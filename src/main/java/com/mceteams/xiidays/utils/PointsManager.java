@@ -1,46 +1,82 @@
 package com.mceteams.xiidays.utils;
 
 import com.mceteams.xiidays.enums.PointType;
+import com.mceteams.xiidays.events.PointsChangedEvent;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.common.NeoForge;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
 import static com.mceteams.xiidays.utils.DataManager.*;
 
 public class PointsManager {
-    public static void addPoints(int teamId, PointType type, Player player) {
+    private static final Map<Integer, Integer> teamPoints = new HashMap<>();
+
+    public static void addPoints(int teamId, PointType type, Player player, Object... args) {
         reloadData();
 
         int newPoints = dataReadInt("team_" + teamId + "_points", "total", 0);
+        int playerPoints = dataReadInt("player_" + player.getUUID().toString() + "_stats", "team_points", 0);
         int pointsAdded = 0;
 
         switch (type) {
-            case KILL -> pointsAdded = 50;
-            case DEATH -> pointsAdded = -25;
-            case MINING -> pointsAdded = 10;
-            case FIRST_BLOOD -> pointsAdded = 150;
-            case KILL_STREAK -> {
-                int streak = dataReadInt("team_" + teamId + "_stats", "kill_streak", 0);
-                if (streak < 5) {
-                    pointsAdded = 10*streak;
-                } else {
-                    pointsAdded = 125;
+            case KILL -> pointsAdded = 50; // Points for a kill
+            case DEATH -> pointsAdded = -25; // Penalty for death
+            case MINING -> { // Points for mining different ores
+                String blockType = (String) args[0];
+                switch (blockType) {
+                    case "DIAMOND_ORE", "NETHERITE_ORE" -> pointsAdded = 100;
+                    case "EMERALD_ORE" -> pointsAdded = 75;
+                    case "GOLD_ORE" -> pointsAdded = 50;
+                    case "IRON_ORE" -> pointsAdded = 25;
+                    case "COAL_ORE", "LAPIS_ORE", "REDSTONE_ORE" -> pointsAdded = 10;
                 }
             }
-            case CRATE -> pointsAdded = 75;
-            case TOTEM -> pointsAdded = 200;
-            case CORE_MAZE -> pointsAdded = 300;
-            case BLOCKS -> pointsAdded = 5;
-            case DISTANCE -> pointsAdded = 1;
-            default -> LOGGER.error("PointType non géré: {}", type);
+
+            case FIRST_BLOOD -> pointsAdded = 150; // Points for first kill of the game
+            case KILL_STREAK -> { // Points for kill streaks
+                int streak = dataReadInt("team_" + teamId + "_stats", "kill_streak", 0);
+
+                if (streak >= 3 && streak < 5) {
+                    pointsAdded = 25;
+                } else if (streak >= 5 && streak < 10) {
+                    pointsAdded = 50;
+                } else if (streak >= 10) {
+                    pointsAdded = 100;
+                }
+            }
+
+            case CRATE -> pointsAdded = 75; // Points for opening a crate
+            case TOTEM -> pointsAdded = 200; // Points for finding a reviving totem
+            case CORE_MAZE -> pointsAdded = 300; // Points for completing the core maze
+            case BLOCKS -> pointsAdded = 5; // Points for placing blocks
+            default -> LOGGER.error("PointType non géré: {}", type); // Log unhandled PointType
         }
 
-        newPoints += pointsAdded;
+        newPoints += pointsAdded; // Update team points
+        playerPoints += pointsAdded; // Update player points
 
-        dataModify("team_" + teamId + "_points", "total", newPoints);
-        if (type != PointType.DISTANCE && type != PointType.BLOCKS && pointsAdded != 0 && type != PointType.KILL_STREAK) {
-            dataModify("team_" + teamId + "_points", "from_3", dataRead("team_" + teamId + "_points", "from_2"));
-            dataModify("team_" + teamId + "_points", "from_2", dataRead("team_" + teamId + "_points", "from_1"));
-            dataModify("team_" + teamId + "_points", "from_1", player.getName().getString() + ":" + type + ":" + pointsAdded);
+        teamPoints.put(teamId, newPoints); // Update in-memory team points
+
+        dataModify("team_" + teamId + "_points", "total", newPoints); // Update team's total points
+        dataModify("player_" + player.getUUID() + "_stats", "team_points", playerPoints); // Update player's total points
+        if ((pointsAdded >= 25 || type == PointType.DEATH) && type != PointType.KILL_STREAK) { // Log significant point changes
+            dataModify("team_" + teamId + "_points", "list_3", dataRead("team_" + teamId + "_points", "list_2"));
+            dataModify("team_" + teamId + "_points", "list_2", dataRead("team_" + teamId + "_points", "list_1"));
+            dataModify("team_" + teamId + "_points", "list_1", player.getName().getString() + ":" + type + ":" + pointsAdded);
         }
+
+        NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, newPoints)); // Trigger event for points change
     }
+
+    public List<Map.Entry<Integer, Integer>> getLeaderboard() {
+        return teamPoints.entrySet()
+                .stream()
+                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue())) // tri desc
+                .toList();
+    }
+
 }

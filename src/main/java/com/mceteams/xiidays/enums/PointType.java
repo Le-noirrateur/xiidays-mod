@@ -10,5 +10,4 @@ public enum PointType {
     TOTEM,
     CORE_MAZE,
     BLOCKS,
-    DISTANCE;
 }

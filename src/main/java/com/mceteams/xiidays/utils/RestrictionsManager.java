@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.util.TriState;
+import net.neoforged.neoforge.event.CommandEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -119,6 +120,7 @@ public class RestrictionsManager {
     // Utils
     // #################################################################################################################
 
+    // Retire un item spécifique de l'inventaire d'un joueur, retourne le nombre d'items retirés
     private static int removeItemFromPlayerInventory(Player player, ItemStack toRemove) {
         if (toRemove == null || toRemove.isEmpty()) return 0;
         int remainingToRemove = toRemove.getCount();
@@ -146,6 +148,7 @@ public class RestrictionsManager {
         return toRemove.getCount() - remainingToRemove; // nombre retiré
     }
 
+    // Vérifie si un item (et éventuellement son block) est interdit
     private static boolean isForbidden(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
 
@@ -163,6 +166,7 @@ public class RestrictionsManager {
         return false;
     }
 
+    // Vérifie si un item (et éventuellement son block) est interdit
     public static boolean isForbidden(Item item) {
         var key = BuiltInRegistries.ITEM.getKey(item).toString();
         boolean allowedItem = DataManager.dataReadBoolean("ItemsAccess", key, true);
@@ -178,6 +182,7 @@ public class RestrictionsManager {
         return false;
     }
 
+    // Vérifie si un block est interdit
     public static boolean isForbidden(Block block) {
         var key = BuiltInRegistries.BLOCK.getKey(block).toString();
         return !DataManager.dataReadBoolean("BlocksAccess", key, true);
@@ -187,6 +192,7 @@ public class RestrictionsManager {
     // Events
     // #################################################################################################################
 
+    // Lors de la connexion d'un joueur, on vérifie son inventaire
     @SubscribeEvent
     public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
@@ -201,6 +207,7 @@ public class RestrictionsManager {
         }
     }
 
+    // Lors du placement d'un block
     @SubscribeEvent
     public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
@@ -215,6 +222,7 @@ public class RestrictionsManager {
         }
     }
 
+    // Lors de l'utilisation d'un item (clic droit)
     @SubscribeEvent
     public static void onRightClick(PlayerInteractEvent.RightClickItem event) {
         Player player = event.getEntity();
@@ -229,6 +237,7 @@ public class RestrictionsManager {
         }
     }
 
+    // Lors de l'attaque avec un item (clic gauche)
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent event) {
         Player player = event.getEntity();
@@ -243,6 +252,7 @@ public class RestrictionsManager {
         }
     }
 
+    // Lors du tick d'un joueur (vérification inventaire)
     @SubscribeEvent
     public static void onPlayerTick(PlayerEvent.StartTracking event) {
         Entity entity = event.getEntity();
@@ -260,6 +270,7 @@ public class RestrictionsManager {
         }
     }
 
+    // Lors de la tentative de ramassage d'un item
     @SubscribeEvent
     public static void onItemPickup(ItemEntityPickupEvent.Pre event) {
         ItemEntity itemEntity = event.getItemEntity();
@@ -302,6 +313,7 @@ public class RestrictionsManager {
         }
     }
 
+    // Lors de la casse d'un block
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         Block block = event.getState().getBlock();
@@ -325,6 +337,7 @@ public class RestrictionsManager {
         }
     }
 
+    // Lors de la notification des voisins d'un block (redstone, etc.)
     @SubscribeEvent
     public static void onBlockNeighborNotifyEvent(BlockEvent.NeighborNotifyEvent event) {
         Block block = event.getState().getBlock();
@@ -337,6 +350,7 @@ public class RestrictionsManager {
         }
     }
 
+    // Lors du craft d'un item
     @SubscribeEvent
     public static void onItemCrafted(PlayerEvent.ItemCraftedEvent event) {
         ItemStack craftedStack = event.getCrafting();
@@ -393,6 +407,7 @@ public class RestrictionsManager {
         }
     }
 
+    // Lors du smelt d'un item
     @SubscribeEvent
     public static void onItemSmelted(PlayerEvent.ItemSmeltedEvent event) {
         ItemStack smeltedStack = event.getSmelting();
@@ -432,10 +447,20 @@ public class RestrictionsManager {
         }
     }
 
+    // Empêche l'utilisation de la commande /spectate
+    @SubscribeEvent
+    public void onCommand(CommandEvent event) {
+        if (event.getParseResults().getReader().getString().startsWith("/spectate")) {
+            event.setCanceled(true);
+        }
+    }
+
+
     // #################################################################################################################
     // Fonctions
     // #################################################################################################################
 
+    // Modifie l'accès d'un item (allow = true => autorisé, false => interdit)
     public static void setItemsAccess(boolean allow, Item it) {
         ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(it);
         String itemName = itemKey.toString(); // Exemple: "minecraft:diamond"
@@ -454,6 +479,7 @@ public class RestrictionsManager {
         }
     }
 
+    // Modifie l'accès d'un block (allow = true => autorisé, false => interdit)
     public static void setBlockAccess(boolean allow, Block bl) {
         ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(bl);
         String blockName = blockKey.toString(); // Exemple: "minecraft:diamond_block"
