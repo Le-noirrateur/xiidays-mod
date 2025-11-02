@@ -108,6 +108,8 @@ public class TeamManager {
 
         dataDelete(teamName);
         dataDelete("team_" + teamID + "_members");
+        dataDelete("team_" + teamID + "_points");
+        dataDelete("team_" + teamID + "_stats");
         dataDelete("team_" + teamID + "_config");
 
         return 1;
@@ -242,6 +244,8 @@ public class TeamManager {
 
             dataAdd("team_" + newTeamId + "_members");
             dataAdd("team_" + newTeamId + "_config");
+            dataAdd("team_" + newTeamId + "_points");
+            dataAdd("team_" + newTeamId + "_stats");
 
             dataModify("Teams", teamName, newTeamId);
 
