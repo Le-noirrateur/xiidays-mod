@@ -1,0 +1,50 @@
+/xgame items disallow
+/xgame items allow
+/xgame blocks disallow
+/xgame items disallow
+/xgame bypass
+/gamemode creative
+/kill @e
+/kill @e[type=!minecraft:player]
+/time set day
+/kill @e[type=!minecraft:player]
+/gamerule doDaylightCycle false
+/gamerule doWeatherCycle false
+/gamerule doMobSpawning false
+/gamerule doMobLoot
+/gamerule doMobLoot false
+/kill @e[type=!minecraft:player]
+/xgame items disallow
+/xgame items allow
+/xgame items disallow
+/xgame items allow
+/xgame items disallow
+/give Dev minecraft:water_bucket
+/xgame items disallow
+/give Dev minecraft:water
+/give Dev minecraft:lava_bucket
+/xgame items disallow
+/effect give Dev minecraft:night_vision infinite 255 true
+/xgame items disallow
+/xgame blocks disallow -2838 11 -2753
+/xgame blocks disallow -2838 12 -2753
+/xgame items disallow
+/xgame items disallowq
+/xgame items disallow
+/xgame blocks disallow -3165 -25 -2301
+/xgame items disallow
+/xgame blocks disallow -4674 97 118
+/xgame blocks disallow -4671 96 117
+/xgame items disallow
+/kill
+/xteam create Jaune
+/xteam create Rouge
+/xteam create Bleu
+/xteam modify core Jaune ~ ~ ~
+/xteam modify spawn Jaune ~ ~ ~
+/gamerule doDaylightCycle false
+/gamerule doWeatherCycle false
+/give Dev minecraft:debug_stick
+/xgame items disallow
+/xgame bypass
+/xgame items disallow

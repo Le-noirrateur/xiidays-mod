@@ -1,0 +1,33 @@
+{
+  "team_1_members": {},
+  "team_1_config": {},
+  "Teams": {
+    "Jaune": 1,
+    "Rouge": 2,
+    "Bleu": 3
+  },
+  "team_2_members": {},
+  "team_2_config": {},
+  "team_3_members": {},
+  "team_3_config": {},
+  "Jaune": {
+    "core": "141,71,-7",
+    "spawn": "141,71,-8"
+  },
+  "ItemsAccess": {
+    "xiidays:team_core": false,
+    "minecraft:grass_block": false,
+    "minecraft:short_grass": false,
+    "xiidays:team_spawner": false,
+    "minecraft:mutton": false,
+    "minecraft:white_wool": false,
+    "minecraft:debug_stick": false
+  },
+  "BlocksAccess": {
+    "xiidays:team_core": false,
+    "minecraft:grass_block": false,
+    "minecraft:short_grass": false,
+    "xiidays:team_spawner": false,
+    "minecraft:white_wool": false
+  }
+}
