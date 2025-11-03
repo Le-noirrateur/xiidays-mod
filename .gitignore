@@ -1,6 +1,9 @@
 # Compiled class file
 *.class
 
+run
+build
+
 # Log file
 *.log
 
