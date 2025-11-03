@@ -1,9 +1,6 @@
 package com.mceteams.xiidays.commands;
 
-import com.mceteams.xiidays.utils.DaysManager;
-import com.mceteams.xiidays.utils.RestrictionsManager;
-import com.mceteams.xiidays.utils.SpectateManager;
-import com.mceteams.xiidays.utils.TeamManager;
+import com.mceteams.xiidays.utils.*;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -146,6 +143,12 @@ public class CommandRegistry {
                 .then(Commands.literal("remove")
                         .then(Commands.literal("member")
                                 .then(Commands.argument("TeamName", StringArgumentType.string())
+                                        .suggests((context, builder) -> {
+                                            for (String team : TeamManager.getAllTeams()) {
+                                                builder.suggest(team);
+                                            }
+                                            return builder.buildFuture();
+                                        })
                                         .then(Commands.argument("player", EntityArgument.player())
                                                 .executes(context -> {
                                                     String teamName = StringArgumentType.getString(context, "TeamName");
@@ -192,6 +195,12 @@ public class CommandRegistry {
 
                         .then(Commands.literal("team")
                                 .then(Commands.argument("TeamName", StringArgumentType.string())
+                                        .suggests((context, builder) -> {
+                                            for (String team : TeamManager.getAllTeams()) {
+                                                builder.suggest(team);
+                                            }
+                                            return builder.buildFuture();
+                                        })
                                         .executes(context -> 1)
                                 )
                         )
@@ -202,6 +211,12 @@ public class CommandRegistry {
                         // Set spawn point with player position
                         .then(Commands.literal("spawn")
                                 .then(Commands.argument("TeamName", StringArgumentType.string())
+                                        .suggests((context, builder) -> {
+                                            for (String team : TeamManager.getAllTeams()) {
+                                                builder.suggest(team);
+                                            }
+                                            return builder.buildFuture();
+                                        })
                                         .executes(context -> {
                                             String teamName = StringArgumentType.getString(context, "TeamName");
                                             BlockPos pos = Objects.requireNonNull(context.getSource().getPlayer()).
@@ -231,6 +246,12 @@ public class CommandRegistry {
                         // Set spawn point with position
                         .then(Commands.literal("spawn")
                                 .then(Commands.argument("TeamName", StringArgumentType.string())
+                                        .suggests((context, builder) -> {
+                                            for (String team : TeamManager.getAllTeams()) {
+                                                builder.suggest(team);
+                                            }
+                                            return builder.buildFuture();
+                                        })
                                         .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                                 .executes(context -> {
                                                     String teamName = StringArgumentType.getString(context, "TeamName");
@@ -261,6 +282,12 @@ public class CommandRegistry {
                         // Set core location
                         .then(Commands.literal("core")
                                 .then(Commands.argument("TeamName", StringArgumentType.string())
+                                        .suggests((context, builder) -> {
+                                            for (String team : TeamManager.getAllTeams()) {
+                                                builder.suggest(team);
+                                            }
+                                            return builder.buildFuture();
+                                        })
                                     .then(Commands.argument("pos", BlockPosArgument.blockPos())
                                             .executes(context -> {
                                                 String teamName = StringArgumentType.getString(context, "TeamName");
@@ -293,6 +320,12 @@ public class CommandRegistry {
                 // add
                 .then(Commands.literal("add")
                         .then(Commands.argument("TeamName", StringArgumentType.string())
+                                .suggests((context, builder) -> {
+                                    for (String team : TeamManager.getAllTeams()) {
+                                        builder.suggest(team);
+                                    }
+                                    return builder.buildFuture();
+                                })
                                 .then(Commands.argument("player", EntityArgument.player())
                                         .executes(context -> {
                                             String teamName = StringArgumentType.getString(context, "TeamName");
@@ -723,6 +756,67 @@ public class CommandRegistry {
                         })
                 )
         );
+
+        // Inside CommandRegistry.register(dispatcher)
+        dispatcher.register(Commands.literal("xgame")
+                .requires(source -> source.hasPermission(4))
+
+                .then(Commands.literal("data")
+                        // /xgame data modify <table> <key> <value>
+                        .then(Commands.literal("modify")
+                                .then(Commands.argument("table", StringArgumentType.string())
+                                        .suggests((context, builder) -> {
+                                            // Suggest all tables
+                                            for (String table : DataManager.getAllTables()) {
+                                                builder.suggest(table);
+                                            }
+                                            return builder.buildFuture();
+                                        })
+                                        .then(Commands.argument("key", StringArgumentType.string())
+                                                .suggests((context, builder) -> {
+                                                    String table = StringArgumentType.getString(context, "table");
+                                                    for (String key : DataManager.getAllDataNames(table)) {
+                                                        builder.suggest(key);
+                                                    }
+                                                    return builder.buildFuture();
+                                                })
+                                                .then(Commands.argument("value", StringArgumentType.string())
+                                                        .executes(context -> {
+                                                            String table = StringArgumentType.getString(context, "table");
+                                                            String key = StringArgumentType.getString(context, "key");
+                                                            String value = StringArgumentType.getString(context, "value");
+
+                                                            DataManager.dataModify(table, key, value);
+
+                                                            context.getSource().sendSystemMessage(Component.literal("§aDonnée modifiée : " + table + "." + key + " = " + value));
+
+                                                            return 1;
+                                                        })
+                                                )
+                                        )
+                                )
+                        )
+
+                        // /xgame data reload
+                        .then(Commands.literal("reload")
+                                .executes(context -> {
+                                    DataManager.reloadData();
+                                    context.getSource().sendSystemMessage(Component.literal("§eData rechargées depuis le fichier !"));
+                                    return 1;
+                                })
+                        )
+
+                        // /xgame data save
+                        .then(Commands.literal("save")
+                                .executes(context -> {
+                                    DataManager.forceSave();
+                                    context.getSource().sendSystemMessage(Component.literal("§eData sauvegardées !"));
+                                    return 1;
+                                })
+                        )
+                )
+        );
+
 
     }
 }

@@ -206,6 +206,14 @@ public class TeamManager {
     }
 
     /**
+     * Récupère toutes les équipes existantes
+     * @return Tableau des noms des équipes
+     */
+    public static String[] getAllTeams() {
+        return getAllDataNames("Teams"); // Récupère toutes les clés de la table "Teams"
+    }
+
+    /**
      * Récupère l'équipe actuelle d'un joueur
      * @param playerUUID UUID du joueur
      * @return Le nom de l'équipe ou null si le joueur n'est dans aucune équipe

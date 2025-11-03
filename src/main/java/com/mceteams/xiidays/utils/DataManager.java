@@ -17,6 +17,13 @@ public class DataManager {
     private static final String DATA_FILE = "xiidays_data.json";
     private static JsonObject mainData = null;
 
+    private static void ensureLoaded() {
+        if (mainData == null) {
+            loadData();
+            XIIDaysManagerMod.LOGGER.info("Data loaded from file");
+        }
+    }
+
     /**
      * Obtient le chemin du fichier de données principal
      */
@@ -74,9 +81,7 @@ public class DataManager {
      * Sauvegarde les données dans le fichier
      */
     private static boolean saveData() {
-        if (mainData == null) {
-            return false;
-        }
+        ensureLoaded();
 
         try {
             Path filePath = getDataFilePath();
@@ -99,7 +104,7 @@ public class DataManager {
      * @param dataTable Le nom de la table
      */
     public static void dataAdd(String dataTable) {
-        reloadData();
+        ensureLoaded();
 
         if (mainData.has(dataTable)) {
             XIIDaysManagerMod.LOGGER.debug("DataTable '{}' already exists", dataTable);
@@ -123,7 +128,7 @@ public class DataManager {
      * @param value     La valeur à stocker
      */
     public static void dataModify(String dataTable, String dataName, String value) {
-        reloadData();
+        ensureLoaded();
 
         // Créer la table si elle n'existe pas
         if (!mainData.has(dataTable)) {
@@ -155,7 +160,7 @@ public class DataManager {
      * @param value     La valeur numérique à stocker
      */
     public static void dataModify(String dataTable, String dataName, int value) {
-        reloadData();
+        ensureLoaded();
 
         // Créer la table si elle n'existe pas
         if (!mainData.has(dataTable)) {
@@ -187,7 +192,7 @@ public class DataManager {
      * @param value     La valeur booléenne à stocker
      */
     public static void dataModify(String dataTable, String dataName, boolean value) {
-        reloadData();
+        ensureLoaded();
 
         // Créer la table si elle n'existe pas
         if (!mainData.has(dataTable)) {
@@ -218,7 +223,7 @@ public class DataManager {
      * @return La valeur sous forme de String, ou null si non trouvée
      */
     public static String dataRead(String dataTable, String dataName) {
-        reloadData();
+        ensureLoaded();
 
         if (!mainData.has(dataTable)) {
             XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
@@ -243,7 +248,7 @@ public class DataManager {
      * @return La valeur numérique
      */
     public static int dataReadInt(String dataTable, String dataName, int defaultValue) {
-        reloadData();
+        ensureLoaded();
 
         if (!mainData.has(dataTable)) {
             return defaultValue;
@@ -270,7 +275,7 @@ public class DataManager {
      * @return La valeur booléenne
      */
     public static boolean dataReadBoolean(String dataTable, String dataName, boolean defaultValue) {
-        reloadData();
+        ensureLoaded();
 
         if (!mainData.has(dataTable)) {
             return defaultValue;
@@ -295,7 +300,7 @@ public class DataManager {
      * @param dataTable Le nom de la table à supprimer
      */
     public static void dataDelete(String dataTable) {
-        reloadData();
+        ensureLoaded();
 
         if (!mainData.has(dataTable)) {
             XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
@@ -318,7 +323,7 @@ public class DataManager {
      * @param dataName  Le nom de la donnée à supprimer
      */
     public static void dataRemove(String dataTable, String dataName) {
-        reloadData();
+        ensureLoaded();
 
         if (!mainData.has(dataTable)) {
             XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
@@ -348,7 +353,7 @@ public class DataManager {
      * @return true si la valeur a été supprimée, false sinon
      */
     public static boolean dataRemove(String dataTable, String dataName, String value) {
-        reloadData();
+        ensureLoaded();
 
         if (!mainData.has(dataTable)) {
             XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
@@ -414,7 +419,7 @@ public class DataManager {
      * @return true si la table existe
      */
     public static boolean hasTable(String dataTable) {
-        reloadData();
+        ensureLoaded();
         return mainData.has(dataTable);
     }
 
@@ -425,8 +430,7 @@ public class DataManager {
      * @return true si la donnée existe
      */
     public static boolean hasData(String dataTable, String dataName) {
-        reloadData();
-
+        ensureLoaded();
         if (!mainData.has(dataTable)) {
             return false;
         }
@@ -439,7 +443,7 @@ public class DataManager {
      * @return Array des noms de tables
      */
     public static String[] getAllTables() {
-        reloadData();
+        ensureLoaded();
         return mainData.keySet().toArray(new String[0]);
     }
 
@@ -449,8 +453,7 @@ public class DataManager {
      * @return Array des noms de données, ou array vide si la table n'existe pas
      */
     public static String[] getAllDataNames(String dataTable) {
-        reloadData();
-
+        ensureLoaded();
         if (!mainData.has(dataTable)) {
             return new String[0];
         }
@@ -458,21 +461,17 @@ public class DataManager {
         JsonObject table = mainData.getAsJsonObject(dataTable);
         return table.keySet().toArray(new String[0]);
     }
-
-    /**
-     * Force le rechargement des données depuis le fichier
-     */
-    private static void reloadData() {
-        mainData = null;
-        loadData();
-        XIIDaysManagerMod.LOGGER.info("Data reloaded from file");
-    }
-
+    
     /**
      * Force la sauvegarde des données
      */
     public static boolean forceSave() {
-        reloadData();
+        ensureLoaded();
         return saveData();
+    }
+
+    public static void reloadData() {
+        mainData = null;
+        ensureLoaded();
     }
 }

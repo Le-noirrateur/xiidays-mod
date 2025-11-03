@@ -31,8 +31,9 @@ public class PointsManager {
                     case "DIAMOND_ORE", "NETHERITE_ORE" -> pointsAdded = 100;
                     case "EMERALD_ORE" -> pointsAdded = 75;
                     case "GOLD_ORE" -> pointsAdded = 50;
-                    case "IRON_ORE" -> pointsAdded = 25;
+                    case "IRON_ORE", "AMETHYST_ORE" -> pointsAdded = 25;
                     case "COAL_ORE", "LAPIS_ORE", "REDSTONE_ORE" -> pointsAdded = 10;
+                    case "COPPER_ORE" -> pointsAdded = 5;
                 }
             }
 

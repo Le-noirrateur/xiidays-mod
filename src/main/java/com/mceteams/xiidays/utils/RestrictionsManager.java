@@ -251,23 +251,23 @@ public class RestrictionsManager {
         }
     }
 
-    // Lors du tick d'un joueur (vérification inventaire)
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerEvent.StartTracking event) {
-        Entity entity = event.getEntity();
-
-        if (entity instanceof ServerPlayer player) {
-            if (RestrictionsManager.hasBypass(player)) return;
-
-            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-                ItemStack stack = player.getInventory().getItem(i);
-                if (RestrictionsManager.isForbidden(stack)) {
-                    player.getInventory().setItem(i, ItemStack.EMPTY);
-                    notifyPlayer(player, "§cUn item interdit a été supprimé de votre inventaire !", new NotifyOptions().actionBar(true).sound(SoundEvents.LAVA_EXTINGUISH, SoundSource.MASTER, 1f, 1f));
-                }
-            }
-        }
-    }
+//    // Lors du tick d'un joueur (vérification inventaire)
+//    @SubscribeEvent
+//    public static void onPlayerTick(PlayerEvent.StartTracking event) {
+//        Entity entity = event.getEntity();
+//
+//        if (entity instanceof ServerPlayer player) {
+//            if (RestrictionsManager.hasBypass(player)) return;
+//
+//            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+//                ItemStack stack = player.getInventory().getItem(i);
+//                if (RestrictionsManager.isForbidden(stack)) {
+//                    player.getInventory().setItem(i, ItemStack.EMPTY);
+//                    notifyPlayer(player, "§cUn item interdit a été supprimé de votre inventaire !", new NotifyOptions().actionBar(true).sound(SoundEvents.LAVA_EXTINGUISH, SoundSource.MASTER, 1f, 1f));
+//                }
+//            }
+//        }
+//    }
 
     // Lors de la tentative de ramassage d'un item
     @SubscribeEvent
@@ -280,8 +280,6 @@ public class RestrictionsManager {
         if (hasBypass(player)) {
             return;
         }
-
-        
 
         // Obtenir le nom de l'item
         ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
@@ -321,8 +319,6 @@ public class RestrictionsManager {
         if (hasBypass(player)) {
             return;
         }
-
-        
 
         ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
         String blockName = blockKey.toString();

@@ -68,7 +68,7 @@ public class SpectateManager {
      * Event déclenché après le respawn du joueur
      */
     @SubscribeEvent
-    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) throws InterruptedException {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
         // Si le joueur doit être en spectate
@@ -93,19 +93,17 @@ public class SpectateManager {
                 // Compte à rebours toutes les secondes
                 for (int i = 1; i <= delaySeconds; i++) {
                     int secondsLeft = delaySeconds - i + 1;
-                    TaskScheduler.schedule(i * 20, () -> player.sendSystemMessage(
-                            Component.literal("Respawn dans " + secondsLeft + " seconde" + (secondsLeft > 1 ? "s" : "") + ".")
-                    ));
+
+                    Thread.sleep(i * 1000L - (i - 1) * 1000L); // Attendre jusqu'à la seconde i
+                    player.sendSystemMessage(Component.literal("Respawn dans " + secondsLeft + " seconde" + (secondsLeft > 1 ? "s" : "") + "."));
                 }
 
-                // Respawn à la fin du délai
-                TaskScheduler.schedule(delaySeconds * 20, () -> SpectateManager.respawnPlayer(player));
+                SpectateManager.respawnPlayer(player);
             } else {
                 // Jour 7+ : aucun respawn
                 player.sendSystemMessage(Component.literal("Spectate permanent pour le reste du jour."));
                 return;
             }
-
 
             LOGGER.info("Player {} put in spectator mode at death position", player.getName().getString());
         }
