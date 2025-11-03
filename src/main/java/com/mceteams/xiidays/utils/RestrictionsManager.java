@@ -18,7 +18,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.util.TriState;
-import net.neoforged.neoforge.event.CommandEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -447,14 +446,12 @@ public class RestrictionsManager {
         }
     }
 
-    // Empêche l'utilisation de la commande /spectate
-    @SubscribeEvent
-    public void onCommand(CommandEvent event) {
-        if (event.getParseResults().getReader().getString().startsWith("/spectate")) {
-            event.setCanceled(true);
-        }
-    }
-
+//    @SubscribeEvent
+//    public static void onCommand(CommandEvent event) {
+//        if (event.getParseResults().getReader().getString().startsWith("/spectate")) {
+//            event.setCanceled(true);
+//        }
+//    }
 
     // #################################################################################################################
     // Fonctions

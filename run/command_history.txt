@@ -1,36 +1,3 @@
-/xgame items disallow
-/xgame items allow
-/xgame blocks disallow
-/xgame items disallow
-/xgame bypass
-/gamemode creative
-/kill @e
-/kill @e[type=!minecraft:player]
-/time set day
-/kill @e[type=!minecraft:player]
-/gamerule doDaylightCycle false
-/gamerule doWeatherCycle false
-/gamerule doMobSpawning false
-/gamerule doMobLoot
-/gamerule doMobLoot false
-/kill @e[type=!minecraft:player]
-/xgame items disallow
-/xgame items allow
-/xgame items disallow
-/xgame items allow
-/xgame items disallow
-/give Dev minecraft:water_bucket
-/xgame items disallow
-/give Dev minecraft:water
-/give Dev minecraft:lava_bucket
-/xgame items disallow
-/effect give Dev minecraft:night_vision infinite 255 true
-/xgame items disallow
-/xgame blocks disallow -2838 11 -2753
-/xgame blocks disallow -2838 12 -2753
-/xgame items disallow
-/xgame items disallowq
-/xgame items disallow
 /xgame blocks disallow -3165 -25 -2301
 /xgame items disallow
 /xgame blocks disallow -4674 97 118
@@ -48,3 +15,36 @@
 /xgame items disallow
 /xgame bypass
 /xgame items disallow
+/xteam add bleu Dev
+/xteam create bleu
+/xteam create jaune
+/xteam create rouge
+/xteam create jaune
+/xteam create bleu
+/xgame bypass
+/xteam modify spawn bleu
+/xteam modify core bleu
+/xteam modify core bleu ~ ~ ~
+/xteam add bleu Dev
+/xday start
+/kill
+/gamerule doImmediateRespawn true
+/xspectate respawnall
+/kill
+/xspectate respawn Dev
+/kill
+/xspectate respawn Dev
+/kill
+/xspectate respawn Dev
+/give Dev minecraft:netherite_chestplate
+/give Dev minecraft:netherite_boots
+/give Dev minecraft:netherite_helmet
+/give Dev minecraft:netherite_leggings
+/give Dev minecraft:netherite_axe
+/give Dev minecraft:netherite_pickaxe
+/give Dev minecraft:netherite_sword
+/effect give Dev minecraft:night_vision infinite 1 true
+/gamerule keepInventory true
+/give Dev minecraft:netherite_shovel
+/kill
+/xspectate respawn Dev

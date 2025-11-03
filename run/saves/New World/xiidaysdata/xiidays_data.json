@@ -1,19 +1,4 @@
 {
-  "team_1_members": {},
-  "team_1_config": {},
-  "Teams": {
-    "Jaune": 1,
-    "Rouge": 2,
-    "Bleu": 3
-  },
-  "team_2_members": {},
-  "team_2_config": {},
-  "team_3_members": {},
-  "team_3_config": {},
-  "Jaune": {
-    "core": "141,71,-7",
-    "spawn": "141,71,-8"
-  },
   "ItemsAccess": {
     "xiidays:team_core": false,
     "minecraft:grass_block": false,
@@ -29,5 +14,40 @@
     "minecraft:short_grass": false,
     "xiidays:team_spawner": false,
     "minecraft:white_wool": false
+  },
+  "team_1_members": {},
+  "team_1_config": {},
+  "team_1_points": {},
+  "team_1_stats": {},
+  "Teams": {
+    "rouge": 1,
+    "jaune": 2,
+    "bleu": 3
+  },
+  "team_2_members": {},
+  "team_2_config": {},
+  "team_2_points": {},
+  "team_2_stats": {},
+  "team_3_members": {
+    "member_1": "380df991-f603-344c-a090-369bad2a924a"
+  },
+  "team_3_config": {},
+  "team_3_points": {
+    "total": -125,
+    "list_1": "Dev:DEATH:-25",
+    "list_2": "Dev:DEATH:-25",
+    "list_3": "Dev:DEATH:-25"
+  },
+  "team_3_stats": {},
+  "bleu": {
+    "spawn": "140,71,-8",
+    "core": "140,71,-9"
+  },
+  "days": {
+    "isInProgress": true,
+    "currentDay": 1
+  },
+  "player_380df991-f603-344c-a090-369bad2a924a_stats": {
+    "team_points": -125
   }
 }

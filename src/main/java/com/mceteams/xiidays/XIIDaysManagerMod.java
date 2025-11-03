@@ -43,7 +43,7 @@ public class XIIDaysManagerMod {
 
         NeoForge.EVENT_BUS.register(RestrictionsManager.class);
         NeoForge.EVENT_BUS.register(SpectateManager.class);
-        NeoForge.EVENT_BUS.register(PlayersHandler.class);
+        NeoForge.EVENT_BUS.register(new PlayersHandler());
 
         NeoForge.EVENT_BUS.addListener(this::onServerTick);
         NeoForge.EVENT_BUS.register(this);

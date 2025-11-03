@@ -1,5 +1,6 @@
 package com.mceteams.xiidays.utils;
 
+import com.mceteams.xiidays.enums.PointType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -54,7 +55,9 @@ public class SpectateManager {
         // Attribution des points de mort
         int teamId = TeamManager.getTeamId(teamName);
         if (teamId > 0) {
-            PointsManager.addPoints(teamId, com.mceteams.xiidays.enums.PointType.DEATH, player);
+            DataManager.dataModify("player_" + player.getUUID() + "_stats", "deaths",
+                    DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 0) + 1);
+            PointsManager.addPoints(teamId, PointType.DEATH, player);
         }
 
         LOGGER.info("Player {} died and will be put in spectator mode", player.getName().getString());
@@ -79,6 +82,20 @@ public class SpectateManager {
                 player.teleportTo(level, deathPos.getX() + 0.5, deathPos.getY() + 1, deathPos.getZ() + 0.5,
                         player.getYRot(), player.getXRot());
             }
+
+            if (DaysManager.getCurrentDay() <= 6) {
+                int deaths = DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 1);
+
+                // 3 secondes / mort, limite 10s
+                int delaySeconds = Math.min(deaths * 3, 10);
+
+                TaskScheduler.schedule((delaySeconds * 20), () -> SpectateManager.respawnPlayer(player));
+            } else {
+                // Jour 7+ : aucun respawn
+                // spectate permanent jusqu'à fin du jour
+                return;
+            }
+
 
             LOGGER.info("Player {} put in spectator mode at death position", player.getName().getString());
         }
