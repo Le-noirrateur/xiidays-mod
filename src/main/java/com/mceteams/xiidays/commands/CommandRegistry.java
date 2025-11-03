@@ -2,6 +2,7 @@ package com.mceteams.xiidays.commands;
 
 import com.mceteams.xiidays.utils.RestrictionsManager;
 import com.mceteams.xiidays.utils.DaysManager;
+import com.mceteams.xiidays.utils.SpectateManager;
 import com.mceteams.xiidays.utils.TeamManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -26,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 
+import java.util.Map;
 import java.util.Objects;
 
 import static com.mceteams.xiidays.utils.DataManager.*;
@@ -634,6 +636,91 @@ public class CommandRegistry {
                                         })
                                 )
                         )
+                )
+        );
+
+        // #############
+        // ## SPECTATE ##
+        // #############
+
+        dispatcher.register(Commands.literal("xspectate")
+                .requires(CommandSourceStack::isPlayer)
+                .requires(source -> source.hasPermission(4))
+
+                // Respawn un joueur spécifique
+                .then(Commands.literal("respawn")
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .executes(context -> {
+                                    ServerPlayer target = EntityArgument.getPlayer(context, "player");
+                                    ServerPlayer sender = context.getSource().getPlayerOrException();
+
+                                    if (!SpectateManager.isSpectating(target)) {
+                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
+                                        context.getSource().sendFailure(Component.literal("§cLe joueur n'est pas en mode spectateur"));
+                                        return 0;
+                                    }
+
+                                    if (SpectateManager.respawnPlayer(target)) {
+                                        sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                                        context.getSource().sendSystemMessage(Component.literal("§a" + target.getName().getString() + " a été respawn"));
+                                        target.sendSystemMessage(Component.literal("§aVous avez été respawn par un administrateur"));
+                                        return 1;
+                                    } else {
+                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
+                                        context.getSource().sendFailure(Component.literal("§cImpossible de respawn le joueur"));
+                                        return 0;
+                                    }
+                                })
+                        )
+                )
+
+                // Respawn tous les spectateurs
+                .then(Commands.literal("respawnall")
+                        .executes(context -> {
+                            ServerPlayer sender = context.getSource().getPlayerOrException();
+                            int count = SpectateManager.getSpectatorCount();
+
+                            if (count == 0) {
+                                sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
+                                context.getSource().sendSystemMessage(Component.literal("§cAucun spectateur à respawn"));
+                                return 0;
+                            }
+
+                            SpectateManager.respawnAllSpectators();
+
+                            sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                            context.getSource().getServer().getPlayerList().broadcastSystemMessage(
+                                    Component.literal("§aTous les spectateurs ont été respawn"), false);
+
+                            return 1;
+                        })
+                )
+
+                // Liste des spectateurs
+                .then(Commands.literal("list")
+                        .executes(context -> {
+                            ServerPlayer sender = context.getSource().getPlayerOrException();
+                            int total = SpectateManager.getSpectatorCount();
+
+                            if (total == 0) {
+                                sender.playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.MASTER, 1f, 1f);
+                                context.getSource().sendSystemMessage(Component.literal("§eAucun spectateur actuellement"));
+                                return 1;
+                            }
+
+                            Map<String, Integer> byTeam = SpectateManager.getSpectatorsByTeam();
+
+                            sender.playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.MASTER, 1f, 1f);
+                            context.getSource().sendSystemMessage(Component.literal("§e=== Spectateurs (" + total + ") ==="));
+
+                            for (Map.Entry<String, Integer> entry : byTeam.entrySet()) {
+                                context.getSource().sendSystemMessage(Component.literal(
+                                        "§7" + entry.getKey() + " : §f" + entry.getValue() + " joueur(s)"
+                                ));
+                            }
+
+                            return 1;
+                        })
                 )
         );
 

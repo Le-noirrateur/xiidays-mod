@@ -5,7 +5,9 @@ import com.mceteams.xiidays.blocks.BlockRegistry;
 import com.mceteams.xiidays.commands.CommandRegistry;
 import com.mceteams.xiidays.items.ItemRegistry;
 import com.mceteams.xiidays.menus.MenuRegistry;
+import com.mceteams.xiidays.utils.PlayersHandler;
 import com.mceteams.xiidays.utils.RestrictionsManager;
+import com.mceteams.xiidays.utils.SpectateManager;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -40,6 +42,8 @@ public class XIIDaysManagerMod {
         BlockEntityRegistry.BLOCK_ENTITIES.register(modEventBus);
 
         NeoForge.EVENT_BUS.register(RestrictionsManager.class);
+        NeoForge.EVENT_BUS.register(SpectateManager.class);
+        NeoForge.EVENT_BUS.register(PlayersHandler.class);
 
         NeoForge.EVENT_BUS.addListener(this::onServerTick);
         NeoForge.EVENT_BUS.register(this);

@@ -133,12 +133,18 @@ public class DaysManager {
             // Termine le jour dans les données
             dataModify("days", "isInProgress", false);
 
-            // Ajoute l'effect de blindness aux joueurs
+            // Respawn tous les spectateurs avant d'appliquer les effets
+            SpectateManager.respawnAllSpectators();
+
+            // Ajoute l'effet de blindness aux joueurs vivants
             for (Player player : context.getSource().getServer().getPlayerList().getPlayers()) {
                 player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 99999, 255, true, false));
                 player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 99999, 255, true, false));
             }
 
+            // Message de fin de jour
+            context.getSource().getServer().getPlayerList()
+                    .broadcastSystemMessage(Component.literal("§cLe jour est terminé"), false);
 
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
