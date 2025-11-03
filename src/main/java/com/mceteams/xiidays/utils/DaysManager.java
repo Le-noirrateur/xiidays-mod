@@ -20,18 +20,18 @@ import static com.mceteams.xiidays.utils.DataManager.*;
 
 public class DaysManager {
     public static boolean isDayInProgress() {
-        reloadData();
+        
         return dataReadBoolean("days", "isInProgress", false);
     }
 
     public static int getCurrentDay() {
-        reloadData();
+        
         return dataReadInt("days", "currentDay", 0);
     }
 
     public static boolean start(CommandContext<CommandSourceStack> context) {
         try {
-            reloadData();
+            
 
             // Vérifie si un jour est déjà en cours ou si
             if (!dataReadBoolean("days", "isInProgress", false) && dataReadInt("days", "currentDay", 0) < 12) {
@@ -128,7 +128,7 @@ public class DaysManager {
 
     public static boolean stop(CommandContext<CommandSourceStack> context) {
         try {
-            reloadData();
+            
 
             // Termine le jour dans les données
             dataModify("days", "isInProgress", false);

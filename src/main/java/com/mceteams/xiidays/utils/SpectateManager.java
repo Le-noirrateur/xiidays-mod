@@ -2,6 +2,7 @@ package com.mceteams.xiidays.utils;
 
 import com.mceteams.xiidays.enums.PointType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
@@ -89,10 +90,19 @@ public class SpectateManager {
                 // 3 secondes / mort, limite 10s
                 int delaySeconds = Math.min(deaths * 3, 10);
 
-                TaskScheduler.schedule((delaySeconds * 20), () -> SpectateManager.respawnPlayer(player));
+                // Compte à rebours toutes les secondes
+                for (int i = 1; i <= delaySeconds; i++) {
+                    int secondsLeft = delaySeconds - i + 1;
+                    TaskScheduler.schedule(i * 20, () -> player.sendSystemMessage(
+                            Component.literal("Respawn dans " + secondsLeft + " seconde" + (secondsLeft > 1 ? "s" : "") + ".")
+                    ));
+                }
+
+                // Respawn à la fin du délai
+                TaskScheduler.schedule(delaySeconds * 20, () -> SpectateManager.respawnPlayer(player));
             } else {
                 // Jour 7+ : aucun respawn
-                // spectate permanent jusqu'à fin du jour
+                player.sendSystemMessage(Component.literal("Spectate permanent pour le reste du jour."));
                 return;
             }
 
@@ -318,7 +328,7 @@ public class SpectateManager {
      * Récupère la position du spawn d'une équipe
      */
     private static BlockPos getTeamSpawnPosition(String teamName) {
-        DataManager.reloadData();
+        
 
         String spawnData = DataManager.dataRead(teamName, "spawn");
         if (spawnData == null) {

@@ -19,7 +19,7 @@ public class TeamManager {
      * @return 1 si a fonctionné, > 1 si une erreur s'est produit
      */
     public static int addMember(String teamName, Player player) {
-        reloadData();
+        
 
         if (hasData("Teams", teamName)) {
             int teamID = dataReadInt("Teams", teamName, 0);
@@ -58,7 +58,7 @@ public class TeamManager {
      * @return 1 si a fonctionné, > 1 si une erreur s'est produit
      */
     public static int remMember(String teamName, Player player) {
-        reloadData();
+        
 
         if (hasData("Teams", teamName)) {
             int teamID = dataReadInt("Teams", teamName, 0);
@@ -191,7 +191,7 @@ public class TeamManager {
      * @return true si le joueur est dans cette équipe
      */
     public static boolean isPlayerInTeam(String playerUUID, int teamID) {
-        reloadData();
+        
 
         String[] teamMembers = getAllDataNames("team_" + teamID + "_members");
 
@@ -211,7 +211,7 @@ public class TeamManager {
      * @return Le nom de l'équipe ou null si le joueur n'est dans aucune équipe
      */
     public static String getPlayerCurrentTeam(String playerUUID) {
-        reloadData();
+        
 
         String[] allTeams = getAllDataNames("Teams");
 
@@ -226,7 +226,7 @@ public class TeamManager {
     }
 
     public static int getTeamId(String teamName) {
-        reloadData();
+        
 
         if (hasData("Teams", teamName)) {
             return dataReadInt("Teams", teamName, 0);
@@ -236,7 +236,7 @@ public class TeamManager {
     }
 
     public static int createTeam(String teamName) {
-        reloadData();
+        
 
         if (!hasData("Teams", teamName)) {
             String[] teams = getAllDataNames("Teams");

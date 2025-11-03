@@ -29,7 +29,7 @@ public class PlayersHandler {
                 serverPlayer.removeEffectNoUpdate(net.minecraft.world.effect.MobEffects.DARKNESS);
                 serverPlayer.removeEffectNoUpdate(net.minecraft.world.effect.MobEffects.BLINDNESS);
 
-                serverPlayer.sendSystemMessage(Component.literal("Bienvenu(e) §3" + serverPlayer.getName() + "§r, le jour §4" + DaysManager.getCurrentDay() + "§r est en cours !"));
+                serverPlayer.sendSystemMessage(Component.literal("Bienvenu(e) §l" + serverPlayer.getName().getString() + "§r, le jour §l" + DaysManager.getCurrentDay() + "§r est en cours !"));
                 serverPlayer.playNotifySound(SoundEvents.VILLAGER_NO, SoundSource.MASTER, 1.0f, 1.0f);
             }
         }

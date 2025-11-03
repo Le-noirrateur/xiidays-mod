@@ -1,7 +1,3 @@
-/xgame blocks disallow -3165 -25 -2301
-/xgame items disallow
-/xgame blocks disallow -4674 97 118
-/xgame blocks disallow -4671 96 117
 /xgame items disallow
 /kill
 /xteam create Jaune
@@ -46,5 +42,9 @@
 /effect give Dev minecraft:night_vision infinite 1 true
 /gamerule keepInventory true
 /give Dev minecraft:netherite_shovel
+/kill
+/xspectate respawn Dev
+/kill
+/xspectate respawn Dev
 /kill
 /xspectate respawn Dev

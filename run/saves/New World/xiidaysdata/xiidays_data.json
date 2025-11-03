@@ -33,7 +33,7 @@
   },
   "team_3_config": {},
   "team_3_points": {
-    "total": -125,
+    "total": -200,
     "list_1": "Dev:DEATH:-25",
     "list_2": "Dev:DEATH:-25",
     "list_3": "Dev:DEATH:-25"
@@ -48,6 +48,7 @@
     "currentDay": 1
   },
   "player_380df991-f603-344c-a090-369bad2a924a_stats": {
-    "team_points": -125
+    "team_points": -200,
+    "deaths": 3
   }
 }

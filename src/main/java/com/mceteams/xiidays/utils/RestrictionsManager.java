@@ -67,7 +67,7 @@ public class RestrictionsManager {
         ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
         String itemName = itemKey.toString();
 
-        DataManager.reloadData();
+        
         return DataManager.dataReadBoolean("ItemsAccess", itemName, true);
     }
 
@@ -75,7 +75,7 @@ public class RestrictionsManager {
         ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
         String blockName = blockKey.toString();
 
-        DataManager.reloadData();
+        
         return DataManager.dataReadBoolean("BlocksAccess", blockName, true);
     }
 
@@ -281,7 +281,7 @@ public class RestrictionsManager {
             return;
         }
 
-        DataManager.reloadData();
+        
 
         // Obtenir le nom de l'item
         ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
@@ -322,7 +322,7 @@ public class RestrictionsManager {
             return;
         }
 
-        DataManager.reloadData();
+        
 
         ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
         String blockName = blockKey.toString();
@@ -360,7 +360,7 @@ public class RestrictionsManager {
             return;
         }
 
-        DataManager.reloadData();
+        
 
         ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
         String itemName = itemKey.toString();
@@ -417,7 +417,7 @@ public class RestrictionsManager {
             return;
         }
 
-        DataManager.reloadData();
+        
 
         ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
         String itemName = itemKey.toString();
@@ -462,7 +462,7 @@ public class RestrictionsManager {
         ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(it);
         String itemName = itemKey.toString(); // Exemple: "minecraft:diamond"
 
-        DataManager.reloadData();
+        
 
         if (allow) { // if Allow
             if (!DataManager.dataReadBoolean("ItemsAccess", itemName, true)) {
@@ -481,7 +481,7 @@ public class RestrictionsManager {
         ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(bl);
         String blockName = blockKey.toString(); // Exemple: "minecraft:diamond_block"
 
-        DataManager.reloadData();
+        
 
         if (allow) { // if Allow
             if (!DataManager.dataReadBoolean("BlocksAccess", blockName, true)) {

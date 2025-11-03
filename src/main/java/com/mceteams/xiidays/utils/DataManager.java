@@ -99,7 +99,7 @@ public class DataManager {
      * @param dataTable Le nom de la table
      */
     public static void dataAdd(String dataTable) {
-        loadData();
+        reloadData();
 
         if (mainData.has(dataTable)) {
             XIIDaysManagerMod.LOGGER.debug("DataTable '{}' already exists", dataTable);
@@ -123,7 +123,7 @@ public class DataManager {
      * @param value     La valeur à stocker
      */
     public static void dataModify(String dataTable, String dataName, String value) {
-        loadData();
+        reloadData();
 
         // Créer la table si elle n'existe pas
         if (!mainData.has(dataTable)) {
@@ -155,7 +155,7 @@ public class DataManager {
      * @param value     La valeur numérique à stocker
      */
     public static void dataModify(String dataTable, String dataName, int value) {
-        loadData();
+        reloadData();
 
         // Créer la table si elle n'existe pas
         if (!mainData.has(dataTable)) {
@@ -187,7 +187,7 @@ public class DataManager {
      * @param value     La valeur booléenne à stocker
      */
     public static void dataModify(String dataTable, String dataName, boolean value) {
-        loadData();
+        reloadData();
 
         // Créer la table si elle n'existe pas
         if (!mainData.has(dataTable)) {
@@ -218,7 +218,7 @@ public class DataManager {
      * @return La valeur sous forme de String, ou null si non trouvée
      */
     public static String dataRead(String dataTable, String dataName) {
-        loadData();
+        reloadData();
 
         if (!mainData.has(dataTable)) {
             XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
@@ -243,7 +243,7 @@ public class DataManager {
      * @return La valeur numérique
      */
     public static int dataReadInt(String dataTable, String dataName, int defaultValue) {
-        loadData();
+        reloadData();
 
         if (!mainData.has(dataTable)) {
             return defaultValue;
@@ -270,7 +270,7 @@ public class DataManager {
      * @return La valeur booléenne
      */
     public static boolean dataReadBoolean(String dataTable, String dataName, boolean defaultValue) {
-        loadData();
+        reloadData();
 
         if (!mainData.has(dataTable)) {
             return defaultValue;
@@ -295,7 +295,7 @@ public class DataManager {
      * @param dataTable Le nom de la table à supprimer
      */
     public static void dataDelete(String dataTable) {
-        loadData();
+        reloadData();
 
         if (!mainData.has(dataTable)) {
             XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
@@ -318,7 +318,7 @@ public class DataManager {
      * @param dataName  Le nom de la donnée à supprimer
      */
     public static void dataRemove(String dataTable, String dataName) {
-        loadData();
+        reloadData();
 
         if (!mainData.has(dataTable)) {
             XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
@@ -348,7 +348,7 @@ public class DataManager {
      * @return true si la valeur a été supprimée, false sinon
      */
     public static boolean dataRemove(String dataTable, String dataName, String value) {
-        loadData();
+        reloadData();
 
         if (!mainData.has(dataTable)) {
             XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
@@ -414,7 +414,7 @@ public class DataManager {
      * @return true si la table existe
      */
     public static boolean hasTable(String dataTable) {
-        loadData();
+        reloadData();
         return mainData.has(dataTable);
     }
 
@@ -425,7 +425,7 @@ public class DataManager {
      * @return true si la donnée existe
      */
     public static boolean hasData(String dataTable, String dataName) {
-        loadData();
+        reloadData();
 
         if (!mainData.has(dataTable)) {
             return false;
@@ -439,7 +439,7 @@ public class DataManager {
      * @return Array des noms de tables
      */
     public static String[] getAllTables() {
-        loadData();
+        reloadData();
         return mainData.keySet().toArray(new String[0]);
     }
 
@@ -449,7 +449,7 @@ public class DataManager {
      * @return Array des noms de données, ou array vide si la table n'existe pas
      */
     public static String[] getAllDataNames(String dataTable) {
-        loadData();
+        reloadData();
 
         if (!mainData.has(dataTable)) {
             return new String[0];
@@ -462,7 +462,7 @@ public class DataManager {
     /**
      * Force le rechargement des données depuis le fichier
      */
-    public static void reloadData() {
+    private static void reloadData() {
         mainData = null;
         loadData();
         XIIDaysManagerMod.LOGGER.info("Data reloaded from file");
@@ -472,7 +472,7 @@ public class DataManager {
      * Force la sauvegarde des données
      */
     public static boolean forceSave() {
-        loadData();
+        reloadData();
         return saveData();
     }
 }

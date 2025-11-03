@@ -16,10 +16,10 @@ public class PointsManager {
     private static final Map<Integer, Integer> teamPoints = new HashMap<>();
 
     public static void addPoints(int teamId, PointType type, Player player, Object... args) {
-        reloadData();
+
 
         int newPoints = dataReadInt("team_" + teamId + "_points", "total", 0);
-        int playerPoints = dataReadInt("player_" + player.getUUID().toString() + "_stats", "team_points", 0);
+        int playerPoints = dataReadInt("player_" + player.getUUID() + "_stats", "team_points", 0);
         int pointsAdded = 0;
 
         switch (type) {

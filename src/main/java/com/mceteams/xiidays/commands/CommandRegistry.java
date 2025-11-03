@@ -1,7 +1,7 @@
 package com.mceteams.xiidays.commands;
 
-import com.mceteams.xiidays.utils.RestrictionsManager;
 import com.mceteams.xiidays.utils.DaysManager;
+import com.mceteams.xiidays.utils.RestrictionsManager;
 import com.mceteams.xiidays.utils.SpectateManager;
 import com.mceteams.xiidays.utils.TeamManager;
 import com.mojang.brigadier.CommandDispatcher;
@@ -72,7 +72,7 @@ public class CommandRegistry {
                 // status
                 .then(Commands.literal("status")
                         .executes(context -> {
-                            reloadData();
+                            
                             int Day = dataReadInt("days", "currentDay", 0);
                             boolean isInProgress = dataReadBoolean("days", "isInProgress", false);
 
