@@ -38,6 +38,19 @@ public class SpectateManager {
             return; // Respawn normal de Minecraft
         }
 
+        // Récupérer l'attaquant s'il y en a un
+        String attackerUUID = null;
+        String attackerTeamName = null;
+        int attackerTeamId = 0;
+
+        // Vérifier si la source de la mort est un joueur
+        if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
+            attackerUUID = attacker.getUUID().toString();
+            attackerTeamName = TeamManager.getPlayerCurrentTeam(attackerUUID);
+
+            attackerTeamId = TeamManager.getTeamId(attackerTeamName); // 0 si pas d'équipe
+        }
+
         // Vérifier si le joueur a une équipe
         String playerUUID = player.getUUID().toString();
         String teamName = TeamManager.getPlayerCurrentTeam(playerUUID);
@@ -56,11 +69,23 @@ public class SpectateManager {
         // Attribution des points de mort
         int teamId = TeamManager.getTeamId(teamName);
         if (teamId > 0) {
-            DataManager.dataModify("player_" + player.getUUID() + "_stats", "deaths",
-                    DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 0) + 1);
+            DataManager.dataModify("player_" + player.getUUID() + "_stats", "deaths", DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 0) + 1);
+            DataManager.dataModify("team_" + teamName + "_stats", "kill_streak", 0); // Reset kill streak de l'équipe tuée
             PointsManager.addPoints(teamId, PointType.DEATH, player);
         }
 
+        // Attribution des points de kill à l'attaquant
+        if (attackerTeamId > 0) {
+            DataManager.dataModify("team_" + attackerTeamName + "_stats", "kills", DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "kills", 0) + 1);
+            DataManager.dataModify("team_" + attackerTeamName + "_stats", "kill_streak", DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "kill_streak", 0) + 1);
+            DataManager.dataModify("team_" + attackerTeamName + "_stats", "max_kill_streak", Math.max(
+                    DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "max_kill_streak", 0),
+                    DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "kill_streak", 0)
+            ));
+
+            PointsManager.addPoints(attackerTeamId, PointType.KILL, player);
+            PointsManager.addPoints(attackerTeamId, PointType.KILL_STREAK, player);
+        }
         LOGGER.info("Player {} died and will be put in spectator mode", player.getName().getString());
     }
 
@@ -101,7 +126,7 @@ public class SpectateManager {
                 SpectateManager.respawnPlayer(player);
             } else {
                 // Jour 7+ : aucun respawn
-                player.sendSystemMessage(Component.literal("Spectate permanent pour le reste du jour."));
+                player.sendSystemMessage(Component.literal("Vous êtes mort pendant la deuxième phase\nVous devez attendre que votre équipe utilise un totêm de revivalité.."));
                 return;
             }
 

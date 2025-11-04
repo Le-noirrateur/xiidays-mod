@@ -9,5 +9,4 @@ public enum PointType {
     CRATE,
     TOTEM,
     CORE_MAZE,
-    BLOCKS,
 }

@@ -16,8 +16,6 @@ public class PointsManager {
     private static final Map<Integer, Integer> teamPoints = new HashMap<>();
 
     public static void addPoints(int teamId, PointType type, Player player, Object... args) {
-
-
         int newPoints = dataReadInt("team_" + teamId + "_points", "total", 0);
         int playerPoints = dataReadInt("player_" + player.getUUID() + "_stats", "team_points", 0);
         int pointsAdded = 0;
@@ -37,7 +35,7 @@ public class PointsManager {
                 }
             }
 
-            case FIRST_BLOOD -> pointsAdded = 150; // Points for first kill of the game
+            case FIRST_BLOOD -> pointsAdded = 2000; // Points for first kill of the game
             case KILL_STREAK -> { // Points for kill streaks
                 int streak = dataReadInt("team_" + teamId + "_stats", "kill_streak", 0);
 
@@ -53,7 +51,6 @@ public class PointsManager {
             case CRATE -> pointsAdded = 75; // Points for opening a crate
             case TOTEM -> pointsAdded = 200; // Points for finding a reviving totem
             case CORE_MAZE -> pointsAdded = 300; // Points for completing the core maze
-            case BLOCKS -> pointsAdded = 5; // Points for placing blocks
             default -> LOGGER.error("PointType non géré: {}", type); // Log unhandled PointType
         }
 
@@ -68,6 +65,12 @@ public class PointsManager {
             dataModify("team_" + teamId + "_points", "list_3", dataRead("team_" + teamId + "_points", "list_2"));
             dataModify("team_" + teamId + "_points", "list_2", dataRead("team_" + teamId + "_points", "list_1"));
             dataModify("team_" + teamId + "_points", "list_1", player.getName().getString() + ":" + type + ":" + pointsAdded);
+        }
+
+        if (pointsAdded < 0) {
+            dataModify("team_" + teamId + "_stats", "pointloss", dataReadInt("team_" + teamId + "_stats", "pointloss", 0) - pointsAdded);
+        } else {
+            dataModify("team_" + teamId + "_stats", "pointgain", dataReadInt("team_" + teamId + "_stats", "pointgain", 0) + pointsAdded);
         }
 
         NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, newPoints)); // Trigger event for points change
