@@ -125,7 +125,7 @@ public class PlayersHandler {
     }
 
     @SubscribeEvent
-    public static void onPlayerDamage(LivingDamageEvent.Post event) {
+    public void onPlayerDamage(LivingDamageEvent.Post event) {
         // Vérifier que la victime est un joueur
         if (!(event.getEntity() instanceof ServerPlayer target)) return;
 
