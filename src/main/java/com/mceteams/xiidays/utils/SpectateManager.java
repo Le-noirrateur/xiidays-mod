@@ -79,8 +79,8 @@ public class SpectateManager {
 
         // Attribution des points de kill à l'attaquant
         if (attackerTeamId > 0) {
-            DataManager.dataModify("team_" + attackerTeamId + "_stats", "kills", DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "kills", 0) + 1);
-            DataManager.dataModify("team_" + attackerTeamId + "_stats", "kill_streak", DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "kill_streak", 0) + 1);
+            DataManager.dataModify("team_" + attackerTeamId + "_stats", "kills", DataManager.dataReadInt("team_" + attackerTeamId + "_stats", "kills", 0) + 1);
+            DataManager.dataModify("team_" + attackerTeamId + "_stats", "kill_streak", DataManager.dataReadInt("team_" + attackerTeamId + "_stats", "kill_streak", 0) + 1);
             DataManager.dataModify("team_" + attackerTeamId + "_stats", "max_kill_streak", Math.max(
                     DataManager.dataReadInt("team_" + attackerTeamId + "_stats", "max_kill_streak", 0),
                     DataManager.dataReadInt("team_" + attackerTeamId + "_stats", "kill_streak", 0)
