@@ -33,10 +33,10 @@ displayName="${mod_name}" #mandatory
 logoFile = "logo.png" #optional
 
 # A URL to query for updates for this mod. See the JSON update specification https://docs.neoforged.net/docs/misc/updatechecker/
-updateJSONURL="https://fss-content.mceteams.com/xiidays/mod_updates.json" #optional
+updateJSONURL="https://fss-content.mceteams.com/xii-days/mod_updates.json" #optional
 
 # A URL for the "homepage" for this mod, displayed in the mod UI
-displayURL="${mod_url}" #optional
+displayURL="https://fss.mceteams.com/xii-days" #optional
 
 # A text field displayed in the mod UI
 #credits="" #optional

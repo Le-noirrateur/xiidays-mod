@@ -32,6 +32,8 @@ public class SpectateManager {
     @SubscribeEvent
     public static void onPlayerDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        ServerPlayer attacker = null;
+
 
         // Vérifier si un jour est en cours
         if (!DaysManager.isDayInProgress()) {
@@ -44,7 +46,8 @@ public class SpectateManager {
         int attackerTeamId = 0;
 
         // Vérifier si la source de la mort est un joueur
-        if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
+        if (event.getSource().getEntity() instanceof ServerPlayer) {
+            attacker = (ServerPlayer) event.getSource().getEntity();
             attackerUUID = attacker.getUUID().toString();
             attackerTeamName = TeamManager.getPlayerCurrentTeam(attackerUUID);
 
@@ -76,15 +79,15 @@ public class SpectateManager {
 
         // Attribution des points de kill à l'attaquant
         if (attackerTeamId > 0) {
-            DataManager.dataModify("team_" + attackerTeamName + "_stats", "kills", DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "kills", 0) + 1);
-            DataManager.dataModify("team_" + attackerTeamName + "_stats", "kill_streak", DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "kill_streak", 0) + 1);
-            DataManager.dataModify("team_" + attackerTeamName + "_stats", "max_kill_streak", Math.max(
-                    DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "max_kill_streak", 0),
-                    DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "kill_streak", 0)
+            DataManager.dataModify("team_" + attackerTeamId + "_stats", "kills", DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "kills", 0) + 1);
+            DataManager.dataModify("team_" + attackerTeamId + "_stats", "kill_streak", DataManager.dataReadInt("team_" + attackerTeamName + "_stats", "kill_streak", 0) + 1);
+            DataManager.dataModify("team_" + attackerTeamId + "_stats", "max_kill_streak", Math.max(
+                    DataManager.dataReadInt("team_" + attackerTeamId + "_stats", "max_kill_streak", 0),
+                    DataManager.dataReadInt("team_" + attackerTeamId + "_stats", "kill_streak", 0)
             ));
 
-            PointsManager.addPoints(attackerTeamId, PointType.KILL, player);
-            PointsManager.addPoints(attackerTeamId, PointType.KILL_STREAK, player);
+            PointsManager.addPoints(attackerTeamId, PointType.KILL, attacker);
+            PointsManager.addPoints(attackerTeamId, PointType.KILL_STREAK, attacker);
         }
         LOGGER.info("Player {} died and will be put in spectator mode", player.getName().getString());
     }

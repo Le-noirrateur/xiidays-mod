@@ -255,6 +255,9 @@ public class TeamManager {
             dataAdd("team_" + newTeamId + "_points");
             dataAdd("team_" + newTeamId + "_stats");
 
+            dataModify("team_" + newTeamId + "_config", "core_destroyed", false);
+            dataModify("team_" + newTeamId + "_config", "team_eliminated", false);
+
             dataModify("Teams", teamName, newTeamId);
 
             return 1; // Crée
