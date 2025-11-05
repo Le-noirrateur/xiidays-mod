@@ -2,6 +2,8 @@ package com.mceteams.xiidays.utils;
 
 import com.mceteams.xiidays.enums.PointType;
 import com.mceteams.xiidays.events.PointsChangedEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -73,6 +75,9 @@ public class PointsManager {
             dataModify("team_" + teamId + "_stats", "pointgain", dataReadInt("team_" + teamId + "_stats", "pointgain", 0) + pointsAdded);
         }
 
+        if (player instanceof ServerPlayer srvp) {
+            srvp.sendSystemMessage(Component.literal("Vous avez ajouté +" + pointsAdded + " à votre équipe avec" + type));
+        }
         NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, newPoints)); // Trigger event for points change
     }
 

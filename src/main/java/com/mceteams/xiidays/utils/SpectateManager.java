@@ -115,23 +115,31 @@ public class SpectateManager {
             if (DaysManager.getCurrentDay() <= 6) {
                 int deaths = DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 1);
 
-                // 3 secondes / mort, limite 10s
                 int delaySeconds = Math.min(deaths * 3, 10);
 
-                // Compte à rebours toutes les secondes
-                for (int i = 1; i <= delaySeconds; i++) {
-                    int secondsLeft = delaySeconds - i + 1;
-
-                    Thread.sleep(i * 1000L - (i - 1) * 1000L); // Attendre jusqu'à la seconde i
-                    player.sendSystemMessage(Component.literal("Respawn dans " + secondsLeft + " seconde" + (secondsLeft > 1 ? "s" : "") + "."));
+                for (int i = 0; i < delaySeconds; i++) {
+                    int secondsLeft = delaySeconds - i;
+                    new PlayersHandler.ScheduledTask(i * 20, () -> {
+                        if (player.isAlive()) return; // Si déjà respawn par autre mécanisme, ignore
+                        player.sendSystemMessage(Component.literal(
+                                "Respawn dans " + secondsLeft + " seconde" + (secondsLeft > 1 ? "s" : "")
+                        ));
+                    });
                 }
 
-                SpectateManager.respawnPlayer(player);
+                // Respawn à la fin
+                new PlayersHandler.ScheduledTask(delaySeconds * 20, () -> {
+                    if (!player.isAlive()) {
+                        SpectateManager.respawnPlayer(player);
+                    }
+                });
+
             } else {
-                // Jour 7+ : aucun respawn
-                player.sendSystemMessage(Component.literal("Vous êtes mort pendant la deuxième phase\nVous devez attendre que votre équipe utilise un totêm de revivalité.."));
-                return;
+                player.sendSystemMessage(Component.literal(
+                        "Vous êtes mort pendant la deuxième phase\nVous devez attendre que votre équipe utilise un totêm de revivalité.."
+                ));
             }
+
 
             LOGGER.info("Player {} put in spectator mode at death position", player.getName().getString());
         }

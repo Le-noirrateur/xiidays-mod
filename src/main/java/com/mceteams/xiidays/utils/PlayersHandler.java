@@ -22,6 +22,17 @@ public class PlayersHandler {
     // Fonctions
     // #################################################################################################################
 
+    public static class ScheduledTask {
+        public int ticks; // modifiable
+        public final Runnable action;
+
+        public ScheduledTask(int ticks, Runnable action) {
+            this.ticks = ticks;
+            this.action = action;
+        }
+    }
+
+
     // Retourne le nom standard d’un bloc minéral
     private static String getBlockName(Block block) {
 
@@ -147,6 +158,7 @@ public class PlayersHandler {
         if (attackerTeam.equals(targetTeam)) return;
 
         int teamId = TeamManager.getTeamId(attackerTeam);
+        int victimTeamId = TeamManager.getTeamId(targetTeam);
         if (teamId == 0) return;
 
         // Récupérer les valeurs actuelles
@@ -156,9 +168,9 @@ public class PlayersHandler {
                 0
         );
 
-        int currentTotalDamages = DataManager.dataReadInt(
+        int currentDamageReceived = DataManager.dataReadInt(
                 "team_" + teamId + "_stats",
-                "total_damages",
+                "damage_received",
                 0
         );
 
@@ -170,9 +182,9 @@ public class PlayersHandler {
         );
 
         DataManager.dataModify(
-                "team_" + teamId + "_stats",
-                "total_damages",
-                currentTotalDamages + (int) damage
+                "team_" + victimTeamId + "_stats",
+                "damage_received",
+                currentDamageReceived + (int) damage
         );
 
         LOGGER.debug("{} a infligé {} dégâts à {} (équipe {})",
