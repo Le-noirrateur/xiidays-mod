@@ -22,6 +22,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 
 import java.util.Map;
@@ -754,6 +755,40 @@ public class CommandRegistry {
 
                             return 1;
                         })
+                )
+
+                .then(Commands.literal("switch")
+                        .executes(context -> {
+                            ServerPlayer player = context.getSource().getPlayerOrException();
+
+                            if (player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) {
+                                context.getSource().sendFailure(Component.literal("§cVous devez être en mode spectateur"));
+                                return 0;
+                            }
+
+                            CameraController.switchToNextTeammate(player);
+                            context.getSource().sendSystemMessage(Component.literal("§aChangement de vue"));
+                            return 1;
+                        })
+                )
+
+                .then(Commands.literal("cinematic")
+                        .then(Commands.literal("start")
+                                .executes(context -> {
+                                    ServerPlayer player = context.getSource().getPlayerOrException();
+                                    SpectateManager.startMapCinematic(player);
+                                    context.getSource().sendSystemMessage(Component.literal("§aCinématique lancée"));
+                                    return 1;
+                                })
+                        )
+                        .then(Commands.literal("stop")
+                                .executes(context -> {
+                                    ServerPlayer player = context.getSource().getPlayerOrException();
+                                    CinematicPath.stop(player);
+                                    context.getSource().sendSystemMessage(Component.literal("§cCinématique arrêtée"));
+                                    return 1;
+                                })
+                        )
                 )
         );
 

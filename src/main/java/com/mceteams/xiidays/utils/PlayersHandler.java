@@ -22,17 +22,6 @@ public class PlayersHandler {
     // Fonctions
     // #################################################################################################################
 
-    public static class ScheduledTask {
-        public int ticks; // modifiable
-        public final Runnable action;
-
-        public ScheduledTask(int ticks, Runnable action) {
-            this.ticks = ticks;
-            this.action = action;
-        }
-    }
-
-
     // Retourne le nom standard d’un bloc minéral
     private static String getBlockName(Block block) {
 

@@ -6,11 +6,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import java.util.*;
 
@@ -96,7 +96,7 @@ public class SpectateManager {
      * Event déclenché après le respawn du joueur
      */
     @SubscribeEvent
-    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) throws InterruptedException {
+    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
         // Si le joueur doit être en spectate
@@ -112,130 +112,129 @@ public class SpectateManager {
                         player.getYRot(), player.getXRot());
             }
 
-            if (DaysManager.getCurrentDay() <= 6) {
-                int deaths = DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 1);
+            int currentDay = DaysManager.getCurrentDay();
+
+            if (currentDay <= 6) {
+                // Phase de préparation : respawn avec délai
+                int deaths = DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 0);
 
                 int delaySeconds = Math.min(deaths * 3, 10);
 
+                // Trouver un coéquipier à suivre
+                ServerPlayer teammate = CameraController.findTeammateToFollow(player);
+                if (teammate != null) {
+                    CameraController.setSpectatorTarget(player, teammate);
+                }
+
+                // Compte à rebours
                 for (int i = 0; i < delaySeconds; i++) {
-                    int secondsLeft = delaySeconds - i;
-                    new PlayersHandler.ScheduledTask(i * 20, () -> {
-                        if (player.isAlive()) return; // Si déjà respawn par autre mécanisme, ignore
+                    final int secondsLeft = delaySeconds - i;
+                    TaskScheduler.schedule(i * 20, () -> {
+                        if (player.hasDisconnected()) return;
                         player.sendSystemMessage(Component.literal(
-                                "Respawn dans " + secondsLeft + " seconde" + (secondsLeft > 1 ? "s" : "")
-                        ));
+                                "§eRespawn dans §c" + secondsLeft + "§e seconde" + (secondsLeft > 1 ? "s" : "")
+                        ), true);
                     });
                 }
 
                 // Respawn à la fin
-                new PlayersHandler.ScheduledTask(delaySeconds * 20, () -> {
-                    if (!player.isAlive()) {
+                TaskScheduler.schedule(delaySeconds * 20, () -> {
+                    if (player.hasDisconnected()) return;
+                    if (spectatingPlayers.contains(player.getUUID())) {
                         SpectateManager.respawnPlayer(player);
+                        player.sendSystemMessage(Component.literal("§aVous avez été respawn !"));
                     }
                 });
 
             } else {
+                // Phase de combat : respawn uniquement avec totem
+                // Lancer une cinématique si aucun coéquipier disponible
+                ServerPlayer teammate = CameraController.findTeammateToFollow(player);
+                if (teammate != null) {
+                    CameraController.setSpectatorTarget(player, teammate);
+                } else {
+                    // Lancer cinématique de la map
+                    startMapCinematic(player);
+                }
+
                 player.sendSystemMessage(Component.literal(
-                        "Vous êtes mort pendant la deuxième phase\nVous devez attendre que votre équipe utilise un totêm de revivalité.."
+                        "§c§lVous êtes mort pendant la phase de combat !\n" +
+                                "§7Votre équipe doit utiliser un §6Totem de Revivalité§7 pour vous faire respawn."
                 ));
             }
-
 
             LOGGER.info("Player {} put in spectator mode at death position", player.getName().getString());
         }
     }
 
     /**
-     * Event tick pour gérer la visibilité des joueurs adverses
-     * Appelé à chaque tick pour chaque joueur
+     * Lance une cinématique panoramique de la map
      */
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer spectator)) return;
+    public static void startMapCinematic(ServerPlayer player) {
+        // Exemple de cinématique : tour de la map
+        String teamName = TeamManager.getPlayerCurrentTeam(player.getUUID().toString());
+        BlockPos teamCore = getTeamCorePosition(teamName);
 
-        // Vérifier uniquement les joueurs en spectate
-        if (!spectatingPlayers.contains(spectator.getUUID())) return;
-
-        // Vérifier seulement toutes les 20 ticks (1 seconde) pour optimisation
-        if (spectator.tickCount % 20 != 0) return;
-
-        String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
-        if (spectatorTeam == null) return;
-
-        // Parcourir tous les joueurs en ligne
-        for (ServerPlayer otherPlayer : spectator.serverLevel().getServer().getPlayerList().getPlayers()) {
-            if (otherPlayer.getUUID().equals(spectator.getUUID())) continue;
-
-            String otherTeam = TeamManager.getPlayerCurrentTeam(otherPlayer.getUUID().toString());
-
-            // Gérer la visibilité selon l'équipe
-            if (otherTeam != null && !otherTeam.equals(spectatorTeam)) {
-                // Joueur adverse : rendre invisible pour le spectateur
-                makeInvisibleFor(spectator, otherPlayer);
-            } else {
-                // Coéquipier : rendre visible
-                makeVisibleFor(spectator, otherPlayer);
-            }
+        if (teamCore == null) {
+            // Position par défaut si pas de core
+            teamCore = new BlockPos(0, 100, 0);
         }
+
+        // Créer un chemin circulaire autour du core
+        CinematicPath cinematic = new CinematicPath(true, 10.0); // 10 blocks/sec
+
+        int radius = 50;
+        int height = teamCore.getY() + 30;
+        int numPoints = 8;
+
+        for (int i = 0; i < numPoints; i++) {
+            double angle = (i / (double) numPoints) * 2 * Math.PI;
+            double x = teamCore.getX() + radius * Math.cos(angle);
+            double z = teamCore.getZ() + radius * Math.sin(angle);
+
+            // Calculer yaw pour regarder vers le centre
+            float yaw = (float) Math.toDegrees(Math.atan2(teamCore.getZ() - z, teamCore.getX() - x));
+            float pitch = -20.0f; // Regarder légèrement vers le bas
+
+            cinematic.addWaypoint(
+                    new Vec3(x, height, z),
+                    yaw,
+                    pitch,
+                    0 // Durée auto
+            );
+        }
+
+        // Boucler la cinématique
+        cinematic.play(player);
+
+        // Relancer automatiquement après 30 secondes
+        TaskScheduler.schedule(600, () -> {
+            if (!player.hasDisconnected() && CameraController.isInCinematicMode(player)) {
+                startMapCinematic(player);
+            }
+        });
     }
 
     /**
-     * Rend un joueur invisible pour un spectateur spécifique
+     * Récupère la position du core d'une équipe
      */
-    private static void makeInvisibleFor(ServerPlayer spectator, ServerPlayer target) {
-        // Utilise le système de pseudo-invisibilité en supprimant l'entité côté client
-        // Note : Cette méthode nécessite un packet custom pour être complètement efficace
-        // Pour l'instant, on utilise une approche simple
+    private static BlockPos getTeamCorePosition(String teamName) {
+        String coreData = DataManager.dataRead(teamName, "core");
+        if (coreData == null) return null;
 
-        // Si le spectateur est trop proche du joueur adverse, le téléporter légèrement
-        if (spectator.distanceToSqr(target) < 25.0) { // < 5 blocs
-            BlockPos targetPos = target.blockPosition();
+        try {
+            String[] coords = coreData.split(",");
+            if (coords.length != 3) return null;
 
-            // Chercher un coéquipier proche pour téléporter le spectateur
-            ServerPlayer nearestTeammate = findNearestTeammate(spectator, targetPos);
-            if (nearestTeammate != null && !nearestTeammate.getUUID().equals(target.getUUID())) {
-                BlockPos teammatePos = nearestTeammate.blockPosition();
-                spectator.teleportTo(spectator.serverLevel(),
-                        teammatePos.getX() + 0.5,
-                        teammatePos.getY(),
-                        teammatePos.getZ() + 0.5,
-                        spectator.getYRot(),
-                        spectator.getXRot());
-            }
+            return new BlockPos(
+                    Integer.parseInt(coords[0].trim()),
+                    Integer.parseInt(coords[1].trim()),
+                    Integer.parseInt(coords[2].trim())
+            );
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
-
-
-    //Rend un joueur visible pour un spectateur spécifique
-    private static void makeVisibleFor(ServerPlayer spectator, ServerPlayer target) {
-        // Rien à faire de spécial, la visibilité normale s'applique
-    }
-
-    // Trouve le coéquipier le plus proche d'une position donnée
-    private static ServerPlayer findNearestTeammate(ServerPlayer spectator, BlockPos pos) {
-        String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
-        if (spectatorTeam == null) return null;
-
-        ServerPlayer nearest = null;
-        double nearestDistance = Double.MAX_VALUE;
-
-        for (ServerPlayer player : spectator.serverLevel().getServer().getPlayerList().getPlayers()) {
-            if (player.getUUID().equals(spectator.getUUID())) continue;
-            if (spectatingPlayers.contains(player.getUUID())) continue; // Ignorer les autres spectateurs
-
-            String playerTeam = TeamManager.getPlayerCurrentTeam(player.getUUID().toString());
-            if (playerTeam != null && playerTeam.equals(spectatorTeam)) {
-                double distance = player.blockPosition().distSqr(pos);
-                if (distance < nearestDistance) {
-                    nearestDistance = distance;
-                    nearest = player;
-                }
-            }
-        }
-
-        return nearest;
-    }
-
 
     // Respawn un joueur (commande admin ou fin de jour)
     public static boolean respawnPlayer(ServerPlayer player) {

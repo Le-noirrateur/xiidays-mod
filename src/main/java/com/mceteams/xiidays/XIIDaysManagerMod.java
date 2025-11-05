@@ -5,25 +5,20 @@ import com.mceteams.xiidays.blocks.BlockRegistry;
 import com.mceteams.xiidays.commands.CommandRegistry;
 import com.mceteams.xiidays.items.ItemRegistry;
 import com.mceteams.xiidays.menus.MenuRegistry;
-import com.mceteams.xiidays.utils.PlayersHandler;
-import com.mceteams.xiidays.utils.RestrictionsManager;
-import com.mceteams.xiidays.utils.SpectateManager;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import org.slf4j.Logger;
-
+import com.mceteams.xiidays.utils.*;
 import com.mojang.logging.LogUtils;
-
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(XIIDaysManagerMod.MODID)
@@ -34,29 +29,49 @@ public class XIIDaysManagerMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public XIIDaysManagerMod(IEventBus modEventBus, ModContainer modContainer) {
+
+        LOGGER.info(  "\n╔═══════════════════════════════════════════════╗\n"+
+                        "║                                               ║\n"+
+                        "║   Welcome to XII Days - Mod                   ║\n"+
+                        "║   Developing by FSS, MCE - fss.mceteams.com   ║\n"+
+                        "║                                               ║\n"+
+                        "║   Version " + modContainer.getModInfo().getVersion() + "                              ║\n"+
+                        "║                                               ║\n"+
+                        "╚═══════════════════════════════════════════════╝");
+
+        LOGGER.info("[XII Days - Mod]: Registering mod components...");
         modEventBus.addListener(this::commonSetup);
 
+        LOGGER.info("[XII Days - Mod]: Registering Items, Blocks, Block Entities & Menus...");
         ItemRegistry.ITEMS.register(modEventBus);
         MenuRegistry.MENUS.register(modEventBus);
         BlockRegistry.BLOCKS.register(modEventBus);
         BlockEntityRegistry.BLOCK_ENTITIES.register(modEventBus);
 
+        LOGGER.info("[XII Days - Mod]: Registering Events listeners & senders...");
         NeoForge.EVENT_BUS.register(RestrictionsManager.class);
         NeoForge.EVENT_BUS.register(SpectateManager.class);
+        NeoForge.EVENT_BUS.register(TaskScheduler.class);
         NeoForge.EVENT_BUS.register(new PlayersHandler());
-
         NeoForge.EVENT_BUS.addListener(this::onServerTick);
         NeoForge.EVENT_BUS.register(this);
 
-        modEventBus.addListener(this::registerPackets);
         modEventBus.addListener(this::addCreative);
 
+        LOGGER.info("[XII Days - Mod]: Registering mod Configuration & Specifications...");
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+
+        LOGGER.info("[XII Days - Mod]: DONE, Mod components registration complete.");
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
         // Some common setup code
-        LOGGER.info("HELLO FROM COMMON SETUP");
+        LOGGER.info("[XII Days - Mod]: Common setup beginning...");
+
+        LOGGER.info("[XII Days - Mod]: Initializing default cinematics...");
+        CinematicConfig.initDefaultCinematics();
+
+        LOGGER.info("[XII Days - Mod]: Common setup complete.");
     }
 
     // Add the example block item to the building blocks tab
@@ -67,17 +82,14 @@ public class XIIDaysManagerMod {
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         // Do something when the server starts
-        LOGGER.info("HELLO from server starting");
-    }
-
-    private void registerPackets(RegisterPayloadHandlersEvent event) {
+        LOGGER.info("[XII Days - Mod]: The server in ready, let's play some XII Days!");
     }
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
-        LOGGER.info("Registering XII Days custom commands...");
+        LOGGER.info("[XII Days - Mod]: Registering XII Days commands...");
         CommandRegistry.register(event.getDispatcher());
-        LOGGER.info("XII Days custom commands registered successfully!");
+        LOGGER.info("[XII Days - Mod]: XII Days commands registered.");
     }
 
     private void onServerTick(ServerTickEvent.Post event) {

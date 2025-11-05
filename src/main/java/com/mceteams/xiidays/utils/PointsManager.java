@@ -76,7 +76,8 @@ public class PointsManager {
         }
 
         if (player instanceof ServerPlayer srvp) {
-            srvp.sendSystemMessage(Component.literal("Vous avez ajouté +" + pointsAdded + " à votre équipe avec" + type));
+            String addedStr = pointsAdded >= 0 ? "§r§2§l+" + pointsAdded : String.valueOf(pointsAdded);
+            srvp.sendSystemMessage(Component.literal("§4§l[DEBUG]:§r Vous avez ajouté §4§l" + addedStr + "§r à votre équipe (§6§l" + type +"§r)"));
         }
         NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, newPoints)); // Trigger event for points change
     }
