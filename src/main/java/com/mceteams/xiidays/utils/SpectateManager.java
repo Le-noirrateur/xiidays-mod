@@ -73,7 +73,7 @@ public class SpectateManager {
         int teamId = TeamManager.getTeamId(teamName);
         if (teamId > 0) {
             DataManager.dataModify("player_" + player.getUUID() + "_stats", "deaths", DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 0) + 1);
-            DataManager.dataModify("team_" + teamName + "_stats", "kill_streak", 0); // Reset kill streak de l'équipe tuée
+            DataManager.dataModify("team_" + teamId + "_stats", "kill_streak", 0); // Reset kill streak de l'équipe tuée
             PointsManager.addPoints(teamId, PointType.DEATH, player);
         }
 
