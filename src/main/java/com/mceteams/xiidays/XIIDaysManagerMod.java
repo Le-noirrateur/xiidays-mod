@@ -5,7 +5,10 @@ import com.mceteams.xiidays.blocks.BlockRegistry;
 import com.mceteams.xiidays.commands.CommandRegistry;
 import com.mceteams.xiidays.items.ItemRegistry;
 import com.mceteams.xiidays.menus.MenuRegistry;
-import com.mceteams.xiidays.utils.*;
+import com.mceteams.xiidays.utils.PlayersHandler;
+import com.mceteams.xiidays.utils.RestrictionsManager;
+import com.mceteams.xiidays.utils.SpectateManager;
+import com.mceteams.xiidays.utils.TaskScheduler;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -69,7 +72,6 @@ public class XIIDaysManagerMod {
         LOGGER.info("[XII Days - Mod]: Common setup beginning...");
 
         LOGGER.info("[XII Days - Mod]: Initializing default cinematics...");
-        CinematicConfig.initDefaultCinematics();
 
         LOGGER.info("[XII Days - Mod]: Common setup complete.");
     }

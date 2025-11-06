@@ -6,7 +6,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -104,26 +103,17 @@ public class SpectateManager {
             // Passer en mode spectateur immédiatement
             player.setGameMode(GameType.SPECTATOR);
 
-            // Téléporter à la position de mort si disponible
-            BlockPos deathPos = deathPositions.get(player.getUUID());
-            if (deathPos != null) {
-                ServerLevel level = player.serverLevel();
-                player.teleportTo(level, deathPos.getX() + 0.5, deathPos.getY() + 1, deathPos.getZ() + 0.5,
-                        player.getYRot(), player.getXRot());
-            }
-
             int currentDay = DaysManager.getCurrentDay();
 
             if (currentDay <= 6) {
                 // Phase de préparation : respawn avec délai
                 int deaths = DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 0);
-
                 int delaySeconds = Math.min(deaths * 3, 10);
 
-                // Trouver un coéquipier à suivre
-                ServerPlayer teammate = CameraController.findTeammateToFollow(player);
+                // Trouver un coéquipier à spectater
+                ServerPlayer teammate = NativeCameraController.findTeammateToSpectate(player);
                 if (teammate != null) {
-                    CameraController.setSpectatorTarget(player, teammate);
+                    NativeCameraController.spectatePlayer(player, teammate);
                 }
 
                 // Compte à rebours
@@ -142,77 +132,27 @@ public class SpectateManager {
                     if (player.hasDisconnected()) return;
                     if (spectatingPlayers.contains(player.getUUID())) {
                         SpectateManager.respawnPlayer(player);
+                        NativeCameraController.cleanup(player);
                         player.sendSystemMessage(Component.literal("§aVous avez été respawn !"));
                     }
                 });
 
             } else {
-                // Phase de combat : respawn uniquement avec totem
-                // Lancer une cinématique si aucun coéquipier disponible
-                ServerPlayer teammate = CameraController.findTeammateToFollow(player);
+                // Phase de combat : spectate jusqu'au totem
+                ServerPlayer teammate = NativeCameraController.findTeammateToSpectate(player);
                 if (teammate != null) {
-                    CameraController.setSpectatorTarget(player, teammate);
-                } else {
-                    // Lancer cinématique de la map
-                    startMapCinematic(player);
+                    NativeCameraController.spectatePlayer(player, teammate);
                 }
 
                 player.sendSystemMessage(Component.literal(
                         "§c§lVous êtes mort pendant la phase de combat !\n" +
-                                "§7Votre équipe doit utiliser un §6Totem de Revivalité§7 pour vous faire respawn."
+                                "§7Votre équipe doit utiliser un §6Totem de Revivalité§7 pour vous faire respawn.\n" +
+                                "§7Appuyez sur §e[Shift]§7 pour changer de vue."
                 ));
             }
 
-            LOGGER.info("Player {} put in spectator mode at death position", player.getName().getString());
+            LOGGER.info("Player {} put in spectator mode", player.getName().getString());
         }
-    }
-
-    /**
-     * Lance une cinématique panoramique de la map
-     */
-    public static void startMapCinematic(ServerPlayer player) {
-        // Exemple de cinématique : tour de la map
-        String teamName = TeamManager.getPlayerCurrentTeam(player.getUUID().toString());
-        BlockPos teamCore = getTeamCorePosition(teamName);
-
-        if (teamCore == null) {
-            // Position par défaut si pas de core
-            teamCore = new BlockPos(0, 100, 0);
-        }
-
-        // Créer un chemin circulaire autour du core
-        CinematicPath cinematic = new CinematicPath(true, 10.0); // 10 blocks/sec
-
-        int radius = 50;
-        int height = teamCore.getY() + 30;
-        int numPoints = 8;
-
-        for (int i = 0; i < numPoints; i++) {
-            double angle = (i / (double) numPoints) * 2 * Math.PI;
-            double x = teamCore.getX() + radius * Math.cos(angle);
-            double z = teamCore.getZ() + radius * Math.sin(angle);
-
-            // Calculer yaw pour regarder vers le centre
-            float yaw = (float) Math.toDegrees(Math.atan2(teamCore.getZ() - z, teamCore.getX() - x));
-            float pitch = -20.0f; // Regarder légèrement vers le bas
-
-            cinematic.addWaypoint(
-                    new Vec3(x, height, z),
-                    yaw,
-                    pitch,
-                    0 // Durée auto
-            );
-        }
-
-        // Boucler la cinématique
-        cinematic.play(player);
-
-        // Relancer automatiquement après 30 secondes
-        TaskScheduler.schedule(600, () -> {
-            if (!player.hasDisconnected() && CameraController.isInCinematicMode(player)) {
-                startMapCinematic(player);
-            }
-        });
     }
 
     /**

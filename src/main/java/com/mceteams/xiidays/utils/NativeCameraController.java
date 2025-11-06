@@ -1,6 +1,5 @@
 package com.mceteams.xiidays.utils;
 
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -13,44 +12,45 @@ import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
 import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
 
 @EventBusSubscriber(modid = MODID)
-public class CameraController {
+public class NativeCameraController {
 
-    // Mapping spectateur → joueur suivi
+    // Map spectateur → cible
     private static final Map<UUID, UUID> spectatorTargets = new HashMap<>();
 
-    // Spectateurs en mode cinématique
-    private static final Set<UUID> cinematicMode = new HashSet<>();
-
     /**
-     * Définit quel joueur le spectateur doit suivre
+     * Fait suivre un joueur par un spectateur (MÉTHODE NATIVE)
      */
-    public static void setSpectatorTarget(ServerPlayer spectator, ServerPlayer target) {
+    public static void spectatePlayer(ServerPlayer spectator, ServerPlayer target) {
         if (target == null) {
-            spectatorTargets.remove(spectator.getUUID());
+            stopSpectating(spectator);
             return;
         }
 
+        // Utiliser la méthode NATIVE de Minecraft
+        spectator.setCamera(target);
+
+        // Enregistrer la cible
         spectatorTargets.put(spectator.getUUID(), target.getUUID());
 
-        // Téléporter immédiatement au joueur
-        spectator.teleportTo(target.serverLevel(),
-                target.getX(),
-                target.getY(),
-                target.getZ(),
-                target.getYRot(),
-                target.getXRot()
-        );
-
-        LOGGER.debug("Spectator {} now following {}",
+        LOGGER.info("Spectator {} now watching {}",
                 spectator.getName().getString(),
                 target.getName().getString()
         );
     }
 
     /**
-     * Trouve automatiquement un coéquipier à suivre
+     * Arrête de spectater
      */
-    public static ServerPlayer findTeammateToFollow(ServerPlayer spectator) {
+    public static void stopSpectating(ServerPlayer spectator) {
+        // Réinitialiser la caméra sur soi-même
+        spectator.setCamera(spectator);
+        spectatorTargets.remove(spectator.getUUID());
+    }
+
+    /**
+     * Trouve un coéquipier à spectater
+     */
+    public static ServerPlayer findTeammateToSpectate(ServerPlayer spectator) {
         String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
         if (spectatorTeam == null) return null;
 
@@ -68,12 +68,12 @@ public class CameraController {
 
         if (teammates.isEmpty()) return null;
 
-        // Retourner un coéquipier aléatoire
+        // Retourner un aléatoire
         return teammates.get(new Random().nextInt(teammates.size()));
     }
 
     /**
-     * Change le joueur suivi (suivant dans la liste)
+     * Passe au coéquipier suivant
      */
     public static void switchToNextTeammate(ServerPlayer spectator) {
         String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
@@ -93,11 +93,11 @@ public class CameraController {
         }
 
         if (teammates.isEmpty()) {
-            spectatorTargets.remove(spectator.getUUID());
+            stopSpectating(spectator);
             return;
         }
 
-        // Trouver l'index du joueur actuel
+        // Trouver l'index actuel
         int currentIndex = -1;
         for (int i = 0; i < teammates.size(); i++) {
             if (teammates.get(i).getUUID().equals(currentTarget)) {
@@ -106,86 +106,47 @@ public class CameraController {
             }
         }
 
-        // Passer au suivant (boucle)
+        // Suivant
         int nextIndex = (currentIndex + 1) % teammates.size();
-        setSpectatorTarget(spectator, teammates.get(nextIndex));
+        spectatePlayer(spectator, teammates.get(nextIndex));
     }
 
     /**
-     * Tick pour suivre automatiquement le joueur cible
+     * Vérifie automatiquement si la cible est toujours valide
      */
     @SubscribeEvent
-    public static void onSpectatorTick(PlayerTickEvent.Post event) {
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer spectator)) return;
         if (spectator.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) return;
 
-        // Si en mode cinématique, ne pas suivre de joueur
-        if (cinematicMode.contains(spectator.getUUID())) return;
+        // Vérifier seulement toutes les secondes
+        if (spectator.tickCount % 20 != 0) return;
 
         UUID targetUUID = spectatorTargets.get(spectator.getUUID());
         if (targetUUID == null) return;
 
-        // Trouver le joueur cible
+        // Vérifier que la cible existe toujours
         ServerPlayer target = getPlayerByUUID(targetUUID, spectator.serverLevel());
 
         if (target == null || target.hasDisconnected() || target.gameMode.getGameModeForPlayer() != GameType.SURVIVAL) {
-            // Le joueur n'est plus disponible, trouver un autre coéquipier
-            ServerPlayer newTarget = findTeammateToFollow(spectator);
+            // Cible invalide, trouver un autre coéquipier
+            ServerPlayer newTarget = findTeammateToSpectate(spectator);
             if (newTarget != null) {
-                setSpectatorTarget(spectator, newTarget);
+                spectatePlayer(spectator, newTarget);
             } else {
-                spectatorTargets.remove(spectator.getUUID());
+                stopSpectating(spectator);
             }
-            return;
-        }
-
-        // Suivre le joueur (synchroniser position et rotation)
-        spectator.teleportTo(target.serverLevel(),
-                target.getX(),
-                target.getY(),
-                target.getZ(),
-                target.getYRot(),
-                target.getXRot()
-        );
-    }
-
-    /**
-     * Active le mode cinématique
-     */
-    public static void enableCinematicMode(ServerPlayer spectator) {
-        cinematicMode.add(spectator.getUUID());
-        spectatorTargets.remove(spectator.getUUID());
-    }
-
-    /**
-     * Désactive le mode cinématique
-     */
-    public static void disableCinematicMode(ServerPlayer spectator) {
-        cinematicMode.remove(spectator.getUUID());
-
-        // Reprendre le suivi d'un coéquipier
-        ServerPlayer target = findTeammateToFollow(spectator);
-        if (target != null) {
-            setSpectatorTarget(spectator, target);
         }
     }
 
     /**
-     * Vérifie si un spectateur est en mode cinématique
-     */
-    public static boolean isInCinematicMode(ServerPlayer spectator) {
-        return cinematicMode.contains(spectator.getUUID());
-    }
-
-    /**
-     * Nettoie les données d'un spectateur
+     * Nettoie les données
      */
     public static void cleanup(ServerPlayer spectator) {
-        spectatorTargets.remove(spectator.getUUID());
-        cinematicMode.remove(spectator.getUUID());
+        stopSpectating(spectator);
     }
 
-    private static ServerPlayer getPlayerByUUID(UUID uuid, ServerLevel level) {
+    private static ServerPlayer getPlayerByUUID(UUID uuid, net.minecraft.server.level.ServerLevel level) {
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             if (player.getUUID().equals(uuid)) {
                 return player;
