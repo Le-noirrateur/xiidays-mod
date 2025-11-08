@@ -85,6 +85,10 @@ public class XIIDaysManagerMod {
     public void onServerStarting(ServerStartingEvent event) {
         // Do something when the server starts
         LOGGER.info("[XII Days - Mod]: The server in ready, let's play some XII Days!");
+
+        LOGGER.info("[XII Days - Mod]: Loading free cam zones for all teams...");
+        SpectateManager.loadFreeCamZones();
+        LOGGER.info("[XII Days - Mod]: Free cam zones loaded for all teams");
     }
 
     @SubscribeEvent

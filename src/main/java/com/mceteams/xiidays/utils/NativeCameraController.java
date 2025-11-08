@@ -18,12 +18,23 @@ public class NativeCameraController {
     private static final Map<UUID, UUID> spectatorTargets = new HashMap<>();
 
     /**
-     * Fait suivre un joueur par un spectateur (MÉTHODE NATIVE)
+     * Fait suivre un joueur par un spectateur (RESTRICTION : même équipe uniquement)
      */
     public static void spectatePlayer(ServerPlayer spectator, ServerPlayer target) {
         if (target == null) {
             stopSpectating(spectator);
             return;
+        }
+
+        // VÉRIFICATION ÉQUIPE
+        String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
+        String targetTeam = TeamManager.getPlayerCurrentTeam(target.getUUID().toString());
+
+        if (spectatorTeam == null || !spectatorTeam.equals(targetTeam)) {
+            LOGGER.warn("Spectator {} tried to watch enemy player {}",
+                    spectator.getName().getString(),
+                    target.getName().getString());
+            return; // Interdiction de spec un ennemi
         }
 
         // Utiliser la méthode NATIVE de Minecraft
@@ -32,7 +43,7 @@ public class NativeCameraController {
         // Enregistrer la cible
         spectatorTargets.put(spectator.getUUID(), target.getUUID());
 
-        LOGGER.info("Spectator {} now watching {}",
+        LOGGER.info("Spectator {} now watching teammate {}",
                 spectator.getName().getString(),
                 target.getName().getString()
         );
@@ -42,13 +53,12 @@ public class NativeCameraController {
      * Arrête de spectater
      */
     public static void stopSpectating(ServerPlayer spectator) {
-        // Réinitialiser la caméra sur soi-même
         spectator.setCamera(spectator);
         spectatorTargets.remove(spectator.getUUID());
     }
 
     /**
-     * Trouve un coéquipier à spectater
+     * Trouve un coéquipier à spectater (UNIQUEMENT même équipe)
      */
     public static ServerPlayer findTeammateToSpectate(ServerPlayer spectator) {
         String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
@@ -61,6 +71,8 @@ public class NativeCameraController {
             if (player.gameMode.getGameModeForPlayer() != GameType.SURVIVAL) continue;
 
             String playerTeam = TeamManager.getPlayerCurrentTeam(player.getUUID().toString());
+
+            // RESTRICTION : même équipe uniquement
             if (spectatorTeam.equals(playerTeam)) {
                 teammates.add(player);
             }
@@ -68,12 +80,11 @@ public class NativeCameraController {
 
         if (teammates.isEmpty()) return null;
 
-        // Retourner un aléatoire
         return teammates.get(new Random().nextInt(teammates.size()));
     }
 
     /**
-     * Passe au coéquipier suivant
+     * Passe au coéquipier suivant (UNIQUEMENT même équipe)
      */
     public static void switchToNextTeammate(ServerPlayer spectator) {
         String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
@@ -87,6 +98,8 @@ public class NativeCameraController {
             if (player.gameMode.getGameModeForPlayer() != GameType.SURVIVAL) continue;
 
             String playerTeam = TeamManager.getPlayerCurrentTeam(player.getUUID().toString());
+
+            // RESTRICTION : même équipe uniquement
             if (spectatorTeam.equals(playerTeam)) {
                 teammates.add(player);
             }
@@ -112,7 +125,7 @@ public class NativeCameraController {
     }
 
     /**
-     * Vérifie automatiquement si la cible est toujours valide
+     * Vérifie automatiquement si la cible est toujours valide (même équipe)
      */
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -125,10 +138,17 @@ public class NativeCameraController {
         UUID targetUUID = spectatorTargets.get(spectator.getUUID());
         if (targetUUID == null) return;
 
-        // Vérifier que la cible existe toujours
         ServerPlayer target = getPlayerByUUID(targetUUID, spectator.serverLevel());
 
-        if (target == null || target.hasDisconnected() || target.gameMode.getGameModeForPlayer() != GameType.SURVIVAL) {
+        // Vérifier validité + équipe
+        String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
+        String targetTeam = target != null ? TeamManager.getPlayerCurrentTeam(target.getUUID().toString()) : null;
+
+        if (target == null ||
+                target.hasDisconnected() ||
+                target.gameMode.getGameModeForPlayer() != GameType.SURVIVAL ||
+                !Objects.equals(spectatorTeam, targetTeam)) { // RESTRICTION : même équipe
+
             // Cible invalide, trouver un autre coéquipier
             ServerPlayer newTarget = findTeammateToSpectate(spectator);
             if (newTarget != null) {
