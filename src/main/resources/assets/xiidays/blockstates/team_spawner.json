@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "xiidays:block/team_spawner"
+    }
+  }
+}

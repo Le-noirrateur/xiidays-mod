@@ -11,7 +11,9 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class teamCore extends BlockEntity {
     private int teamId = 0;
+    private int puzzleStatus = 0;
     private boolean puzzleSolved = false;
+
 
     public teamCore(BlockPos pos, BlockState state) {
         super(BlockEntityRegistry.TEAM_CORE.get(), pos, state);
@@ -25,6 +27,10 @@ public class teamCore extends BlockEntity {
 
     public int getTeamId() {
         return teamId;
+    }
+
+    public int getPuzzleStatus() {
+        return puzzleStatus;
     }
 
     public boolean isPuzzleSolved() {
@@ -53,13 +59,12 @@ public class teamCore extends BlockEntity {
         return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
     }
 
-
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putInt("TeamId", teamId);
         tag.putBoolean("PuzzleSolved", puzzleSolved);
-
+        tag.putInt("PuzzleStatus", puzzleStatus);
     }
 
     @Override
@@ -67,5 +72,6 @@ public class teamCore extends BlockEntity {
         super.loadAdditional(tag, registries);
         teamId = tag.getInt("TeamId");
         puzzleSolved = tag.getBoolean("PuzzleSolved");
+        puzzleStatus = tag.getInt("PuzzleStatus");
     }
 }

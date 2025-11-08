@@ -8,9 +8,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-public class teamCoreBlock extends Block implements EntityBlock {
+public class teamCoreSettings extends Block implements EntityBlock {
 
-    public teamCoreBlock(Properties properties) {
+    public teamCoreSettings(Properties properties) {
         super(properties);
     }
 
