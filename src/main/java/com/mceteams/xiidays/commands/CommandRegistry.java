@@ -2,8 +2,6 @@ package com.mceteams.xiidays.commands;
 
 import com.mceteams.xiidays.utils.*;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.BoolArgumentType;
-import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
@@ -26,10 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.phys.Vec3;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -75,7 +70,7 @@ public class CommandRegistry {
                 // status
                 .then(Commands.literal("status")
                         .executes(context -> {
-                            
+
                             int Day = dataReadInt("days", "currentDay", 0);
                             boolean isInProgress = dataReadBoolean("days", "isInProgress", false);
 
@@ -382,46 +377,101 @@ public class CommandRegistry {
                 .requires(CommandSourceStack::isPlayer)
                 .requires(source -> source.hasPermission(4))
 
-                // ----- Status -----
-                .then(Commands.literal("status")
-                        .executes(context -> {
-                            ServerPlayer player = context.getSource().getPlayer();
-                            assert player != null;
+                .then(Commands.literal("data")
+                        // /xgame data modify <table> <key> <value>
+                        .then(Commands.literal("modify")
+                                .then(Commands.argument("table", StringArgumentType.string())
+                                        .suggests((context, builder) -> {
+                                            // Suggest all tables
+                                            for (String table : DataManager.getAllTables()) {
+                                                builder.suggest(table);
+                                            }
+                                            return builder.buildFuture();
+                                        })
+                                        .then(Commands.argument("key", StringArgumentType.string())
+                                                .suggests((context, builder) -> {
+                                                    String table = StringArgumentType.getString(context, "table");
+                                                    for (String key : DataManager.getAllDataNames(table)) {
+                                                        builder.suggest(key);
+                                                    }
+                                                    return builder.buildFuture();
+                                                })
+                                                .then(Commands.argument("value", StringArgumentType.string())
+                                                        .executes(context -> {
+                                                            String table = StringArgumentType.getString(context, "table");
+                                                            String key = StringArgumentType.getString(context, "key");
+                                                            String value = StringArgumentType.getString(context, "value");
 
-                            ItemStack heldStack = player.getMainHandItem();
+                                                            DataManager.dataModify(table, key, value);
 
-                            if (heldStack.isEmpty()) {
-                                context.getSource().sendSystemMessage(Component.literal("§cVous ne tenez rien en main."));
-                                return 0;
-                            }
+                                                            context.getSource().sendSystemMessage(Component.literal("§aDonnée modifiée : " + table + "." + key + " = " + value));
 
-                            Item held = heldStack.getItem();
-                            boolean allowed = RestrictionsManager.isAllowedCompletely(held);
-                            Component status = RestrictionsManager.getStatusComponent(held);
+                                                            return 1;
+                                                        })
+                                                )
+                                        )
+                                )
+                        )
 
-                            // --- Effet visuel + sonore ---
-                            ServerLevel level = player.serverLevel();
+                        // /xgame data reload
+                        .then(Commands.literal("reload")
+                                .executes(context -> {
+                                    DataManager.reloadData();
+                                    context.getSource().sendSystemMessage(Component.literal("§eData rechargées depuis le fichier !"));
+                                    return 1;
+                                })
+                        )
 
-                            double x = player.getX();
-                            double y = player.getY() + 1.5;
-                            double z = player.getZ();
-
-                            if (allowed) {
-                                // Vert = autorisé
-                                level.sendParticles(ParticleTypes.HAPPY_VILLAGER, x, y, z, 10, 0.3, 0.5, 0.3, 0.01);
-                                player.playNotifySound(SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, 1f, 1.5f);
-                            } else {
-                                // Rouge = interdit
-                                level.sendParticles(ParticleTypes.ANGRY_VILLAGER, x, y, z, 10, 0.3, 0.5, 0.3, 0.01);
-                                player.playNotifySound(SoundEvents.ANVIL_BREAK, SoundSource.MASTER, 1f, 1f);
-                            }
-
-                            context.getSource().sendSystemMessage(Component.literal("§eStatut de l'objet tenu : ").append(status));
-
-                            return 1;
-                        })
+                        // /xgame data save
+                        .then(Commands.literal("save")
+                                .executes(context -> {
+                                    DataManager.forceSave();
+                                    context.getSource().sendSystemMessage(Component.literal("§eData sauvegardées !"));
+                                    return 1;
+                                })
+                        )
                 )
 
+                .then(Commands.literal("restrictions")
+                        // ----- Status -----
+                        .then(Commands.literal("status")
+                                .executes(context -> {
+                                ServerPlayer player = context.getSource().getPlayer();
+                                assert player != null;
+
+                                ItemStack heldStack = player.getMainHandItem();
+
+                                if (heldStack.isEmpty()) {
+                                    context.getSource().sendSystemMessage(Component.literal("§cVous ne tenez rien en main."));
+                                    return 0;
+                                }
+
+                                Item held = heldStack.getItem();
+                                boolean allowed = RestrictionsManager.isAllowedCompletely(held);
+                                Component status = RestrictionsManager.getStatusComponent(held);
+
+                                // --- Effet visuel + sonore ---
+                                ServerLevel level = player.serverLevel();
+
+                                double x = player.getX();
+                                double y = player.getY() + 1.5;
+                                double z = player.getZ();
+
+                                if (allowed) {
+                                    // Vert = autorisé
+                                    level.sendParticles(ParticleTypes.HAPPY_VILLAGER, x, y, z, 10, 0.3, 0.5, 0.3, 0.01);
+                                    player.playNotifySound(SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, 1f, 1.5f);
+                                } else {
+                                    // Rouge = interdit
+                                    level.sendParticles(ParticleTypes.ANGRY_VILLAGER, x, y, z, 10, 0.3, 0.5, 0.3, 0.01);
+                                    player.playNotifySound(SoundEvents.ANVIL_BREAK, SoundSource.MASTER, 1f, 1f);
+                                }
+
+                                context.getSource().sendSystemMessage(Component.literal("§eStatut de l'objet tenu : ").append(status));
+
+                                return 1;
+                            })
+                        )
 
                         // ----- Items -----
                         .then(Commands.literal("items")
@@ -562,34 +612,16 @@ public class CommandRegistry {
                                 )
                         )
 
-
                         // ----- Bypass -----
-                .then(Commands.literal("bypass")
-                        // /xgame bypass
-                        .executes(context -> {
-                            ServerPlayer player = context.getSource().getPlayerOrException();
-
-                            if (RestrictionsManager.hasBypass(player)) {
-                                RestrictionsManager.removeBypassPlayer(player);
-                                player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                                context.getSource().sendSystemMessage(Component.literal("§cBypass désactivé"));
-                            } else {
-                                RestrictionsManager.addBypassPlayer(player);
-                                player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                                context.getSource().sendSystemMessage(Component.literal("§aBypass activé"));
-                            }
-
-                            return 1;
-                        })
-
-                        // /xgame bypass on
-                        .then(Commands.literal("on")
+                        .then(Commands.literal("bypass")
+                                // /xgame bypass
                                 .executes(context -> {
                                     ServerPlayer player = context.getSource().getPlayerOrException();
 
                                     if (RestrictionsManager.hasBypass(player)) {
-                                        context.getSource().sendSystemMessage(Component.literal("§cVous êtes déjà en bypass"));
-                                        player.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, .5f);
+                                        RestrictionsManager.removeBypassPlayer(player);
+                                        player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                                        context.getSource().sendSystemMessage(Component.literal("§cBypass désactivé"));
                                     } else {
                                         RestrictionsManager.addBypassPlayer(player);
                                         player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
@@ -598,169 +630,234 @@ public class CommandRegistry {
 
                                     return 1;
                                 })
-                        )
 
-                        // /xgame bypass off
-                        .then(Commands.literal("off")
-                                .executes(context -> {
-                                    ServerPlayer player = context.getSource().getPlayerOrException();
-
-                                    if (!RestrictionsManager.hasBypass(player)) {
-                                        context.getSource().sendSystemMessage(Component.literal("§cVous n'êtes pas en bypass"));
-                                        player.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, .5f);
-                                    } else {
-                                        RestrictionsManager.removeBypassPlayer(player);
-                                        player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                                        context.getSource().sendSystemMessage(Component.literal("§cBypass désactivé"));
-                                    }
-
-                                    return 1;
-                                })
-                        )
-
-                        // /xgame bypass <player>
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .executes(context -> {
-                                    ServerPlayer target = EntityArgument.getPlayer(context, "player");
-                                    ServerPlayer sender = context.getSource().getPlayerOrException();
-
-                                    if (RestrictionsManager.hasBypass(target)) {
-                                        RestrictionsManager.removeBypassPlayer(target);
-                                        sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                                        context.getSource().sendSystemMessage(Component.literal("§cBypass désactivé pour " + target.getName().getString()));
-                                    } else {
-                                        RestrictionsManager.addBypassPlayer(target);
-                                        sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                                        context.getSource().sendSystemMessage(Component.literal("§aBypass activé pour " + target.getName().getString()));
-                                    }
-
-                                    return 1;
-                                })
-
-                                // /xgame bypass <player> on
+                                // /xgame bypass on
                                 .then(Commands.literal("on")
+                                        .executes(context -> {
+                                            ServerPlayer player = context.getSource().getPlayerOrException();
+
+                                            if (RestrictionsManager.hasBypass(player)) {
+                                                context.getSource().sendSystemMessage(Component.literal("§cVous êtes déjà en bypass"));
+                                                player.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, .5f);
+                                            } else {
+                                                RestrictionsManager.addBypassPlayer(player);
+                                                player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                                                context.getSource().sendSystemMessage(Component.literal("§aBypass activé"));
+                                            }
+
+                                            return 1;
+                                        })
+                                )
+
+                                // /xgame bypass off
+                                .then(Commands.literal("off")
+                                        .executes(context -> {
+                                            ServerPlayer player = context.getSource().getPlayerOrException();
+
+                                            if (!RestrictionsManager.hasBypass(player)) {
+                                                context.getSource().sendSystemMessage(Component.literal("§cVous n'êtes pas en bypass"));
+                                                player.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, .5f);
+                                            } else {
+                                                RestrictionsManager.removeBypassPlayer(player);
+                                                player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                                                context.getSource().sendSystemMessage(Component.literal("§cBypass désactivé"));
+                                            }
+
+                                            return 1;
+                                        })
+                                )
+
+                                // /xgame bypass <player>
+                                .then(Commands.argument("player", EntityArgument.player())
                                         .executes(context -> {
                                             ServerPlayer target = EntityArgument.getPlayer(context, "player");
                                             ServerPlayer sender = context.getSource().getPlayerOrException();
 
                                             if (RestrictionsManager.hasBypass(target)) {
-                                                sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, .5f);
-                                                context.getSource().sendSystemMessage(Component.literal("§c" + target.getName().getString() + " est déjà en bypass"));
+                                                RestrictionsManager.removeBypassPlayer(target);
+                                                sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                                                context.getSource().sendSystemMessage(Component.literal("§cBypass désactivé pour " + target.getName().getString()));
                                             } else {
                                                 RestrictionsManager.addBypassPlayer(target);
                                                 sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                                                context.getSource().sendSystemMessage(Component.literal("§a" + target.getName().getString() + " est désormais en bypass"));
+                                                context.getSource().sendSystemMessage(Component.literal("§aBypass activé pour " + target.getName().getString()));
                                             }
 
                                             return 1;
                                         })
-                                )
 
-                                // /xgame bypass <player> off
-                                .then(Commands.literal("off")
-                                        .executes(context -> {
-                                            ServerPlayer target = EntityArgument.getPlayer(context, "player");
-                                            ServerPlayer sender = context.getSource().getPlayerOrException();
+                                        // /xgame bypass <player> on
+                                        .then(Commands.literal("on")
+                                                .executes(context -> {
+                                                    ServerPlayer target = EntityArgument.getPlayer(context, "player");
+                                                    ServerPlayer sender = context.getSource().getPlayerOrException();
 
-                                            if (!RestrictionsManager.hasBypass(target)) {
-                                                sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, .5f);
-                                                context.getSource().sendSystemMessage(Component.literal("§c" + target.getName().getString() + " n'est pas en bypass"));
-                                            } else {
-                                                RestrictionsManager.removeBypassPlayer(target);
-                                                sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                                                context.getSource().sendSystemMessage(Component.literal("§c" + target.getName().getString() + " n'est plus en bypass"));
-                                            }
+                                                    if (RestrictionsManager.hasBypass(target)) {
+                                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, .5f);
+                                                        context.getSource().sendSystemMessage(Component.literal("§c" + target.getName().getString() + " est déjà en bypass"));
+                                                    } else {
+                                                        RestrictionsManager.addBypassPlayer(target);
+                                                        sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                                                        context.getSource().sendSystemMessage(Component.literal("§a" + target.getName().getString() + " est désormais en bypass"));
+                                                    }
 
-                                            return 1;
-                                        })
+                                                    return 1;
+                                                })
+                                        )
+
+                                        // /xgame bypass <player> off
+                                        .then(Commands.literal("off")
+                                                .executes(context -> {
+                                                    ServerPlayer target = EntityArgument.getPlayer(context, "player");
+                                                    ServerPlayer sender = context.getSource().getPlayerOrException();
+
+                                                    if (!RestrictionsManager.hasBypass(target)) {
+                                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, .5f);
+                                                        context.getSource().sendSystemMessage(Component.literal("§c" + target.getName().getString() + " n'est pas en bypass"));
+                                                    } else {
+                                                        RestrictionsManager.removeBypassPlayer(target);
+                                                        sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                                                        context.getSource().sendSystemMessage(Component.literal("§c" + target.getName().getString() + " n'est plus en bypass"));
+                                                    }
+
+                                                    return 1;
+                                                })
+                                        )
                                 )
                         )
                 )
+
+                .then(Commands.literal("spectator")
+                        .then(Commands.literal("players") // Sous-commande pour la gestion des spectateurs
+                                .then(Commands.literal("respawn")
+
+                                        // Respawn un spectateur
+                                        .then(Commands.argument("player", EntityArgument.player())
+                                                .executes(context -> {
+                                                    ServerPlayer target = EntityArgument.getPlayer(context, "player");
+                                                    ServerPlayer sender = context.getSource().getPlayerOrException();
+
+                                                    if (!SpectateManager.isSpectating(target)) {
+                                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
+                                                        context.getSource().sendFailure(Component.literal("§cLe joueur n'est pas en mode spectateur"));
+                                                        return 0;
+                                                    }
+
+                                                    if (SpectateManager.respawnPlayer(target)) {
+                                                        sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                                                        context.getSource().sendSystemMessage(Component.literal("§a" + target.getName().getString() + " a été respawn"));
+                                                        target.sendSystemMessage(Component.literal("§aVous avez été respawn par un administrateur"));
+                                                        return 1;
+                                                    } else {
+                                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
+                                                        context.getSource().sendFailure(Component.literal("§cImpossible de respawn le joueur"));
+                                                        return 0;
+                                                    }
+                                                })
+                                        )
+                                )
+
+                                        // Respawn tous les spectateurs
+                                        .then(Commands.literal("respawnall")
+                                                .executes(context -> {
+                                                    ServerPlayer sender = context.getSource().getPlayerOrException();
+                                                    int count = SpectateManager.getSpectatorCount();
+
+                                                    if (count == 0) {
+                                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
+                                                        context.getSource().sendSystemMessage(Component.literal("§cAucun spectateur à respawn"));
+                                                        return 0;
+                                                    }
+
+                                                    SpectateManager.respawnAllSpectators();
+
+                                                    sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                                                    context.getSource().getServer().getPlayerList().broadcastSystemMessage(
+                                                            Component.literal("§aTous les spectateurs ont été respawn"), false);
+
+                                                    return 1;
+                                                })
+                                        )
+
+                                        // Liste des spectateurs
+                                        .then(Commands.literal("list")
+                                                .executes(context -> {
+                                                    ServerPlayer sender = context.getSource().getPlayerOrException();
+                                                    int total = SpectateManager.getSpectatorCount();
+
+                                                    if (total == 0) {
+                                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.MASTER, 1f, 1f);
+                                                        context.getSource().sendSystemMessage(Component.literal("§eAucun spectateur actuellement"));
+                                                        return 1;
+                                                    }
+
+                                                    Map<String, Integer> byTeam = SpectateManager.getSpectatorsByTeam();
+
+                                                    sender.playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.MASTER, 1f, 1f);
+                                                    context.getSource().sendSystemMessage(Component.literal("§e=== Spectateurs (" + total + ") ==="));
+
+                                                    for (Map.Entry<String, Integer> entry : byTeam.entrySet()) {
+                                                        context.getSource().sendSystemMessage(Component.literal(
+                                                                "§7" + entry.getKey() + " : §f" + entry.getValue() + " joueur(s)"
+                                                        ));
+                                                    }
+
+                                                    return 1;
+                                                })
+                                        )
+                                )
+                        )
+
+                        .then(Commands.literal("settings")
+                                .then(Commands.literal("fcz")
+                                        .then(Commands.argument("TeamName", StringArgumentType.string())
+                                                .suggests((context, builder) -> {
+                                                    for (String team : TeamManager.getAllTeams()) {
+                                                        builder.suggest(team);
+                                                    }
+                                                    return builder.buildFuture();
+                                                })
+                                                .then(Commands.argument("corner1", BlockPosArgument.blockPos())
+                                                        .then(Commands.argument("corner2", BlockPosArgument.blockPos())
+                                                                .executes(context -> {
+                                                                    String teamName = StringArgumentType.getString(context, "TeamName");
+                                                                    BlockPos corner1 = BlockPosArgument.getLoadedBlockPos(context, "corner1");
+                                                                    BlockPos corner2 = BlockPosArgument.getLoadedBlockPos(context, "corner2");
+                                                                    ServerPlayer sender = context.getSource().getPlayerOrException();
+
+                                                                    // Vérifier que l'équipe existe
+                                                                    if (!DataManager.hasData("Teams", teamName)) {
+                                                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
+                                                                        context.getSource().sendFailure(Component.literal("§cL'équipe \"" + teamName + "\" n'existe pas !"));
+                                                                        return 0;
+                                                                    }
+
+                                                                    // Définir la zone
+                                                                    SpectateManager.setFreeCamZone(teamName, corner1, corner2);
+
+                                                                    sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
+                                                                    context.getSource().sendSystemMessage(Component.literal(
+                                                                            "§aZone de free cam définie pour l'équipe \"" + teamName + "\"\n" +
+                                                                                    "§7Coin 1 : §e" + corner1.getX() + ", " + corner1.getY() + ", " + corner1.getZ() + "\n" +
+                                                                                    "§7Coin 2 : §e" + corner2.getX() + ", " + corner2.getY() + ", " + corner2.getZ()
+                                                                    ));
+
+                                                                    return 1;
+                                                                })
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
         );
 
-        // #############
+        // ##############
         // ## SPECTATE ##
-        // #############
+        // ##############
 
         dispatcher.register(Commands.literal("xspectate")
                 .requires(CommandSourceStack::isPlayer)
-                .requires(source -> source.hasPermission(4))
-
-                // Respawn un joueur spécifique
-                .then(Commands.literal("respawn")
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .executes(context -> {
-                                    ServerPlayer target = EntityArgument.getPlayer(context, "player");
-                                    ServerPlayer sender = context.getSource().getPlayerOrException();
-
-                                    if (!SpectateManager.isSpectating(target)) {
-                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
-                                        context.getSource().sendFailure(Component.literal("§cLe joueur n'est pas en mode spectateur"));
-                                        return 0;
-                                    }
-
-                                    if (SpectateManager.respawnPlayer(target)) {
-                                        sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                                        context.getSource().sendSystemMessage(Component.literal("§a" + target.getName().getString() + " a été respawn"));
-                                        target.sendSystemMessage(Component.literal("§aVous avez été respawn par un administrateur"));
-                                        return 1;
-                                    } else {
-                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
-                                        context.getSource().sendFailure(Component.literal("§cImpossible de respawn le joueur"));
-                                        return 0;
-                                    }
-                                })
-                        )
-                )
-
-                // Respawn tous les spectateurs
-                .then(Commands.literal("respawnall")
-                        .executes(context -> {
-                            ServerPlayer sender = context.getSource().getPlayerOrException();
-                            int count = SpectateManager.getSpectatorCount();
-
-                            if (count == 0) {
-                                sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
-                                context.getSource().sendSystemMessage(Component.literal("§cAucun spectateur à respawn"));
-                                return 0;
-                            }
-
-                            SpectateManager.respawnAllSpectators();
-
-                            sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                            context.getSource().getServer().getPlayerList().broadcastSystemMessage(
-                                    Component.literal("§aTous les spectateurs ont été respawn"), false);
-
-                            return 1;
-                        })
-                )
-
-                // Liste des spectateurs
-                .then(Commands.literal("list")
-                        .executes(context -> {
-                            ServerPlayer sender = context.getSource().getPlayerOrException();
-                            int total = SpectateManager.getSpectatorCount();
-
-                            if (total == 0) {
-                                sender.playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.MASTER, 1f, 1f);
-                                context.getSource().sendSystemMessage(Component.literal("§eAucun spectateur actuellement"));
-                                return 1;
-                            }
-
-                            Map<String, Integer> byTeam = SpectateManager.getSpectatorsByTeam();
-
-                            sender.playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.MASTER, 1f, 1f);
-                            context.getSource().sendSystemMessage(Component.literal("§e=== Spectateurs (" + total + ") ==="));
-
-                            for (Map.Entry<String, Integer> entry : byTeam.entrySet()) {
-                                context.getSource().sendSystemMessage(Component.literal(
-                                        "§7" + entry.getKey() + " : §f" + entry.getValue() + " joueur(s)"
-                                ));
-                            }
-
-                            return 1;
-                        })
-                )
+                .requires(source -> source.hasPermission(0))
 
                 .then(Commands.literal("switch")
                         .executes(context -> {
@@ -776,6 +873,7 @@ public class CommandRegistry {
                             return 1;
                         })
                 )
+
                 .then(Commands.literal("mode")
                         .then(Commands.literal("teammate")
                                 .executes(context -> {
@@ -801,46 +899,6 @@ public class CommandRegistry {
                         )
                 )
 
-                .then(Commands.literal("fcz")
-                        .then(Commands.argument("TeamName", StringArgumentType.string())
-                                .suggests((context, builder) -> {
-                                    for (String team : TeamManager.getAllTeams()) {
-                                        builder.suggest(team);
-                                    }
-                                    return builder.buildFuture();
-                                })
-                                .then(Commands.argument("corner1", BlockPosArgument.blockPos())
-                                        .then(Commands.argument("corner2", BlockPosArgument.blockPos())
-                                                .executes(context -> {
-                                                    String teamName = StringArgumentType.getString(context, "TeamName");
-                                                    BlockPos corner1 = BlockPosArgument.getLoadedBlockPos(context, "corner1");
-                                                    BlockPos corner2 = BlockPosArgument.getLoadedBlockPos(context, "corner2");
-                                                    ServerPlayer sender = context.getSource().getPlayerOrException();
-
-                                                    // Vérifier que l'équipe existe
-                                                    if (!DataManager.hasData("Teams", teamName)) {
-                                                        sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
-                                                        context.getSource().sendFailure(Component.literal("§cL'équipe \"" + teamName + "\" n'existe pas !"));
-                                                        return 0;
-                                                    }
-
-                                                    // Définir la zone
-                                                    SpectateManager.setFreeCamZone(teamName, corner1, corner2);
-
-                                                    sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                                                    context.getSource().sendSystemMessage(Component.literal(
-                                                            "§aZone de free cam définie pour l'équipe \"" + teamName + "\"\n" +
-                                                                    "§7Coin 1 : §e" + corner1.getX() + ", " + corner1.getY() + ", " + corner1.getZ() + "\n" +
-                                                                    "§7Coin 2 : §e" + corner2.getX() + ", " + corner2.getY() + ", " + corner2.getZ()
-                                                    ));
-
-                                                    return 1;
-                                                })
-                                        )
-                                )
-                        )
-                )
-
                 .then(Commands.literal("toggle")
                         .executes(context -> {
                             ServerPlayer player = context.getSource().getPlayerOrException();
@@ -859,291 +917,6 @@ public class CommandRegistry {
                             return 1;
                         })
                 )
-
-                // Définir une zone de spectate
-                .then(Commands.literal("zone")
-                        .then(Commands.literal("set")
-                                .then(Commands.argument("teamName", StringArgumentType.string())
-                                        .then(Commands.argument("pos1", BlockPosArgument.blockPos())
-                                                .then(Commands.argument("pos2", BlockPosArgument.blockPos())
-                                                        .then(Commands.argument("minY", IntegerArgumentType.integer())
-                                                                .executes(context -> {
-                                                                    String teamName = StringArgumentType.getString(context, "teamName");
-                                                                    BlockPos pos1 = BlockPosArgument.getLoadedBlockPos(context, "pos1");
-                                                                    BlockPos pos2 = BlockPosArgument.getLoadedBlockPos(context, "pos2");
-                                                                    int minY = IntegerArgumentType.getInteger(context, "minY");
-
-                                                                    SpectateZone.setZone(teamName, pos1, pos2, minY);
-
-                                                                    context.getSource().sendSystemMessage(Component.literal(
-                                                                            "§aZone de spectate définie pour §e" + teamName +
-                                                                                    "\n§7Min Y: §f" + minY
-                                                                    ));
-
-                                                                    return 1;
-                                                                })
-                                                        )
-                                                )
-                                        )
-                                )
-                        )
-                        .then(Commands.literal("remove")
-                                .then(Commands.argument("teamName", StringArgumentType.string())
-                                        .executes(context -> {
-                                            String teamName = StringArgumentType.getString(context, "teamName");
-                                            SpectateZone.removeZone(teamName);
-                                            context.getSource().sendSystemMessage(Component.literal("§cZone supprimée"));
-                                            return 1;
-                                        })
-                                )
-                        )
-                )
         );
-
-        // ###################
-        // ## CINEMATIC CMD ##
-        // ###################
-
-        dispatcher.register(Commands.literal("xcinematic")
-                .requires(CommandSourceStack::isPlayer)
-                .requires(source -> source.hasPermission(4))
-
-                // Créer une cinématique
-                .then(Commands.literal("create")
-                        .then(Commands.argument("name", StringArgumentType.string())
-                                .then(Commands.argument("speed", DoubleArgumentType.doubleArg(0, 100))
-                                        .then(Commands.argument("loop", BoolArgumentType.bool())
-                                                .executes(context -> {
-                                                    String name = StringArgumentType.getString(context, "name");
-                                                    double speed = DoubleArgumentType.getDouble(context, "speed");
-                                                    boolean loop = BoolArgumentType.getBool(context, "loop");
-
-                                                    CinematicManager.Cinematic cinematic = new CinematicManager.Cinematic(name, loop, speed);
-                                                    CinematicManager.registerCinematic(name, cinematic);
-
-                                                    // Sauvegarder dans DataManager
-                                                    DataManager.dataModify("cinematic_" + name, "speed", String.valueOf(speed));
-                                                    DataManager.dataModify("cinematic_" + name, "loop", loop);
-                                                    DataManager.dataModify("cinematic_" + name, "point_count", 0);
-
-                                                    context.getSource().sendSystemMessage(Component.literal(
-                                                            "§aCinématique §e" + name + "§a créée\n" +
-                                                                    "§7Vitesse: §f" + speed + " blocks/s\n" +
-                                                                    "§7Boucle: §f" + (loop ? "Oui" : "Non")
-                                                    ));
-
-                                                    return 1;
-                                                })
-                                        )
-                                )
-                        )
-                )
-
-                // Ajouter un point
-                .then(Commands.literal("addpoint")
-                        .then(Commands.argument("name", StringArgumentType.string())
-                                .executes(context -> {
-                                    String name = StringArgumentType.getString(context, "name");
-                                    ServerPlayer player = context.getSource().getPlayerOrException();
-
-                                    Vec3 pos = player.position();
-                                    float yaw = player.getYRot();
-                                    float pitch = player.getXRot();
-
-                                    // Récupérer le nombre de points
-                                    int pointCount = DataManager.dataReadInt("cinematic_" + name, "point_count", 0);
-                                    pointCount++;
-
-                                    // Sauvegarder
-                                    String pointData = pos.x + "," + pos.y + "," + pos.z + "," + yaw + "," + pitch + ",0";
-                                    DataManager.dataModify("cinematic_" + name, "point_" + pointCount, pointData);
-                                    DataManager.dataModify("cinematic_" + name, "point_count", pointCount);
-
-                                    player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
-                                    context.getSource().sendSystemMessage(Component.literal(
-                                            "§aPoint " + pointCount + " ajouté à §e" + name +
-                                                    "\n§7Position: §f" + (int)pos.x + ", " + (int)pos.y + ", " + (int)pos.z
-                                    ));
-
-                                    return 1;
-                                })
-                        )
-                )
-
-                // Charger depuis DataManager
-                .then(Commands.literal("load")
-                        .then(Commands.argument("name", StringArgumentType.string())
-                                .executes(context -> {
-                                    String name = StringArgumentType.getString(context, "name");
-
-                                    double speed = Double.parseDouble(DataManager.dataRead("cinematic_" + name, "speed"));
-                                    boolean loop = DataManager.dataReadBoolean("cinematic_" + name, "loop", false);
-                                    int pointCount = DataManager.dataReadInt("cinematic_" + name, "point_count", 0);
-
-                                    CinematicManager.Cinematic cinematic = new CinematicManager.Cinematic(name, loop, speed);
-
-                                    for (int i = 1; i <= pointCount; i++) {
-                                        String pointData = DataManager.dataRead("cinematic_" + name, "point_" + i);
-                                        String[] parts = pointData.split(",");
-                                        double x = Double.parseDouble(parts[0]);
-                                        double y = Double.parseDouble(parts[1]);
-                                        double z = Double.parseDouble(parts[2]);
-                                        float yaw = Float.parseFloat(parts[3]);
-                                        float pitch = Float.parseFloat(parts[4]);
-                                        int duration = Integer.parseInt(parts[5]);
-
-                                        cinematic.addWaypoint(new Vec3(x, y, z), yaw, pitch, duration);
-                                    }
-
-                                    CinematicManager.registerCinematic(name, cinematic);
-
-                                    context.getSource().sendSystemMessage(Component.literal(
-                                            "§aCinématique §e" + name + "§a chargée\n" +
-                                                    "§7Points: §f" + pointCount
-                                    ));
-
-                                    return 1;
-                                })
-                        )
-                )
-
-                // Jouer une cinématique
-                .then(Commands.literal("play")
-                        .then(Commands.argument("name", StringArgumentType.string())
-                                .executes(context -> {
-                                    String name = StringArgumentType.getString(context, "name");
-                                    ServerPlayer player = context.getSource().getPlayerOrException();
-
-                                    CinematicManager.startCinematic(player, name);
-
-                                    context.getSource().sendSystemMessage(Component.literal(
-                                            "§aDémarrage de la cinématique §e" + name
-                                    ));
-
-                                    return 1;
-                                })
-                        )
-                )
-
-                // Arrêter la cinématique
-                .then(Commands.literal("stop")
-                        .executes(context -> {
-                            ServerPlayer player = context.getSource().getPlayerOrException();
-                            CinematicManager.stopCinematic(player);
-                            context.getSource().sendSystemMessage(Component.literal("§cCinématique arrêtée"));
-                            return 1;
-                        })
-                )
-
-                // Lister les cinématiques
-                .then(Commands.literal("list")
-                        .executes(context -> {
-                            ServerPlayer player = context.getSource().getPlayerOrException();
-
-                            String[] tables = DataManager.getAllTables();
-                            List<String> cinematicNames = new ArrayList<>();
-
-                            for (String table : tables) {
-                                if (table.startsWith("cinematic_")) {
-                                    String name = table.substring("cinematic_".length());
-                                    int points = DataManager.dataReadInt(table, "point_count", 0);
-                                    cinematicNames.add(name + " (" + points + " points)");
-                                }
-                            }
-
-                            player.playNotifySound(SoundEvents.NOTE_BLOCK_PLING.value(), SoundSource.MASTER, 1f, 2f);
-                            context.getSource().sendSystemMessage(Component.literal("§e=== Cinématiques ==="));
-
-                            if (cinematicNames.isEmpty()) {
-                                context.getSource().sendSystemMessage(Component.literal("§7Aucune cinématique disponible"));
-                            } else {
-                                for (String name : cinematicNames) {
-                                    context.getSource().sendSystemMessage(Component.literal("§7- §f" + name));
-                                }
-                            }
-
-                            return 1;
-                        })
-                )
-
-                // Supprimer une cinématique
-                .then(Commands.literal("delete")
-                        .then(Commands.argument("name", StringArgumentType.string())
-                                .executes(context -> {
-                                    String name = StringArgumentType.getString(context, "name");
-
-                                    DataManager.dataDelete("cinematic_" + name);
-
-                                    context.getSource().sendSystemMessage(Component.literal(
-                                            "§cCinématique §e" + name + "§c supprimée"
-                                    ));
-
-                                    return 1;
-                                })
-                        )
-                )
-        );
-
-        // Inside CommandRegistry.register(dispatcher)
-        dispatcher.register(Commands.literal("xgame")
-                .requires(source -> source.hasPermission(4))
-
-                .then(Commands.literal("data")
-                        // /xgame data modify <table> <key> <value>
-                        .then(Commands.literal("modify")
-                                .then(Commands.argument("table", StringArgumentType.string())
-                                        .suggests((context, builder) -> {
-                                            // Suggest all tables
-                                            for (String table : DataManager.getAllTables()) {
-                                                builder.suggest(table);
-                                            }
-                                            return builder.buildFuture();
-                                        })
-                                        .then(Commands.argument("key", StringArgumentType.string())
-                                                .suggests((context, builder) -> {
-                                                    String table = StringArgumentType.getString(context, "table");
-                                                    for (String key : DataManager.getAllDataNames(table)) {
-                                                        builder.suggest(key);
-                                                    }
-                                                    return builder.buildFuture();
-                                                })
-                                                .then(Commands.argument("value", StringArgumentType.string())
-                                                        .executes(context -> {
-                                                            String table = StringArgumentType.getString(context, "table");
-                                                            String key = StringArgumentType.getString(context, "key");
-                                                            String value = StringArgumentType.getString(context, "value");
-
-                                                            DataManager.dataModify(table, key, value);
-
-                                                            context.getSource().sendSystemMessage(Component.literal("§aDonnée modifiée : " + table + "." + key + " = " + value));
-
-                                                            return 1;
-                                                        })
-                                                )
-                                        )
-                                )
-                        )
-
-                        // /xgame data reload
-                        .then(Commands.literal("reload")
-                                .executes(context -> {
-                                    DataManager.reloadData();
-                                    context.getSource().sendSystemMessage(Component.literal("§eData rechargées depuis le fichier !"));
-                                    return 1;
-                                })
-                        )
-
-                        // /xgame data save
-                        .then(Commands.literal("save")
-                                .executes(context -> {
-                                    DataManager.forceSave();
-                                    context.getSource().sendSystemMessage(Component.literal("§eData sauvegardées !"));
-                                    return 1;
-                                })
-                        )
-                )
-        );
-
-
     }
 }
