@@ -1,4 +1,4 @@
-package com.mceteams.xiidays.utils;
+package com.mceteams.xiidays.utils.spectate;
 
 import net.minecraft.core.BlockPos;
 

@@ -22,7 +22,6 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 
 import java.util.Map;
@@ -833,13 +832,21 @@ public class CommandRegistry {
                                                                     }
 
                                                                     // Définir la zone
-                                                                    SpectateManager.setFreeCamZone(teamName, corner1, corner2);
+//                                                                    SpectateManager.setFreeCamZone(teamName, corner1, corner2);
+
+                                                                    // Calculer les dimensions
+                                                                    int sizeX = Math.abs(corner2.getX() - corner1.getX()) + 1;
+                                                                    int sizeY = Math.abs(corner2.getY() - corner1.getY()) + 1;
+                                                                    int sizeZ = Math.abs(corner2.getZ() - corner1.getZ()) + 1;
 
                                                                     sender.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1f, 2f);
                                                                     context.getSource().sendSystemMessage(Component.literal(
-                                                                            "§aZone de free cam définie pour l'équipe \"" + teamName + "\"\n" +
+                                                                            "§a§lZone de free cam définie pour \"" + teamName + "\"\n\n" +
                                                                                     "§7Coin 1 : §e" + corner1.getX() + ", " + corner1.getY() + ", " + corner1.getZ() + "\n" +
-                                                                                    "§7Coin 2 : §e" + corner2.getX() + ", " + corner2.getY() + ", " + corner2.getZ()
+                                                                                    "§7Coin 2 : §e" + corner2.getX() + ", " + corner2.getY() + ", " + corner2.getZ() + "\n\n" +
+                                                                                    "§7Dimensions : §b" + sizeX + "§7x§b" + sizeY + "§7x§b" + sizeZ + " blocs\n" +
+                                                                                    "§7Volume : §b" + (sizeX * sizeY * sizeZ) + " blocs³\n\n" +
+                                                                                    "§e⚠ Les spectateurs hors jour actif seront limités à cette zone."
                                                                     ));
 
                                                                     return 1;
@@ -849,74 +856,6 @@ public class CommandRegistry {
                                         )
                                 )
                         )
-        );
-
-        // ##############
-        // ## SPECTATE ##
-        // ##############
-
-        dispatcher.register(Commands.literal("xspectate")
-                .requires(CommandSourceStack::isPlayer)
-                .requires(source -> source.hasPermission(0))
-
-                .then(Commands.literal("switch")
-                        .executes(context -> {
-                            ServerPlayer player = context.getSource().getPlayerOrException();
-
-                            if (player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) {
-                                context.getSource().sendFailure(Component.literal("§cVous devez être en spectateur"));
-                                return 0;
-                            }
-
-                            NativeCameraController.switchToNextTeammate(player);
-                            context.getSource().sendSystemMessage(Component.literal("§aChangement de vue"));
-                            return 1;
-                        })
-                )
-
-                .then(Commands.literal("mode")
-                        .then(Commands.literal("teammate")
-                                .executes(context -> {
-                                    ServerPlayer player = context.getSource().getPlayerOrException();
-                                    SpectateController.setMode(player, SpectateController.SpectateMode.TEAMMATE);
-                                    return 1;
-                                })
-                        )
-                        .then(Commands.literal("freecam")
-                                .executes(context -> {
-                                    ServerPlayer player = context.getSource().getPlayerOrException();
-                                    SpectateController.setMode(player, SpectateController.SpectateMode.FREECAM_LIMITED);
-                                    return 1;
-                                })
-                        )
-                        .then(Commands.literal("cinematic")
-                                .executes(context -> {
-                                    ServerPlayer player = context.getSource().getPlayerOrException();
-                                    SpectateController.setMode(player, SpectateController.SpectateMode.CINEMATIC);
-                                    CinematicManager.startCinematic(player, "default");
-                                    return 1;
-                                })
-                        )
-                )
-
-                .then(Commands.literal("toggle")
-                        .executes(context -> {
-                            ServerPlayer player = context.getSource().getPlayerOrException();
-
-                            if (player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) {
-                                context.getSource().sendFailure(Component.literal("§cVous devez être en spectateur"));
-                                return 0;
-                            }
-
-                            if (!DaysManager.isDayInProgress()) {
-                                context.getSource().sendFailure(Component.literal("§cLe toggle est désactivé hors jour actif"));
-                                return 0;
-                            }
-
-                            SpectateManager.toggleSpectateMode(player);
-                            return 1;
-                        })
-                )
         );
     }
 }

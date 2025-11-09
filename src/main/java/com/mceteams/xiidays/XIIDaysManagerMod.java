@@ -9,6 +9,7 @@ import com.mceteams.xiidays.utils.PlayersHandler;
 import com.mceteams.xiidays.utils.RestrictionsManager;
 import com.mceteams.xiidays.utils.SpectateManager;
 import com.mceteams.xiidays.utils.TaskScheduler;
+import com.mceteams.xiidays.utils.spectate.SpectatePackets;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,7 +21,8 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
@@ -56,13 +58,15 @@ public class XIIDaysManagerMod {
         NeoForge.EVENT_BUS.register(SpectateManager.class);
         NeoForge.EVENT_BUS.register(TaskScheduler.class);
         NeoForge.EVENT_BUS.register(new PlayersHandler());
-        NeoForge.EVENT_BUS.addListener(this::onServerTick);
         NeoForge.EVENT_BUS.register(this);
 
         modEventBus.addListener(this::addCreative);
 
         LOGGER.info("[XII Days - Mod]: Registering mod Configuration & Specifications...");
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+
+        LOGGER.info("[XII Days - Mod]: Registering network packets...");
+        modEventBus.addListener(this::registerPackets);
 
         LOGGER.info("[XII Days - Mod]: DONE, Mod components registration complete.");
     }
@@ -87,8 +91,20 @@ public class XIIDaysManagerMod {
         LOGGER.info("[XII Days - Mod]: The server in ready, let's play some XII Days!");
 
         LOGGER.info("[XII Days - Mod]: Loading free cam zones for all teams...");
-        SpectateManager.loadFreeCamZones();
+//        SpectateManager.loadFreeCamZones();
         LOGGER.info("[XII Days - Mod]: Free cam zones loaded for all teams");
+    }
+
+    private void registerPackets(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar("1");
+
+        registrar.playToServer(
+                SpectatePackets.SpectateSwitchPayload.TYPE,
+                SpectatePackets.SpectateSwitchPayload.CODEC,
+                SpectatePackets.SpectateSwitchPayload::handle
+        );
+
+        LOGGER.info("[XII Days - Mod]: Network packets registered");
     }
 
     @SubscribeEvent
@@ -96,9 +112,5 @@ public class XIIDaysManagerMod {
         LOGGER.info("[XII Days - Mod]: Registering XII Days commands...");
         CommandRegistry.register(event.getDispatcher());
         LOGGER.info("[XII Days - Mod]: XII Days commands registered.");
-    }
-
-    private void onServerTick(ServerTickEvent.Post event) {
-
     }
 }
