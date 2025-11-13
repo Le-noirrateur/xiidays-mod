@@ -4,5 +4,8 @@
 
   "item.xiidays.team_core": "Cœur d'équipe",
   "item.xiidays.team_spawner": "Spawner d'équipe",
-  "item.xiidays.core_destroyer": "Destructeur de cœur"
+  "item.xiidays.core_destroyer": "Destructeur de cœur",
+
+  "key.xiidays.open_scoreboard": "Ouvrir Tableau des scores",
+  "key.categories.xiidays": "XII Days"
 }

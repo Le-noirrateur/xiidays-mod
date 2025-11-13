@@ -4,11 +4,16 @@ import com.mceteams.xiidays.blocks.BlockRegistry;
 import com.mceteams.xiidays.blocks.teamCore.teamCore;
 import com.mceteams.xiidays.blocks.teamSpawner.teamSpawner;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
+import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
 import static com.mceteams.xiidays.utils.DataManager.*;
 
 public class TeamManager {
@@ -150,6 +155,20 @@ public class TeamManager {
         }
     }
 
+    public static String getTeamName(int teamId) {
+        String[] allTeams = getAllDataNames("Teams");
+
+        for (String teamName : allTeams) {
+            int id = dataReadInt("Teams", teamName, 0);
+            if (id == teamId) {
+                return teamName;
+            }
+        }
+
+        return null; // aucune team avec cet ID
+    }
+
+
     /**
      * place le block et le core de l'équipe
      * @param teamName Nom de l'équipe
@@ -214,6 +233,147 @@ public class TeamManager {
     }
 
     /**
+     * Élimine une équipe et calcule sa position finale
+     * @param teamName Nom de l'équipe éliminée
+     * @return true si succès
+     */
+    public static boolean eliminateTeam(String teamName) {
+        int teamId = getTeamId(teamName);
+        if (teamId == 0) return false;
+
+        // Vérifier si déjà éliminée
+        if (DataManager.dataReadBoolean("team_" + teamId + "_config", "team_eliminated", false)) {
+            LOGGER.warn("Team {} already eliminated!", teamName);
+            return false;
+        }
+
+        // Marquer comme éliminée
+        DataManager.dataModify("team_" + teamId + "_config", "team_eliminated", true);
+
+        // CALCUL : finalpos = total_teams - teams_restantes
+        int totalTeams = getAllTeams().length;
+        int remainingTeams = countRemainingTeams(); // Compte APRÈS élimination
+        int finalPosition = totalTeams - remainingTeams;
+
+        DataManager.dataModify("team_" + teamId + "_config", "finalpos", finalPosition);
+
+        LOGGER.info("Team {} eliminated - Position: {} ({} teams remaining)",
+                teamName, finalPosition, remainingTeams);
+
+        // 🔥 SI UNE SEULE ÉQUIPE RESTE → FIN DE PARTIE
+        if (remainingTeams == 1) {
+            String winnerTeam = getLastRemainingTeam();
+            if (winnerTeam != null) {
+                setWinningTeam(winnerTeam);
+                triggerEndScreen(winnerTeam);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Compte les équipes encore en vie
+     */
+    private static int countRemainingTeams() {
+        String[] allTeams = getAllTeams();
+        int count = 0;
+
+        for (String teamName : allTeams) {
+            int teamId = getTeamId(teamName);
+            if (teamId == 0) continue;
+
+            boolean eliminated = DataManager.dataReadBoolean(
+                    "team_" + teamId + "_config",
+                    "team_eliminated",
+                    false
+            );
+
+            if (!eliminated) count++;
+        }
+
+        return count;
+    }
+
+    /**
+     * Récupère la dernière équipe en vie
+     */
+    private static String getLastRemainingTeam() {
+        String[] allTeams = getAllTeams();
+
+        for (String teamName : allTeams) {
+            int teamId = getTeamId(teamName);
+            if (teamId == 0) continue;
+
+            boolean eliminated = DataManager.dataReadBoolean(
+                    "team_" + teamId + "_config",
+                    "team_eliminated",
+                    false
+            );
+
+            if (!eliminated) return teamName;
+        }
+
+        return null;
+    }
+
+    /**
+     * Définit l'équipe gagnante (finalpos = 1)
+     */
+    private static void setWinningTeam(String teamName) {
+        int teamId = getTeamId(teamName);
+        if (teamId == 0) return;
+
+        DataManager.dataModify("team_" + teamId + "_config", "finalpos", 1);
+
+        LOGGER.info("🏆 Team {} wins the game!", teamName);
+    }
+
+    /**
+     * Déclenche l'écran de fin pour tous les joueurs
+     */
+    private static void triggerEndScreen(String winningTeam) {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+
+        // Envoyer à tous les joueurs connectés
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            // Côté serveur : envoyer packet custom pour ouvrir GUI côté client
+            // Ou utiliser un command pour ouvrir
+            player.sendSystemMessage(Component.literal("§6§l=== FIN DE PARTIE ==="));
+            player.sendSystemMessage(Component.literal("§eÉquipe gagnante : §6§l" + winningTeam));
+
+            // TODO: Envoyer packet pour ouvrir EndScoreboardScreen côté client
+            // PacketDistributor.sendToPlayer(player, new OpenEndScreenPacket(winningTeam));
+        }
+    }
+
+    /**
+     * Récupère la position finale d'une équipe
+     */
+    public static int getFinalPosition(String teamName) {
+        int teamId = getTeamId(teamName);
+        if (teamId == 0) return 999;
+
+        return DataManager.dataReadInt("team_" + teamId + "_config", "finalpos", 999);
+    }
+
+    /**
+     * Récupère l'équipe gagnante
+     */
+    public static String getWinningTeam() {
+        String[] allTeams = getAllTeams();
+
+        for (String teamName : allTeams) {
+            if (getFinalPosition(teamName) == 1) {
+                return teamName;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Récupère l'équipe actuelle d'un joueur
      * @param playerUUID UUID du joueur
      * @return Le nom de l'équipe ou null si le joueur n'est dans aucune équipe
@@ -243,9 +403,9 @@ public class TeamManager {
         }
     }
 
-    public static int createTeam(String teamName) {
-        
+    // Dans TeamManager.java, modifie la méthode createTeam() :
 
+    public static int createTeam(String teamName) {
         if (!hasData("Teams", teamName)) {
             String[] teams = getAllDataNames("Teams");
             int newTeamId = teams.length + 1;
@@ -260,7 +420,10 @@ public class TeamManager {
 
             dataModify("Teams", teamName, newTeamId);
 
-            return 1; // Crée
+            // ✅ AJOUTE CETTE LIGNE : Rafraîchir le leaderboard
+            PointsManager.refreshTeamPoints();
+
+            return 1; // Créé
         } else {
             return 2; // Nom de teams existe déjà
         }

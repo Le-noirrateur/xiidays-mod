@@ -4,5 +4,8 @@
 
   "item.xiidays.team_core": "Team Core",
   "item.xiidays.team_spawner": "Team Spawner",
-  "item.xiidays.core_destroyer": "Core Destroyer"
+  "item.xiidays.core_destroyer": "Core Destroyer",
+
+  "key.xiidays.open_scoreboard": "Open Scoreboard",
+  "key.categories.xiidays": "XII Days"
 }

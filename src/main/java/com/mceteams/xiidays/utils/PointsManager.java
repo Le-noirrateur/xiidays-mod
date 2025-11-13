@@ -18,7 +18,8 @@ public class PointsManager {
     private static final Map<Integer, Integer> teamPoints = new HashMap<>();
 
     public static void addPoints(int teamId, PointType type, Player player, Object... args) {
-        int newPoints = dataReadInt("team_" + teamId + "_points", "total", 0);
+        int oldPoints = dataReadInt("team_" + teamId + "_points", "total", 0);
+        int newPoints = 0;
         int playerPoints = dataReadInt("player_" + player.getUUID() + "_stats", "team_points", 0);
         int pointsAdded = 0;
 
@@ -56,8 +57,12 @@ public class PointsManager {
             default -> LOGGER.error("PointType non géré: {}", type); // Log unhandled PointType
         }
 
-        newPoints += pointsAdded; // Update team points
+        newPoints = oldPoints + pointsAdded; // Update team points
         playerPoints += pointsAdded; // Update player points
+
+        if (pointsAdded != 0) {
+            NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, oldPoints, newPoints));
+        }
 
         teamPoints.put(teamId, newPoints); // Update in-memory team points
 
@@ -79,10 +84,40 @@ public class PointsManager {
             String addedStr = pointsAdded >= 0 ? "§r§2§l+" + pointsAdded : String.valueOf(pointsAdded);
             srvp.sendSystemMessage(Component.literal("§4§l[DEBUG]:§r Vous avez ajouté §4§l" + addedStr + "§r à votre équipe (§6§l" + type +"§r)"));
         }
-        NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, newPoints)); // Trigger event for points change
+        NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, oldPoints, newPoints)); // Trigger event for points change
     }
 
-    public List<Map.Entry<Integer, Integer>> getLeaderboard() {
+    // Ajoute cette méthode dans PointsManager.java
+
+    /**
+     * Initialise les points de toutes les équipes existantes
+     * À appeler au démarrage du serveur
+     */
+    public static void initializeTeamPoints() {
+        String[] allTeams = TeamManager.getAllTeams();
+
+        for (String teamName : allTeams) {
+            int teamId = TeamManager.getTeamId(teamName);
+            if (teamId > 0) {
+                // Charger les points depuis DataManager
+                int points = dataReadInt("team_" + teamId + "_points", "total", 0);
+                teamPoints.put(teamId, points);
+                LOGGER.info("Loaded team {} (ID: {}) with {} points", teamName, teamId, points);
+            }
+        }
+
+        LOGGER.info("Initialized {} teams in leaderboard", teamPoints.size());
+    }
+
+    /**
+     * Recharge tous les points depuis DataManager (utile après création d'équipe)
+     */
+    public static void refreshTeamPoints() {
+        teamPoints.clear();
+        initializeTeamPoints();
+    }
+
+    public static List<Map.Entry<Integer, Integer>> getLeaderboard() {
         return teamPoints.entrySet()
                 .stream()
                 .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue())) // tri desc

@@ -112,6 +112,33 @@ public class CommandRegistry {
                 .requires(CommandSourceStack::isPlayer)
                 .requires(source -> source.hasPermission(4))
 
+                // Dans CommandRegistry.java
+                .then(Commands.literal("eliminate")
+                        .then(Commands.argument("TeamName", StringArgumentType.string())
+                                .suggests((context, builder) -> {
+                                    for (String team : TeamManager.getAllTeams()) {
+                                        builder.suggest(team);
+                                    }
+                                    return builder.buildFuture();
+                                })
+                                .executes(context -> {
+                                    String teamName = StringArgumentType.getString(context, "TeamName");
+
+                                    if (TeamManager.eliminateTeam(teamName)) {
+                                        context.getSource().sendSystemMessage(
+                                                Component.literal("§aÉquipe " + teamName + " éliminée !")
+                                        );
+                                        return 1;
+                                    } else {
+                                        context.getSource().sendFailure(
+                                                Component.literal("§cImpossible d'éliminer l'équipe")
+                                        );
+                                        return 0;
+                                    }
+                                })
+                        )
+                )
+
                 // create
                 .then(Commands.literal("create")
                         .then(Commands.argument("TeamName", StringArgumentType.string())

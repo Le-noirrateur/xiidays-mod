@@ -5,10 +5,7 @@ import com.mceteams.xiidays.blocks.BlockRegistry;
 import com.mceteams.xiidays.commands.CommandRegistry;
 import com.mceteams.xiidays.items.ItemRegistry;
 import com.mceteams.xiidays.menus.MenuRegistry;
-import com.mceteams.xiidays.utils.PlayersHandler;
-import com.mceteams.xiidays.utils.RestrictionsManager;
-import com.mceteams.xiidays.utils.SpectateManager;
-import com.mceteams.xiidays.utils.TaskScheduler;
+import com.mceteams.xiidays.utils.*;
 import com.mceteams.xiidays.utils.spectate.SpectatePackets;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -53,11 +50,13 @@ public class XIIDaysManagerMod {
         BlockRegistry.BLOCKS.register(modEventBus);
         BlockEntityRegistry.BLOCK_ENTITIES.register(modEventBus);
 
+        // Dans la méthode XIIDaysManagerMod() du constructeur, ajoute cette ligne :
         LOGGER.info("[XII Days - Mod]: Registering Events listeners & senders...");
         NeoForge.EVENT_BUS.register(RestrictionsManager.class);
         NeoForge.EVENT_BUS.register(SpectateManager.class);
         NeoForge.EVENT_BUS.register(TaskScheduler.class);
         NeoForge.EVENT_BUS.register(new PlayersHandler());
+        NeoForge.EVENT_BUS.register(ScoreboardManager.class); // ← AJOUTE CETTE LIGNE
         NeoForge.EVENT_BUS.register(this);
 
         modEventBus.addListener(this::addCreative);
@@ -85,14 +84,19 @@ public class XIIDaysManagerMod {
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
+
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        // Do something when the server starts
-        LOGGER.info("[XII Days - Mod]: The server in ready, let's play some XII Days!");
+        LOGGER.info("[XII Days - Mod]: The server is ready, let's play some XII Days!");
 
         LOGGER.info("[XII Days - Mod]: Loading free cam zones for all teams...");
-//        SpectateManager.loadFreeCamZones();
+        // SpectateManager.loadFreeCamZones();
         LOGGER.info("[XII Days - Mod]: Free cam zones loaded for all teams");
+
+        // ✅ AJOUTE CES LIGNES
+        LOGGER.info("[XII Days - Mod]: Initializing team points for leaderboard...");
+        PointsManager.initializeTeamPoints();
+        LOGGER.info("[XII Days - Mod]: Team points initialized");
     }
 
     private void registerPackets(RegisterPayloadHandlersEvent event) {
