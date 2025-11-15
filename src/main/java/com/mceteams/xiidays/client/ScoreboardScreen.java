@@ -24,9 +24,9 @@ public class ScoreboardScreen extends Screen {
     private static final ResourceLocation PROGRESS_BAR_BG =
             ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/progress_bg.png");
     private static final ResourceLocation HEART_RED =
-            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/heart_red.png");
+            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/arrow_down.png");
     private static final ResourceLocation HEART_GREEN =
-            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/heart_green.png");
+            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/arrow_up.png");
 
     private final List<TeamScore> teams;
     private final String playerTeam;
