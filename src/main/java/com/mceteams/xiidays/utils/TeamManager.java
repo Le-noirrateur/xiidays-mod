@@ -393,6 +393,11 @@ public class TeamManager {
         return null; // Joueur dans aucune équipe
     }
 
+    /**
+     * Récupère l'identifiant relatif à une équipe.
+     * @param teamName nom de l'équipe
+     * @return identifiant de l'équipe.
+     */
     public static int getTeamId(String teamName) {
         
 
@@ -403,8 +408,11 @@ public class TeamManager {
         }
     }
 
-    // Dans TeamManager.java, modifie la méthode createTeam() :
-
+    /**
+     * Créer une équpe avec le nom demandé.
+     * @param teamName nom d'une équipe
+     * @return retourne 1 si tout a fonctionné.
+     */
     public static int createTeam(String teamName) {
         if (!hasData("Teams", teamName)) {
             String[] teams = getAllDataNames("Teams");
@@ -420,7 +428,7 @@ public class TeamManager {
 
             dataModify("Teams", teamName, newTeamId);
 
-            // ✅ AJOUTE CETTE LIGNE : Rafraîchir le leaderboard
+            // Rafraîchir le leaderboard
             PointsManager.refreshTeamPoints();
 
             return 1; // Créé
