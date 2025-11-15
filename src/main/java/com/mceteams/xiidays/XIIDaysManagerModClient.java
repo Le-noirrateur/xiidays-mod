@@ -12,37 +12,30 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
 
 @Mod(value = XIIDaysManagerMod.MODID, dist = Dist.CLIENT)
-@EventBusSubscriber(modid = XIIDaysManagerMod.MODID, value = Dist.CLIENT)
 public class XIIDaysManagerModClient {
+
     public XIIDaysManagerModClient(ModContainer container, IEventBus modEventBus) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
 
-        // Enregistrer les événements client (pour les touches)
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Registering client events...");
+        // Enregistrer les events du MOD BUS
+        modEventBus.addListener(this::onClientSetup);
+        modEventBus.addListener(ClientEvents::registerKeys); // ← Correction ici
+
+        // Enregistrer les events du FORGE BUS (tick client)
         NeoForge.EVENT_BUS.register(ClientEvents.class);
-
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Client events registered");
     }
 
     @SubscribeEvent
-    static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Registering keybindings");
-        ClientEvents.registerKeys(event);
-    }
-
-    @SubscribeEvent
-    static void onClientSetup(FMLClientSetupEvent event) {
+    void onClientSetup(FMLClientSetupEvent event) {
         XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Client setup started");
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+        XIIDaysManagerMod.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
 
         // Enregistrement des renderers de Block Entities
         XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Registering Block Entity Renderers");
@@ -55,9 +48,6 @@ public class XIIDaysManagerModClient {
 
             // Team Spawner avec transparence
             ItemBlockRenderTypes.setRenderLayer(BlockRegistry.TEAM_SPAWNER.get(), RenderType.translucent());
-
-            // Team Core (si besoin de transparence aussi)
-            // ItemBlockRenderTypes.setRenderLayer(BlockRegistry.TEAM_CORE.get(), RenderType.translucent());
 
             XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Render layers configured");
         });
