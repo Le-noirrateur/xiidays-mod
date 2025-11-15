@@ -5,6 +5,7 @@ import com.mceteams.xiidays.blocks.BlockRegistry;
 import com.mceteams.xiidays.commands.CommandRegistry;
 import com.mceteams.xiidays.items.ItemRegistry;
 import com.mceteams.xiidays.menus.MenuRegistry;
+import com.mceteams.xiidays.network.ScoreboardPackets;
 import com.mceteams.xiidays.utils.*;
 import com.mceteams.xiidays.utils.spectate.SpectatePackets;
 import com.mojang.logging.LogUtils;
@@ -89,11 +90,6 @@ public class XIIDaysManagerMod {
     public void onServerStarting(ServerStartingEvent event) {
         LOGGER.info("[XII Days - Mod]: The server is ready, let's play some XII Days!");
 
-        LOGGER.info("[XII Days - Mod]: Loading free cam zones for all teams...");
-        // SpectateManager.loadFreeCamZones();
-        LOGGER.info("[XII Days - Mod]: Free cam zones loaded for all teams");
-
-        // ✅ AJOUTE CES LIGNES
         LOGGER.info("[XII Days - Mod]: Initializing team points for leaderboard...");
         PointsManager.initializeTeamPoints();
         LOGGER.info("[XII Days - Mod]: Team points initialized");
@@ -106,6 +102,18 @@ public class XIIDaysManagerMod {
                 SpectatePackets.SpectateSwitchPayload.TYPE,
                 SpectatePackets.SpectateSwitchPayload.CODEC,
                 SpectatePackets.SpectateSwitchPayload::handle
+        );
+
+        registrar.playToServer(
+                ScoreboardPackets.RequestScoreboardPayload.TYPE,
+                ScoreboardPackets.RequestScoreboardPayload.CODEC,
+                ScoreboardPackets.RequestScoreboardPayload::handle
+        );
+
+        registrar.playToClient(
+                ScoreboardPackets.ScoreboardDataPayload.TYPE,
+                ScoreboardPackets.ScoreboardDataPayload.CODEC,
+                ScoreboardPackets.ScoreboardDataPayload::handle
         );
 
         LOGGER.info("[XII Days - Mod]: Network packets registered");

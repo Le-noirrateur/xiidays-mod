@@ -3,7 +3,6 @@ package com.mceteams.xiidays;
 import com.mceteams.xiidays.blocks.BlockEntityRegistry;
 import com.mceteams.xiidays.blocks.BlockRegistry;
 import com.mceteams.xiidays.client.ClientEvents;
-import com.mceteams.xiidays.client.KeyBindings;
 import com.mceteams.xiidays.render.TeamSpawnerRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -31,16 +30,13 @@ public class XIIDaysManagerModClient {
         XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Registering client events...");
         NeoForge.EVENT_BUS.register(ClientEvents.class);
 
-        // Enregistrer les touches sur le MOD event bus
-        modEventBus.addListener(this::registerKeyBindings);
-
         XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Client events registered");
     }
 
-    private void registerKeyBindings(RegisterKeyMappingsEvent event) {
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Registering key bindings...");
-        event.register(KeyBindings.OPEN_SCOREBOARD.get());
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Key bindings registered");
+    @SubscribeEvent
+    static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+        XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Registering keybindings");
+        ClientEvents.registerKeys(event);
     }
 
     @SubscribeEvent

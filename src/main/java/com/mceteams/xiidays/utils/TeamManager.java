@@ -13,6 +13,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
+import java.util.UUID;
+
 import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
 import static com.mceteams.xiidays.utils.DataManager.*;
 
@@ -230,6 +232,66 @@ public class TeamManager {
      */
     public static String[] getAllTeams() {
         return getAllDataNames("Teams"); // Récupère toutes les clés de la table "Teams"
+    }
+
+    /**
+     * Envoie un message à tous une équipe
+     * @param teamName Nom de l'équipe
+     * @param message String du message
+     */
+    public static void sendMessageToTeam(String teamName, Component message) {
+        int teamId = getTeamId(teamName);
+        if (teamId == 0) return;
+
+        String[] members = getAllDataNames("team_" + teamId + "_members");
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+
+        for (String memberKey : members) {
+            String uuidStr = dataRead("team_" + teamId + "_members", memberKey);
+            if (uuidStr == null) continue;
+
+            try {
+                java.util.UUID uuid = java.util.UUID.fromString(uuidStr);
+                ServerPlayer player = server.getPlayerList().getPlayer(uuid);
+                if (player != null) {
+                    player.sendSystemMessage(message);
+                }
+            } catch (IllegalArgumentException e) {
+                // UUID invalide, on skip
+            }
+        }
+    }
+
+    /**
+     * Envoie un message à tous une équipe
+     * @param teamId Nom de l'équipe
+     * @param message String du message
+     * @param exclude Player
+     */
+    public static void sendMessageToTeam(int teamId, Component message, UUID exclude) {
+        if (teamId == 0) return;
+
+        String[] members = getAllDataNames("team_" + teamId + "_members");
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+
+        for (String memberKey : members) {
+            String uuidStr = dataRead("team_" + teamId + "_members", memberKey);
+            if (uuidStr == null) continue;
+
+            try {
+                UUID uuid = UUID.fromString(uuidStr);
+                ServerPlayer player = server.getPlayerList().getPlayer(uuid);
+                if (uuid == exclude) continue;
+
+                if (player != null) {
+                    player.sendSystemMessage(message);
+                }
+            } catch (IllegalArgumentException e) {
+                // UUID invalide, on skip
+            }
+        }
     }
 
     /**

@@ -1,23 +1,44 @@
 package com.mceteams.xiidays.client;
 
-import com.mceteams.xiidays.menus.ScoreboardScreen;
-import net.minecraft.client.Minecraft;
+import com.mceteams.xiidays.network.ScoreboardPackets;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.network.PacketDistributor;
+import org.lwjgl.glfw.GLFW;
 
-@EventBusSubscriber(modid = "xiidays", value = Dist.CLIENT)
+import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+
+@EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
 public class ClientEvents {
 
-    @SubscribeEvent
-    public static void onKeyInput(InputEvent.Key event) {
-        Minecraft mc = Minecraft.getInstance();
+    public static final String CATEGORY = "key.categories." + MODID;
 
-        // Vérifier si la touche du scoreboard est pressée
-        if (KeyBindings.OPEN_SCOREBOARD.get().consumeClick()) {
-            // Ouvrir l'écran du scoreboard
-            mc.setScreen(new ScoreboardScreen());
+    public static KeyMapping OPEN_SCOREBOARD;
+
+    @SubscribeEvent
+    public static void registerKeys(RegisterKeyMappingsEvent event) {
+        OPEN_SCOREBOARD = new KeyMapping(
+                "key." + MODID + ".open_scoreboard",
+                KeyConflictContext.IN_GAME,
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_TAB,
+                CATEGORY
+        );
+
+        event.register(OPEN_SCOREBOARD);
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(ClientTickEvent.Post event) {
+        while (OPEN_SCOREBOARD.consumeClick()) {
+            // Demander les données au serveur
+            PacketDistributor.sendToServer(new ScoreboardPackets.RequestScoreboardPayload());
         }
     }
 }
