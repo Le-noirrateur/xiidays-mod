@@ -16,24 +16,19 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import net.neoforged.neoforge.common.NeoForge;
 
 @Mod(value = XIIDaysManagerMod.MODID, dist = Dist.CLIENT)
 public class XIIDaysManagerModClient {
-
     public XIIDaysManagerModClient(ModContainer container, IEventBus modEventBus) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
 
-        // Enregistrer les events du MOD BUS
+        // Enregistrer les listeners du MOD BUS
         modEventBus.addListener(this::onClientSetup);
-        modEventBus.addListener(ClientEvents::registerKeys); // ← Correction ici
-
-        // Enregistrer les events du FORGE BUS (tick client)
-        NeoForge.EVENT_BUS.register(ClientEvents.class);
+        modEventBus.addListener(ClientEvents::registerKeys);
     }
 
     @SubscribeEvent
-    void onClientSetup(FMLClientSetupEvent event) {
+    private void onClientSetup(FMLClientSetupEvent event) {
         XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Client setup started");
         XIIDaysManagerMod.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
 
