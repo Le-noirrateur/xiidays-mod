@@ -7,5 +7,7 @@
   "item.xiidays.core_destroyer": "Destructeur de cœur",
 
   "key.xiidays.open_scoreboard": "Ouvrir Tableau des scores",
-  "key.categories.xiidays": "XII Days"
+  "key.categories.xiidays": "XII Days",
+  "key.xiidays.spectate_next": "Spectate Suivant",
+  "key.xiidays.spectate_previous": "Spectate Précédent"
 }
