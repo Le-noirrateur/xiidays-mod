@@ -2,6 +2,7 @@ package com.mceteams.xiidays;
 
 import com.mceteams.xiidays.blocks.BlockEntityRegistry;
 import com.mceteams.xiidays.blocks.BlockRegistry;
+import com.mceteams.xiidays.client.ClientEvents;
 import com.mceteams.xiidays.render.TeamSpawnerRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -15,15 +16,15 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
+@SuppressWarnings("deprecation")
 @Mod(value = XIIDaysManagerMod.MODID, dist = Dist.CLIENT)
 public class XIIDaysManagerModClient {
     public XIIDaysManagerModClient(ModContainer container, IEventBus modEventBus) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
 
-        // ⚠️ ATTENTION : N'ENREGISTRE QU'UNE SEULE FOIS
         modEventBus.addListener(this::onClientSetup);
+        modEventBus.addListener(ClientEvents::registerKeys);
     }
-
     private void onClientSetup(FMLClientSetupEvent event) {
         XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Client setup started");
         XIIDaysManagerMod.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());

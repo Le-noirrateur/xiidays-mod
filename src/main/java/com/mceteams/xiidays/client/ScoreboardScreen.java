@@ -1,5 +1,6 @@
 package com.mceteams.xiidays.client;
 
+import com.mceteams.xiidays.utils.ScoreboardManager;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -14,14 +15,12 @@ import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
 
 public class ScoreboardScreen extends Screen {
 
-    private static final ResourceLocation RANK_GOLD = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank_gold.png");
-    private static final ResourceLocation RANK_SILVER = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank_silver.png");
-    private static final ResourceLocation RANK_BRONZE = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank_bronze.png");
+    private static final ResourceLocation RANK_GOLD = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank/rank_1.png");
+    private static final ResourceLocation RANK_SILVER = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank/rank_2.png");
+    private static final ResourceLocation RANK_BRONZE = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank/rank_3.png");
     private static final ResourceLocation TEAM_ROW_BG = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/team_row.png");
     private static final ResourceLocation HEART_ALIVE = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/heart_alive.png");
     private static final ResourceLocation HEART_DEAD = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/heart_dead.png");
-    private static final ResourceLocation ARROW_UP = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/arrow_up.png");
-    private static final ResourceLocation ARROW_DOWN = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/arrow_down.png");
 
     private static final Set<String> SPECIAL_TEAMS = Set.of("jaune", "vert", "rouge", "bleu");
 
@@ -30,7 +29,7 @@ public class ScoreboardScreen extends Screen {
 
     private static final int PANEL_WIDTH = 580;
     private static final int PANEL_HEIGHT = 400;
-    private static final int TEAM_ROW_HEIGHT = 65;
+    private static final int TEAM_ROW_HEIGHT = 75; // Augmenté pour les badges plus hauts
     private static final int TEAM_ROW_SPACING = 5;
     private static final int MAX_VISIBLE_ROWS = 5;
     private static final int CONTENT_START_Y = 60;
@@ -99,7 +98,7 @@ public class ScoreboardScreen extends Screen {
     private void renderScrollbar(GuiGraphics graphics, int x, int y, int height) {
         graphics.fill(x, y, x + 6, y + height, 0x80000000);
         float scrollPercent = scrollOffset / maxScroll;
-        int barHeight = Math.max(20, (height / (teams.size() * (TEAM_ROW_HEIGHT + TEAM_ROW_SPACING))) * height);
+        int barHeight = Math.max(20, (int) ((height / (teams.size() * (TEAM_ROW_HEIGHT + TEAM_ROW_SPACING))) * height));
         int barY = y + (int) (scrollPercent * (height - barHeight));
         graphics.fill(x, barY, x + 6, barY + barHeight, 0xFFC0C0C0);
     }
@@ -114,12 +113,7 @@ public class ScoreboardScreen extends Screen {
             graphics.fill(rowX, rowY, rowX + rowWidth, rowY + TEAM_ROW_HEIGHT, 0xFF505050);
         }
 
-        renderRankBadge(graphics, rowX + 10, rowY + 16, rank);
-
-        // Flèches de changement de rang (à côté du badge)
-        if (team.rankChange != RankChange.NONE) {
-            renderRankChangeArrow(graphics, rowX + 50, rowY + 20, team.rankChange);
-        }
+        renderRankBadge(graphics, rowX + 10, rowY + 5, rank); // Ajusté verticalement
 
         boolean isPlayerTeam = team.teamName.equalsIgnoreCase(playerTeam);
         boolean useGoldTitle = (rank == 1) && SPECIAL_TEAMS.contains(team.teamName.toLowerCase());
@@ -137,38 +131,21 @@ public class ScoreboardScreen extends Screen {
             graphics.drawString(this.font, "§7" + displayName, nameX, nameY + 14, 0xC0C0C0);
         }
 
-        // Points alignés à droite (avant le cœur)
         String pointsText = String.format("§6%d pts", team.points);
-        int pointsWidth = this.font.width(pointsText);
-        int pointsX = rowX + rowWidth - 70 - pointsWidth; // 70px pour laisser de la place au cœur
+        int pointsX = rowX + rowWidth - 80;
         graphics.drawString(this.font, pointsText, pointsX, rowY + 25, 0xFFD700);
 
         renderHeartIcon(graphics, rowX + rowWidth - 40, rowY + 20, team.coreAlive);
     }
 
-    private void renderRankChangeArrow(GuiGraphics graphics, int x, int y, RankChange change) {
-        ResourceLocation texture = (change == RankChange.UP) ? ARROW_UP : ARROW_DOWN;
-
-        try {
-            graphics.blit(texture, x, y, 0, 0, 16, 16, 16, 16);
-        } catch (Exception e) {
-            // Fallback : dessin manuel de flèche
-            if (change == RankChange.UP) {
-                graphics.drawString(this.font, "§a▲", x, y, 0x00FF00);
-            } else {
-                graphics.drawString(this.font, "§c▼", x, y, 0xFF0000);
-            }
-        }
-    }
-
     private void renderSpecialTitle(GuiGraphics graphics, int x, int y, String teamName, boolean isGold) {
         String suffix = isGold ? "_gold" : "_silver";
-        ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/team/" + teamName + suffix + ".png");
+        ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MODID, "textures/team/" + teamName + suffix + ".png");
 
         try {
             int textureWidth = 128;
             int textureHeight = 32;
-            float scale = 1.0f;
+            float scale = Math.min(1.0f, (TEAM_ROW_HEIGHT - 10f) / textureHeight);
             int scaledWidth = (int) (textureWidth * scale);
             int scaledHeight = (int) (textureHeight * scale);
             graphics.blit(texture, x, y, 0, 0, scaledWidth, scaledHeight, textureWidth, textureHeight);
@@ -179,30 +156,50 @@ public class ScoreboardScreen extends Screen {
     }
 
     private void renderRankBadge(GuiGraphics graphics, int x, int y, int rank) {
+        // Utiliser les textures pour les rangs I, II, III
         ResourceLocation texture = switch (rank) {
-            case 1 -> RANK_GOLD;
-            case 2 -> RANK_SILVER;
-            case 3 -> RANK_BRONZE;
+            case 1 -> ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank/rank_1.png");
+            case 2 -> ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank/rank_2.png");
+            case 3 -> ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank/rank_3.png");
             default -> null;
         };
 
-        if (texture != null) {
+        if (texture != null && rank <= 3) {
             try {
-                graphics.blit(texture, x, y, 0, 0, 32, 32, 32, 32);
+                // Dimensions des textures de badge (ajuste selon tes images)
+                int badgeWidth = 32;
+                int badgeHeight = 64;
+                graphics.blit(texture, x, y, 0, 0, badgeWidth, badgeHeight, badgeWidth, badgeHeight);
             } catch (Exception e) {
-                int color = switch (rank) {
-                    case 1 -> 0xFFFFD700;
-                    case 2 -> 0xFFC0C0C0;
-                    case 3 -> 0xFFCD7F32;
-                    default -> 0xFF808080;
-                };
-                graphics.fill(x, y, x + 32, y + 32, color);
-                graphics.drawCenteredString(this.font, "§l" + rank, x + 16, y + 11, 0x000000);
+                // Fallback : numéro de rang avec fond coloré
+                renderFallbackBadge(graphics, x, y, rank);
             }
         } else {
-            graphics.fill(x, y, x + 32, y + 32, 0xFF505050);
-            graphics.drawCenteredString(this.font, "§l" + rank, x + 16, y + 11, 0xFFFFFF);
+            // Pour les rangs 4+, afficher le numéro simplement
+            graphics.fill(x, y, x + 32, y + 64, 0xFF505050);
+            graphics.drawCenteredString(this.font, "§l" + rank, x + 16, y + 26, 0xFFFFFF);
         }
+    }
+
+    private void renderFallbackBadge(GuiGraphics graphics, int x, int y, int rank) {
+        int color = switch (rank) {
+            case 1 -> 0xFFFFD700;
+            case 2 -> 0xFFC0C0C0;
+            case 3 -> 0xFFCD7F32;
+            default -> 0xFF808080;
+        };
+
+        graphics.fill(x, y, x + 32, y + 64, color);
+
+        // Chiffre romain
+        String romanNumeral = switch (rank) {
+            case 1 -> "I";
+            case 2 -> "II";
+            case 3 -> "III";
+            default -> String.valueOf(rank);
+        };
+
+        graphics.drawCenteredString(this.font, "§l§0" + romanNumeral, x + 16, y + 26, 0x000000);
     }
 
     private void renderHeartIcon(GuiGraphics graphics, int x, int y, boolean alive) {
@@ -227,10 +224,6 @@ public class ScoreboardScreen extends Screen {
         return true;
     }
 
-    public enum RankChange {
-        UP, DOWN, NONE
-    }
-
-    public record TeamScore(String teamName, String uuid, int points, boolean coreAlive, RankChange rankChange) {
+    public record TeamScore(String teamName, String uuid, int points, boolean coreAlive, ScoreboardManager.RankChange rankChange) {
     }
 }

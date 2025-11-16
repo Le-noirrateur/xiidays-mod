@@ -21,6 +21,14 @@ import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
 public class ScoreboardPackets {
 
     /**
+     * Enum pour les changements de rang (compatible réseau)
+     * DOIT ÊTRE DÉCLARÉ EN PREMIER !
+     */
+    public enum RankChange {
+        UP, DOWN, NONE
+    }
+
+    /**
      * Packet client → serveur : Demande des données de classement
      */
     public record RequestScoreboardPayload() implements CustomPacketPayload {
@@ -108,11 +116,11 @@ public class ScoreboardPackets {
                 List<ScoreboardScreen.TeamScore> scores = new ArrayList<>();
 
                 for (TeamData data : payload.teams) {
-                    // Convertir l'enum pour le client
-                    ScoreboardScreen.RankChange clientChange = switch (data.change) {
-                        case UP -> ScoreboardScreen.RankChange.UP;
-                        case DOWN -> ScoreboardScreen.RankChange.DOWN;
-                        case NONE -> ScoreboardScreen.RankChange.NONE;
+                    // Convertir l'enum du packet vers ScoreboardManager.RankChange
+                    ScoreboardManager.RankChange clientChange = switch (data.change) {
+                        case UP -> ScoreboardManager.RankChange.UP;
+                        case DOWN -> ScoreboardManager.RankChange.DOWN;
+                        case NONE -> ScoreboardManager.RankChange.NONE;
                     };
 
                     scores.add(new ScoreboardScreen.TeamScore(
@@ -132,44 +140,31 @@ public class ScoreboardPackets {
     }
 
     /**
-     * Enum pour les changements de rang (compatible réseau)
-     */
-    public enum RankChange {
-        UP, DOWN, NONE
-    }
-
-    // Codec personnalisé pour RankChange
-    private static final StreamCodec<ByteBuf, RankChange> RANK_CHANGE_CODEC = new StreamCodec<>() {
-        @Override
-        public @NotNull RankChange decode(@NotNull ByteBuf buffer) {
-            int ordinal = buffer.readByte();
-            return RankChange.values()[ordinal];
-        }
-
-        @Override
-        public void encode(@NotNull ByteBuf buffer, RankChange value) {
-            buffer.writeByte(value.ordinal());
-        }
-    };
-
-    /**
      * Classe de données pour une équipe (serializable)
      */
     public record TeamData(String name, String uuid, int points, boolean coreAlive, RankChange change) {
 
-        public static final StreamCodec<ByteBuf, TeamData> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8,
-                TeamData::name,
-                ByteBufCodecs.STRING_UTF8,
-                TeamData::uuid,
-                ByteBufCodecs.INT,
-                TeamData::points,
-                ByteBufCodecs.BOOL,
-                TeamData::coreAlive,
-                RANK_CHANGE_CODEC,
-                TeamData::change,
-                TeamData::new
-        );
+        // Codec manuel pour TeamData (car StreamCodec.composite est limité à 6 paramètres)
+        public static final StreamCodec<ByteBuf, TeamData> STREAM_CODEC = new StreamCodec<>() {
+            @Override
+            public @NotNull TeamData decode(@NotNull ByteBuf buffer) {
+                String name = ByteBufCodecs.STRING_UTF8.decode(buffer);
+                String uuid = ByteBufCodecs.STRING_UTF8.decode(buffer);
+                int points = ByteBufCodecs.INT.decode(buffer);
+                boolean coreAlive = ByteBufCodecs.BOOL.decode(buffer);
+                RankChange change = RankChange.values()[buffer.readByte()];
 
+                return new TeamData(name, uuid, points, coreAlive, change);
+            }
+
+            @Override
+            public void encode(@NotNull ByteBuf buffer, @NotNull TeamData data) {
+                ByteBufCodecs.STRING_UTF8.encode(buffer, data.name);
+                ByteBufCodecs.STRING_UTF8.encode(buffer, data.uuid);
+                ByteBufCodecs.INT.encode(buffer, data.points);
+                ByteBufCodecs.BOOL.encode(buffer, data.coreAlive);
+                buffer.writeByte(data.change.ordinal());
+            }
+        };
     }
 }
