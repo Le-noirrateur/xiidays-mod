@@ -405,9 +405,6 @@ public class TeamManager {
             // Ou utiliser un command pour ouvrir
             player.sendSystemMessage(Component.literal("§6§l=== FIN DE PARTIE ==="));
             player.sendSystemMessage(Component.literal("§eÉquipe gagnante : §6§l" + winningTeam));
-
-            // TODO: Envoyer packet pour ouvrir EndScoreboardScreen côté client
-            // PacketDistributor.sendToPlayer(player, new OpenEndScreenPacket(winningTeam));
         }
     }
 

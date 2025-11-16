@@ -5,9 +5,8 @@ import com.mceteams.xiidays.blocks.BlockRegistry;
 import com.mceteams.xiidays.commands.CommandRegistry;
 import com.mceteams.xiidays.items.ItemRegistry;
 import com.mceteams.xiidays.menus.MenuRegistry;
-import com.mceteams.xiidays.network.ScoreboardPackets;
+import com.mceteams.xiidays.network.RequestScoreboardPacket;
 import com.mceteams.xiidays.utils.*;
-import com.mceteams.xiidays.utils.spectate.SpectatePackets;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -15,7 +14,6 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -89,33 +87,19 @@ public class XIIDaysManagerMod {
     }
 
     private void registerPackets(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1");
+        PayloadRegistrar registrar = event.registrar("1").optional();
 
-        // Packets serveur → serveur : OK partout
+        LOGGER.info("[XII Days - Mod]: Registering server-bound packets...");
+
+        // Client → Serveur : Demande d'ouverture du scoreboard
         registrar.playToServer(
-                SpectatePackets.SpectateSwitchPayload.TYPE,
-                SpectatePackets.SpectateSwitchPayload.CODEC,
-                SpectatePackets.SpectateSwitchPayload::handle
-        );
-        registrar.playToServer(
-                ScoreboardPackets.RequestScoreboardPayload.TYPE,
-                ScoreboardPackets.RequestScoreboardPayload.CODEC,
-                ScoreboardPackets.RequestScoreboardPayload::handle
+                RequestScoreboardPacket.TYPE,
+                RequestScoreboardPacket.CODEC,
+                RequestScoreboardPacket::handle
         );
 
-        // Packets serveur → client : uniquement côté client
-        if (FMLEnvironment.dist.isClient()) {
-            registrar.playToClient(
-                    ScoreboardPackets.ScoreboardDataPayload.TYPE,
-                    ScoreboardPackets.ScoreboardDataPayload.CODEC,
-                    ScoreboardPackets.ScoreboardDataPayload::handle
-            );
-        }
-
-        LOGGER.info("[XII Days - Mod]: Network packets registered");
+        LOGGER.info("[XII Days - Mod]: Server-bound packets registered (1 channel)");
     }
-
-
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {

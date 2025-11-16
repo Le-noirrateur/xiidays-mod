@@ -1,5 +1,7 @@
 package com.mceteams.xiidays.commands;
 
+import com.mceteams.xiidays.network.OpenScoreboardPacket;
+import com.mceteams.xiidays.network.PacketHandler;
 import com.mceteams.xiidays.utils.*;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -31,6 +33,31 @@ import static com.mceteams.xiidays.utils.DataManager.*;
 
 public class CommandRegistry {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+
+        // ################
+        // ## SCOREBOARD ##
+        // ################
+
+        dispatcher.register(Commands.literal("score")
+                .requires(CommandSourceStack::isPlayer)
+                .executes(context -> {
+                    ServerPlayer player = context.getSource().getPlayerOrException();
+
+                    // Récupérer les données du scoreboard
+                    ScoreboardManager.ScoreboardData data = ScoreboardManager.getScoreboardData(player);
+
+                    // Envoyer le paquet au client pour ouvrir l'écran
+                    PacketHandler.sendToClient(
+                            new OpenScoreboardPacket(data.teams(), data.playerTeam()),
+                            player
+                    );
+
+                    // Son de confirmation
+                    player.playNotifySound(SoundEvents.UI_TOAST_IN, SoundSource.MASTER, 1f, 2f);
+                    return 1;
+                })
+        );
+
 
         // #########
         // ## DAY ##

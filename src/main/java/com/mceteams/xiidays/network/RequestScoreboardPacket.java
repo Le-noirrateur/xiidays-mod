@@ -1,0 +1,52 @@
+package com.mceteams.xiidays.network;
+
+import com.mceteams.xiidays.utils.ScoreboardManager;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+
+import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+
+/**
+ * Paquet envoyé du CLIENT vers le SERVEUR
+ * Demande les données du scoreboard
+ * Ce paquet est vide (pas de données à transférer)
+ */
+public record RequestScoreboardPacket() implements CustomPacketPayload {
+
+    // Identifiant unique du paquet
+    public static final Type<RequestScoreboardPacket> TYPE =
+            new Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "request_scoreboard"));
+
+    // Codec pour encoder/décoder le paquet (vide car pas de données)
+    public static final StreamCodec<FriendlyByteBuf, RequestScoreboardPacket> CODEC =
+            StreamCodec.unit(new RequestScoreboardPacket());
+
+    @Override
+    public @NotNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    /**
+     * Gère la réception du paquet côté SERVEUR
+     */
+    public static void handle(RequestScoreboardPacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            // Vérifier que c'est bien un joueur
+            if (context.player() instanceof ServerPlayer player) {
+                // Récupérer les données du scoreboard
+                ScoreboardManager.ScoreboardData data = ScoreboardManager.getScoreboardData(player);
+
+                // Envoyer les données au client
+                PacketHandler.sendToClient(
+                        new OpenScoreboardPacket(data.teams(), data.playerTeam()),
+                        player
+                );
+            }
+        });
+    }
+}

@@ -2,7 +2,8 @@ package com.mceteams.xiidays;
 
 import com.mceteams.xiidays.blocks.BlockEntityRegistry;
 import com.mceteams.xiidays.blocks.BlockRegistry;
-import com.mceteams.xiidays.client.ClientEvents;
+import com.mceteams.xiidays.client.KeyBindings;
+import com.mceteams.xiidays.network.OpenScoreboardPacket;
 import com.mceteams.xiidays.render.TeamSpawnerRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -14,21 +15,19 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-@Mod(value = XIIDaysManagerMod.MODID, dist = Dist.CLIENT)
+import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+
+@Mod(value = MODID, dist = Dist.CLIENT)
 public class XIIDaysManagerModClient {
+
     public XIIDaysManagerModClient(ModContainer container, IEventBus modEventBus) {
-        container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-
-        // MOD BUS : événements de setup
         modEventBus.addListener(this::onClientSetup);
-        modEventBus.addListener(ClientEvents::registerKeys);
-
-        // FORGE BUS : événements runtime (ticks, etc.)
-        NeoForge.EVENT_BUS.addListener(ClientEvents::onClientTick);
+        modEventBus.addListener(this::registerClientPackets);
+        modEventBus.addListener(this::onRegisterKeyMappings);
     }
 
     @SubscribeEvent
@@ -44,11 +43,37 @@ public class XIIDaysManagerModClient {
         // Configuration des render layers
         event.enqueueWork(() -> {
             XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Configuring render layers");
-
-            // Team Spawner avec transparence
             ItemBlockRenderTypes.setRenderLayer(BlockRegistry.TEAM_SPAWNER.get(), RenderType.translucent());
-
             XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Render layers configured");
         });
+    }
+
+    /**
+     * Enregistre les packets SERVEUR → CLIENT
+     */
+    @SubscribeEvent
+    private void registerClientPackets(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar("1").optional();
+
+        XIIDaysManagerMod.LOGGER.info("[XII Days - Client]: Registering client-bound packets...");
+
+        // Serveur → Client : Données du scoreboard + ouverture de l'écran
+        registrar.playToClient(
+                OpenScoreboardPacket.TYPE,
+                OpenScoreboardPacket.CODEC,
+                OpenScoreboardPacket::handle
+        );
+
+        XIIDaysManagerMod.LOGGER.info("[XII Days - Client]: Client-bound packets registered (1 channel)");
+    }
+
+    /**
+     * Enregistre la touche U pour ouvrir le scoreboard
+     */
+    @SubscribeEvent
+    private void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+        XIIDaysManagerMod.LOGGER.info("[XII Days - Client]: Registering key bindings...");
+        event.register(KeyBindings.OPEN_SCOREBOARD);
+        XIIDaysManagerMod.LOGGER.info("[XII Days - Client]: Key bindings registered (1 key)");
     }
 }
