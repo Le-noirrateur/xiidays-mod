@@ -1,8 +1,7 @@
 package com.mceteams.xiidays.network;
 
 import com.mceteams.xiidays.client.ScoreboardScreen;
-import com.mceteams.xiidays.utils.DataManager;
-import com.mceteams.xiidays.utils.TeamManager;
+import com.mceteams.xiidays.utils.ScoreboardManager;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -15,7 +14,6 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
@@ -47,25 +45,38 @@ public class ScoreboardPackets {
         }
 
         private static void sendScoreboardData(ServerPlayer player) {
-            String playerTeam = TeamManager.getPlayerCurrentTeam(player.getUUID().toString());
+            String playerTeam = com.mceteams.xiidays.utils.TeamManager.getPlayerCurrentTeam(player.getUUID().toString());
             List<TeamData> teams = new ArrayList<>();
 
-            // Récupérer toutes les équipes
-            for (String teamName : TeamManager.getAllTeams()) {
-                int teamId = TeamManager.getTeamId(teamName);
-                if (teamId == 0) continue;
+            // Récupérer le classement avec les flèches depuis ScoreboardManager
+            List<ScoreboardManager.TeamRankingEntry> rankings = ScoreboardManager.getRankings();
 
-                int points = DataManager.dataReadInt("team_" + teamId + "_points", "total", 0);
-                boolean coreAlive = !DataManager.dataReadBoolean("team_" + teamId + "_config", "core_destroyed", false);
-                String uuid = "0" + teamId + "234567891"; // UUID fictif basé sur ID
+            for (ScoreboardManager.TeamRankingEntry entry : rankings) {
+                int teamId = entry.teamId();
+                boolean coreAlive = !com.mceteams.xiidays.utils.DataManager.dataReadBoolean(
+                        "team_" + teamId + "_config",
+                        "core_destroyed",
+                        false
+                );
 
-                teams.add(new TeamData(teamName, uuid, points, coreAlive));
+                String uuid = "0" + teamId + "234567891";
+
+                // Convertir l'enum pour le packet
+                RankChange change = switch (entry.change()) {
+                    case UP -> RankChange.UP;
+                    case DOWN -> RankChange.DOWN;
+                    case NONE -> RankChange.NONE;
+                };
+
+                teams.add(new TeamData(
+                        entry.teamName(),
+                        uuid,
+                        entry.points(),
+                        coreAlive,
+                        change
+                ));
             }
 
-            // Trier par points décroissants
-            teams.sort(Comparator.comparingInt(t -> -t.points));
-
-            // Envoyer au client
             PacketDistributor.sendToPlayer(player,
                     new ScoreboardDataPayload(teams, playerTeam != null ? playerTeam : ""));
         }
@@ -97,11 +108,19 @@ public class ScoreboardPackets {
                 List<ScoreboardScreen.TeamScore> scores = new ArrayList<>();
 
                 for (TeamData data : payload.teams) {
+                    // Convertir l'enum pour le client
+                    ScoreboardScreen.RankChange clientChange = switch (data.change) {
+                        case UP -> ScoreboardScreen.RankChange.UP;
+                        case DOWN -> ScoreboardScreen.RankChange.DOWN;
+                        case NONE -> ScoreboardScreen.RankChange.NONE;
+                    };
+
                     scores.add(new ScoreboardScreen.TeamScore(
                             data.name,
                             data.uuid,
                             data.points,
-                            data.coreAlive
+                            data.coreAlive,
+                            clientChange
                     ));
                 }
 
@@ -113,9 +132,30 @@ public class ScoreboardPackets {
     }
 
     /**
+     * Enum pour les changements de rang (compatible réseau)
+     */
+    public enum RankChange {
+        UP, DOWN, NONE
+    }
+
+    // Codec personnalisé pour RankChange
+    private static final StreamCodec<ByteBuf, RankChange> RANK_CHANGE_CODEC = new StreamCodec<>() {
+        @Override
+        public @NotNull RankChange decode(@NotNull ByteBuf buffer) {
+            int ordinal = buffer.readByte();
+            return RankChange.values()[ordinal];
+        }
+
+        @Override
+        public void encode(@NotNull ByteBuf buffer, RankChange value) {
+            buffer.writeByte(value.ordinal());
+        }
+    };
+
+    /**
      * Classe de données pour une équipe (serializable)
      */
-    public record TeamData(String name, String uuid, int points, boolean coreAlive) {
+    public record TeamData(String name, String uuid, int points, boolean coreAlive, RankChange change) {
 
         public static final StreamCodec<ByteBuf, TeamData> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8,
@@ -126,7 +166,10 @@ public class ScoreboardPackets {
                 TeamData::points,
                 ByteBufCodecs.BOOL,
                 TeamData::coreAlive,
+                RANK_CHANGE_CODEC,
+                TeamData::change,
                 TeamData::new
         );
+
     }
 }

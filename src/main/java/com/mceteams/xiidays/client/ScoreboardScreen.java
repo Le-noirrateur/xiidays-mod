@@ -1,47 +1,64 @@
 package com.mceteams.xiidays.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Set;
 
 import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
 
 public class ScoreboardScreen extends Screen {
 
-    // Textures
-    private static final ResourceLocation RANK_GOLD =
-            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank_gold.png");
-    private static final ResourceLocation RANK_SILVER =
-            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank_silver.png");
-    private static final ResourceLocation RANK_BRONZE =
-            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank_bronze.png");
-    private static final ResourceLocation TEAM_ROW_BG =
-            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/team_row.png");
-    private static final ResourceLocation PROGRESS_BAR_BG =
-            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/progress_bg.png");
-    private static final ResourceLocation HEART_ALIVE =
-            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/heart_alive.png");
-    private static final ResourceLocation HEART_DEAD =
-            ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/heart_dead.png");
+    private static final ResourceLocation RANK_GOLD = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank_gold.png");
+    private static final ResourceLocation RANK_SILVER = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank_silver.png");
+    private static final ResourceLocation RANK_BRONZE = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/rank_bronze.png");
+    private static final ResourceLocation TEAM_ROW_BG = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/team_row.png");
+    private static final ResourceLocation HEART_ALIVE = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/heart_alive.png");
+    private static final ResourceLocation HEART_DEAD = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/heart_dead.png");
+    private static final ResourceLocation ARROW_UP = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/arrow_up.png");
+    private static final ResourceLocation ARROW_DOWN = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/arrow_down.png");
+
+    private static final Set<String> SPECIAL_TEAMS = Set.of("jaune", "vert", "rouge", "bleu");
 
     private final List<TeamScore> teams;
     private final String playerTeam;
 
-    // Dimensions
     private static final int PANEL_WIDTH = 580;
-    private static final int PANEL_HEIGHT = 340;
-    private static final int TEAM_ROW_HEIGHT = 55;
-    private static final int TEAM_ROW_SPACING = 3;
+    private static final int PANEL_HEIGHT = 400;
+    private static final int TEAM_ROW_HEIGHT = 65;
+    private static final int TEAM_ROW_SPACING = 5;
+    private static final int MAX_VISIBLE_ROWS = 5;
+    private static final int CONTENT_START_Y = 60;
+
+    private float scrollOffset = 0;
+    private float maxScroll = 0;
 
     public ScoreboardScreen(List<TeamScore> teams, String playerTeam) {
         super(Component.literal("Classement"));
         this.teams = teams;
         this.playerTeam = playerTeam;
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        int totalHeight = teams.size() * (TEAM_ROW_HEIGHT + TEAM_ROW_SPACING);
+        int visibleHeight = MAX_VISIBLE_ROWS * (TEAM_ROW_HEIGHT + TEAM_ROW_SPACING);
+        maxScroll = Math.max(0, totalHeight - visibleHeight);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (maxScroll > 0) {
+            scrollOffset = Mth.clamp(scrollOffset - (float) scrollY * 30, 0, maxScroll);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -53,81 +70,112 @@ public class ScoreboardScreen extends Screen {
         int panelX = centerX - PANEL_WIDTH / 2;
         int panelY = centerY - PANEL_HEIGHT / 2;
 
-        // Fond semi-transparent
         graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, 0xE0D0D0D0);
+        graphics.drawCenteredString(this.font, "§6§lCLASSEMENT", centerX, panelY + 20, 0xFFFFFF);
 
-        // Note : Le titre "CLASSEMENT" sera dans le fond d'écran
+        int contentY = panelY + CONTENT_START_Y;
+        int contentHeight = MAX_VISIBLE_ROWS * (TEAM_ROW_HEIGHT + TEAM_ROW_SPACING);
 
-        // Lignes d'équipes
-        int yOffset = panelY + 50;
+        graphics.enableScissor(panelX + 10, contentY, panelX + PANEL_WIDTH - 10, contentY + contentHeight);
+
+        int yOffset = contentY - (int) scrollOffset;
         for (int i = 0; i < teams.size(); i++) {
             TeamScore team = teams.get(i);
-
-            if (playerTeam != null && !playerTeam.isEmpty() && !team.teamName.equals(playerTeam)) {
-                continue;
+            if (yOffset + TEAM_ROW_HEIGHT >= contentY && yOffset <= contentY + contentHeight) {
+                renderTeamRow(graphics, panelX, yOffset, team, i + 1);
             }
-
-            renderTeamRow(graphics, panelX, yOffset, team, i + 1);
             yOffset += TEAM_ROW_HEIGHT + TEAM_ROW_SPACING;
+        }
+
+        graphics.disableScissor();
+
+        if (maxScroll > 0) {
+            renderScrollbar(graphics, panelX + PANEL_WIDTH - 15, contentY, contentHeight);
         }
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    private void renderTeamRow(GuiGraphics graphics, int x, int rowY, TeamScore team, int rank) {
-        int rowX = x + 15;
-        int rowWidth = PANEL_WIDTH - 30;
+    private void renderScrollbar(GuiGraphics graphics, int x, int y, int height) {
+        graphics.fill(x, y, x + 6, y + height, 0x80000000);
+        float scrollPercent = scrollOffset / maxScroll;
+        int barHeight = Math.max(20, (height / (teams.size() * (TEAM_ROW_HEIGHT + TEAM_ROW_SPACING))) * height);
+        int barY = y + (int) (scrollPercent * (height - barHeight));
+        graphics.fill(x, barY, x + 6, barY + barHeight, 0xFFC0C0C0);
+    }
 
-        // Fond de ligne (texture ou fallback)
+    private void renderTeamRow(GuiGraphics graphics, int x, int rowY, TeamScore team, int rank) {
+        int rowX = x + 20;
+        int rowWidth = PANEL_WIDTH - 40;
+
         try {
-            RenderSystem.setShaderTexture(0, TEAM_ROW_BG);
-            RenderSystem.enableBlend();
             graphics.blit(TEAM_ROW_BG, rowX, rowY, 0, 0, rowWidth, TEAM_ROW_HEIGHT, rowWidth, TEAM_ROW_HEIGHT);
-            RenderSystem.disableBlend();
         } catch (Exception e) {
-            // Fallback : fond gris foncé avec bordure
-            graphics.fill(rowX, rowY, rowX + rowWidth, rowY + TEAM_ROW_HEIGHT, 0xFF3A3A3A);
-            graphics.fill(rowX, rowY, rowX + rowWidth, rowY + 2, 0xFF5A5A5A); // bordure haut
-            graphics.fill(rowX, rowY + TEAM_ROW_HEIGHT - 2, rowX + rowWidth, rowY + TEAM_ROW_HEIGHT, 0xFF2A2A2A); // bordure basse
+            graphics.fill(rowX, rowY, rowX + rowWidth, rowY + TEAM_ROW_HEIGHT, 0xFF505050);
         }
 
-        // Badge de rang (à gauche)
-        renderRankBadge(graphics, rowX + 10, rowY + 12, rank);
+        renderRankBadge(graphics, rowX + 10, rowY + 16, rank);
 
-        // Texte "EQUIPE" et UUID avec police custom
-        int textY = rowY + (TEAM_ROW_HEIGHT / 2) - 8;
+        // Flèches de changement de rang (à côté du badge)
+        if (team.rankChange != RankChange.NONE) {
+            renderRankChangeArrow(graphics, rowX + 50, rowY + 20, team.rankChange);
+        }
 
-        String displayName = shouldShowTeam(team.teamName) ? team.teamName : formatUUID(team.uuid);
+        boolean isPlayerTeam = team.teamName.equalsIgnoreCase(playerTeam);
+        boolean useGoldTitle = (rank == 1) && SPECIAL_TEAMS.contains(team.teamName.toLowerCase());
 
-        // "EQUIPE" en orange
-        FontTextureRenderer.drawGoldText(graphics, "EQUIPE", rowX + 60, textY, 1.0f);
+        int nameX = rowX + 70;
+        int nameY = rowY + 18;
 
-        // UUID/Nom en gris
-        FontTextureRenderer.drawGrayText(graphics, displayName, rowX + 160, textY, 1.0f);
+        if (isPlayerTeam && useGoldTitle) {
+            renderSpecialTitle(graphics, nameX, nameY, team.teamName.toLowerCase(), true);
+        } else if (isPlayerTeam && SPECIAL_TEAMS.contains(team.teamName.toLowerCase())) {
+            renderSpecialTitle(graphics, nameX, nameY, team.teamName.toLowerCase(), false);
+        } else {
+            String displayName = isPlayerTeam ? team.teamName.toUpperCase() : "§kXXXXXXXX";
+            graphics.drawString(this.font, "§f§lEQUIPE", nameX, nameY, 0xFFFFFF);
+            graphics.drawString(this.font, "§7" + displayName, nameX, nameY + 14, 0xC0C0C0);
+        }
 
-        // Points affichés avec police custom
-        String pointsText = String.format("%d", team.points);
-        int pointsX = rowX + rowWidth - 150;
+        // Points alignés à droite (avant le cœur)
+        String pointsText = String.format("§6%d pts", team.points);
+        int pointsWidth = this.font.width(pointsText);
+        int pointsX = rowX + rowWidth - 70 - pointsWidth; // 70px pour laisser de la place au cœur
+        graphics.drawString(this.font, pointsText, pointsX, rowY + 25, 0xFFD700);
 
-        FontTextureRenderer.drawGoldText(graphics, pointsText, pointsX, textY, 1.0f);
-
-        // Cœur (tout à droite)
-        renderHeartIcon(graphics, rowX + rowWidth - 35, rowY + 15, team.coreAlive);
+        renderHeartIcon(graphics, rowX + rowWidth - 40, rowY + 20, team.coreAlive);
     }
 
-    /**
-     * Vérifie si on doit afficher le vrai nom de l'équipe
-     * @return true si c'est l'équipe du joueur, false sinon (à offusquer)
-     */
-    private boolean shouldShowTeam(String teamName) {
-        if (playerTeam == null || playerTeam.isEmpty()) return false; // Aucune équipe = tout offusqué
-        return teamName.equals(playerTeam); // true si c'est l'équipe du joueur
+    private void renderRankChangeArrow(GuiGraphics graphics, int x, int y, RankChange change) {
+        ResourceLocation texture = (change == RankChange.UP) ? ARROW_UP : ARROW_DOWN;
+
+        try {
+            graphics.blit(texture, x, y, 0, 0, 16, 16, 16, 16);
+        } catch (Exception e) {
+            // Fallback : dessin manuel de flèche
+            if (change == RankChange.UP) {
+                graphics.drawString(this.font, "§a▲", x, y, 0x00FF00);
+            } else {
+                graphics.drawString(this.font, "§c▼", x, y, 0xFF0000);
+            }
+        }
     }
 
-    // Formate l'UUID en format court (8 premiers caractères)
-    private String formatUUID(String uuid) {
-        if (uuid == null || uuid.length() < 8) return "INCONNU";
-        return uuid.substring(0, 8).toUpperCase();
+    private void renderSpecialTitle(GuiGraphics graphics, int x, int y, String teamName, boolean isGold) {
+        String suffix = isGold ? "_gold" : "_silver";
+        ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/team/" + teamName + suffix + ".png");
+
+        try {
+            int textureWidth = 128;
+            int textureHeight = 32;
+            float scale = 1.0f;
+            int scaledWidth = (int) (textureWidth * scale);
+            int scaledHeight = (int) (textureHeight * scale);
+            graphics.blit(texture, x, y, 0, 0, scaledWidth, scaledHeight, textureWidth, textureHeight);
+        } catch (Exception e) {
+            String color = isGold ? "§6§l" : "§7§l";
+            graphics.drawString(this.font, color + teamName.toUpperCase(), x, y, isGold ? 0xFFD700 : 0xC0C0C0);
+        }
     }
 
     private void renderRankBadge(GuiGraphics graphics, int x, int y, int rank) {
@@ -140,122 +188,32 @@ public class ScoreboardScreen extends Screen {
 
         if (texture != null) {
             try {
-                RenderSystem.setShaderTexture(0, texture);
-                RenderSystem.enableBlend();
-                // Taille 32x32 pour le badge
                 graphics.blit(texture, x, y, 0, 0, 32, 32, 32, 32);
-                RenderSystem.disableBlend();
             } catch (Exception e) {
-                // Fallback : carré coloré avec numéro
-                renderFallbackBadge(graphics, x, y, rank);
+                int color = switch (rank) {
+                    case 1 -> 0xFFFFD700;
+                    case 2 -> 0xFFC0C0C0;
+                    case 3 -> 0xFFCD7F32;
+                    default -> 0xFF808080;
+                };
+                graphics.fill(x, y, x + 32, y + 32, color);
+                graphics.drawCenteredString(this.font, "§l" + rank, x + 16, y + 11, 0x000000);
             }
         } else {
-            // Rang > 3 : badge gris simple
-            renderFallbackBadge(graphics, x, y, rank);
+            graphics.fill(x, y, x + 32, y + 32, 0xFF505050);
+            graphics.drawCenteredString(this.font, "§l" + rank, x + 16, y + 11, 0xFFFFFF);
         }
-    }
-
-    private void renderFallbackBadge(GuiGraphics graphics, int x, int y, int rank) {
-        // Couleurs selon le rang
-        int bgColor = switch (rank) {
-            case 1 -> 0xFFFFD700; // Or
-            case 2 -> 0xFFC0C0C0; // Argent
-            case 3 -> 0xFFCD7F32; // Bronze
-            default -> 0xFF4A4A4A; // Gris foncé
-        };
-
-        // Fond du badge
-        graphics.fill(x, y, x + 32, y + 32, bgColor);
-
-        // Bordure plus foncée
-        int borderColor = (bgColor & 0xFEFEFE) >> 1; // Assombrir
-        graphics.fill(x, y, x + 32, y + 1, borderColor); // haut
-        graphics.fill(x, y, x + 1, y + 32, borderColor); // gauche
-        graphics.fill(x + 31, y, x + 32, y + 32, borderColor); // droite
-        graphics.fill(x, y + 31, x + 32, y + 32, borderColor); // bas
-
-        // Numéro centré
-        String rankText = String.valueOf(rank);
-        int textX = x + 16 - (this.font.width(rankText) / 2);
-        int textY = y + 12;
-
-        // Ombre du texte
-        graphics.drawString(this.font, rankText, textX + 1, textY + 1, 0xFF000000);
-        // Texte principal
-        graphics.drawString(this.font, "§l" + rankText, textX, textY, 0xFFFFFFFF);
-    }
-
-    private void renderProgressBar(GuiGraphics graphics, int x, int y, int points) {
-        int barWidth = 200;
-        int barHeight = 20;
-
-        // Fond de la barre (texture ou fallback)
-        try {
-            RenderSystem.setShaderTexture(0, PROGRESS_BAR_BG);
-            RenderSystem.enableBlend();
-            graphics.blit(PROGRESS_BAR_BG, x, y, 0, 0, barWidth, barHeight, barWidth, barHeight);
-            RenderSystem.disableBlend();
-        } catch (Exception e) {
-            // Fallback : fond gris avec bordure
-            graphics.fill(x, y, x + barWidth, y + barHeight, 0xFF2A2A2A);
-            graphics.fill(x, y, x + barWidth, y + 1, 0xFF4A4A4A); // bordure haut
-            graphics.fill(x, y + barHeight - 1, x + barWidth, y + barHeight, 0xFF1A1A1A); // bordure basse
-        }
-
-        // Remplissage orange/jaune (proportionnel aux points, max = 10000)
-        int maxPoints = 10000;
-        int fillWidth = Math.min((int) ((points / (double) maxPoints) * (barWidth - 4)), barWidth - 4);
-
-        // Dégradé orange → jaune
-        int orangeColor = 0xFFFF8C00;
-        graphics.fill(x + 2, y + 2, x + 2 + fillWidth, y + barHeight - 2, orangeColor);
-
-        // Marqueur rouge vertical à 50%
-        int markerX = x + (barWidth / 2);
-        graphics.fill(markerX - 1, y, markerX + 1, y + barHeight, 0xFFDC143C); // Rouge crimson
-
-        // Texte des points (centré dans la barre)
-        String pointsText = String.format("%d", points);
-        int textX = x + (barWidth / 2) - (this.font.width(pointsText) / 2);
-        int textY = y + (barHeight / 2) - 4;
-
-        // Ombre du texte
-        graphics.drawString(this.font, pointsText, textX + 1, textY + 1, 0xFF000000);
-        // Texte principal
-        graphics.drawString(this.font, "§f§l" + pointsText, textX, textY, 0xFFFFFFFF);
     }
 
     private void renderHeartIcon(GuiGraphics graphics, int x, int y, boolean alive) {
         ResourceLocation texture = alive ? HEART_ALIVE : HEART_DEAD;
-
         try {
-            RenderSystem.setShaderTexture(0, texture);
-            RenderSystem.enableBlend();
-            // Taille 24x24 pour le cœur
             graphics.blit(texture, x, y, 0, 0, 24, 24, 24, 24);
-            RenderSystem.disableBlend();
         } catch (Exception e) {
-            // Fallback : cœur pixelisé
-            int heartColor = alive ? 0xFF00FF00 : 0xFFFF0000; // Vert ou rouge
-
-            // Forme de cœur en pixels (8-bit style)
-            // Haut du cœur (2 bosses)
-            graphics.fill(x + 6, y + 2, x + 10, y + 6, heartColor);
-            graphics.fill(x + 14, y + 2, x + 18, y + 6, heartColor);
-
-            // Centre large
-            graphics.fill(x + 2, y + 6, x + 22, y + 14, heartColor);
-
-            // Bas pointu
-            graphics.fill(x + 4, y + 14, x + 20, y + 18, heartColor);
-            graphics.fill(x + 6, y + 18, x + 18, y + 20, heartColor);
-            graphics.fill(x + 8, y + 20, x + 16, y + 22, heartColor);
-            graphics.fill(x + 10, y + 22, x + 14, y + 24, heartColor);
-
-            // Reflet blanc (effet brillant)
-            if (alive) {
-                graphics.fill(x + 8, y + 6, x + 10, y + 8, 0xFFFFFFFF);
-            }
+            int color = alive ? 0xFF00FF00 : 0xFFFF0000;
+            graphics.fill(x + 5, y, x + 19, y + 10, color);
+            graphics.fill(x, y + 3, x + 24, y + 13, color);
+            graphics.fill(x + 3, y + 10, x + 21, y + 17, color);
         }
     }
 
@@ -269,6 +227,10 @@ public class ScoreboardScreen extends Screen {
         return true;
     }
 
-    public record TeamScore(String teamName, String uuid, int points, boolean coreAlive) {
+    public enum RankChange {
+        UP, DOWN, NONE
+    }
+
+    public record TeamScore(String teamName, String uuid, int points, boolean coreAlive, RankChange rankChange) {
     }
 }

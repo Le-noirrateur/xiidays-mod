@@ -85,7 +85,6 @@ public class XIIDaysManagerMod {
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
-
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         LOGGER.info("[XII Days - Mod]: The server is ready, let's play some XII Days!");

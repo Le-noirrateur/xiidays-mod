@@ -58,6 +58,7 @@ public class ScoreboardManager {
                 .collect(Collectors.toList());
     }
 
+
     // Enum pour les changements
     public enum RankChange {
         UP, DOWN, NONE

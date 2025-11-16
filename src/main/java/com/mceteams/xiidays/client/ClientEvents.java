@@ -27,7 +27,7 @@ public class ClientEvents {
                 "key." + MODID + ".open_scoreboard",
                 KeyConflictContext.IN_GAME,
                 InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_TAB,
+                GLFW.GLFW_KEY_U,
                 CATEGORY
         );
 

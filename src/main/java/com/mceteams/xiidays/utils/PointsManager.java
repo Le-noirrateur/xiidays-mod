@@ -19,7 +19,7 @@ public class PointsManager {
 
     public static void addPoints(int teamId, PointType type, Player player, Object... args) {
         int oldPoints = dataReadInt("team_" + teamId + "_points", "total", 0);
-        int newPoints = 0;
+        int newPoints;
         int playerPoints = dataReadInt("player_" + player.getUUID() + "_stats", "team_points", 0);
         int pointsAdded = 0;
 
@@ -83,7 +83,7 @@ public class PointsManager {
         if (player instanceof ServerPlayer srvp) {
             String addedStr = pointsAdded >= 0 ? "§r§2§l+" + pointsAdded : String.valueOf(pointsAdded);
             srvp.sendSystemMessage(Component.literal("Vous avez ajouté §4§l" + addedStr + "§r à votre équipe (§6§l" + type +"§r)"));
-            TeamManager.sendMessageToTeam(teamId, Component.literal(player.getName() + " à ajouté §4§l" + addedStr + "§r à votre équipe (§6§l" + type + "§r)"), player.getUUID());
+            TeamManager.sendMessageToTeam(teamId, Component.literal(player.getName().getString() + " à ajouté §4§l" + addedStr + "§r à votre équipe (§6§l" + type + "§r)"), player.getUUID());
         }
         NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, oldPoints, newPoints)); // Trigger event for points change
     }

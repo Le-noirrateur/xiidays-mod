@@ -235,7 +235,7 @@ public class TeamManager {
     }
 
     /**
-     * Envoie un message à tous une équipe
+     * Envoie un message à toute une équipe
      * @param teamName Nom de l'équipe
      * @param message String du message
      */
@@ -264,7 +264,7 @@ public class TeamManager {
     }
 
     /**
-     * Envoie un message à tous une équipe
+     * Envoie un message à toute une équipe
      * @param teamId Nom de l'équipe
      * @param message String du message
      * @param exclude Player
@@ -283,11 +283,12 @@ public class TeamManager {
             try {
                 UUID uuid = UUID.fromString(uuidStr);
                 ServerPlayer player = server.getPlayerList().getPlayer(uuid);
-                if (uuid == exclude) continue;
 
-                if (player != null) {
-                    player.sendSystemMessage(message);
-                }
+                if (uuid.equals(exclude)) continue;
+                assert player != null;
+
+                player.sendSystemMessage(message);
+
             } catch (IllegalArgumentException e) {
                 // UUID invalide, on skip
             }
@@ -471,7 +472,7 @@ public class TeamManager {
     }
 
     /**
-     * Créer une équpe avec le nom demandé.
+     * Créer une équipe avec le nom demandé.
      * @param teamName nom d'une équipe
      * @return retourne 1 si tout a fonctionné.
      */
