@@ -51,6 +51,9 @@ public class ScoreboardScreen extends Screen {
         }
     }
 
+    @Override
+    protected void renderBlurredBackground(float partialTick) {
+    }
 
     public ScoreboardScreen(List<TeamScore> teams, String playerTeam) {
         super(Component.literal("Classement"));
@@ -77,7 +80,7 @@ public class ScoreboardScreen extends Screen {
 
     @Override
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        graphics.fill(0, 0, this.width, this.height, 0xC0101010); // Fond noir semi-transparent
 
         int centerX = this.width / 2;
         int centerY = this.height / 2;
@@ -85,15 +88,12 @@ public class ScoreboardScreen extends Screen {
         int panelY = centerY - PANEL_HEIGHT / 2;
 
         if (customBackground != null) {
-            // Dessiner l'image en fond du panneau
             try {
                 graphics.blit(customBackground, panelX, panelY, 0, 0, PANEL_WIDTH, PANEL_HEIGHT, PANEL_WIDTH, PANEL_HEIGHT);
             } catch (Exception e) {
-                // fallback au gris
                 graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, 0xFFD0D0D0);
             }
         } else {
-            // fond gris par défaut
             graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, 0xFFD0D0D0);
         }
 

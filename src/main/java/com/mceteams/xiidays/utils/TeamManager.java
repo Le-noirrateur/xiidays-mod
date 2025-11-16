@@ -483,6 +483,10 @@ public class TeamManager {
             dataAdd("team_" + newTeamId + "_points");
             dataAdd("team_" + newTeamId + "_stats");
 
+            // Générer un UUID unique pour l'équipe
+            String teamUUID = UUID.randomUUID().toString();
+            dataModify("team_" + newTeamId + "_config", "uuid", teamUUID);
+
             dataModify("team_" + newTeamId + "_config", "core_destroyed", false);
             dataModify("team_" + newTeamId + "_config", "team_eliminated", false);
 
@@ -491,6 +495,7 @@ public class TeamManager {
             // Rafraîchir le leaderboard
             PointsManager.refreshTeamPoints();
 
+            LOGGER.info("Created team {} (ID: {}) with UUID: {}", teamName, newTeamId, teamUUID);
             return 1; // Créé
         } else {
             return 2; // Nom de teams existe déjà

@@ -11,26 +11,27 @@ import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
 
 /**
  * Gestionnaire central des paquets réseau
- * Enregistre tous les paquets utilisés par le mod
+ * UNIQUE POINT D'ENREGISTREMENT DES PAQUETS
  */
-@EventBusSubscriber(modid = MODID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = MODID)
 public class PacketHandler {
 
     /**
-     * Enregistre tous les paquets du mod
+     * Enregistre TOUS les paquets (client ET serveur)
+     * Cette méthode s'exécute UNE SEULE FOIS sur CLIENT et SERVEUR
      */
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1.0.0");
 
-        // Client -> Serveur : Demande d'ouverture du scoreboard
+        // Client -> Serveur
         registrar.playToServer(
                 RequestScoreboardPacket.TYPE,
                 RequestScoreboardPacket.CODEC,
                 RequestScoreboardPacket::handle
         );
 
-        // Serveur -> Client : Données du scoreboard
+        // Serveur -> Client
         registrar.playToClient(
                 OpenScoreboardPacket.TYPE,
                 OpenScoreboardPacket.CODEC,
@@ -38,16 +39,10 @@ public class PacketHandler {
         );
     }
 
-    /**
-     * Envoie un paquet au serveur (depuis le client)
-     */
     public static void sendToServer(RequestScoreboardPacket packet) {
         PacketDistributor.sendToServer(packet);
     }
 
-    /**
-     * Envoie un paquet à un joueur spécifique (depuis le serveur)
-     */
     public static void sendToClient(OpenScoreboardPacket packet, ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, packet);
     }

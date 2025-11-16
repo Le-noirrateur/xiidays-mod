@@ -58,7 +58,7 @@ public class XIIDaysManagerMod {
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
 
         LOGGER.info("[XII Days - Mod]: Registering network packets...");
-        modEventBus.addListener(this::registerPackets);
+//        modEventBus.addListener(this::registerPackets);
 
         LOGGER.info("[XII Days - Mod]: DONE, Mod components registration complete.");
     }

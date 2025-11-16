@@ -9,6 +9,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
 import static com.mceteams.xiidays.utils.TeamManager.getTeamName;
 
 @EventBusSubscriber(modid = "xiidays")
@@ -129,7 +130,16 @@ public class ScoreboardManager {
 
             // Récupérer les données depuis DataManager
             String uuid = DataManager.dataRead("team_" + teamId + "_config", "uuid");
-            int points = DataManager.dataReadInt("team_" + teamId + "_scores", "total_points", 0);
+
+            // Vérification pour éviter les null
+            if (uuid == null || uuid.isEmpty()) {
+                // Générer un UUID si inexistant
+                uuid = UUID.randomUUID().toString();
+                DataManager.dataModify("team_" + teamId + "_config", "uuid", uuid);
+                LOGGER.warn("Team {} had no UUID, generated new one: {}", teamName, uuid);
+            }
+
+            int points = DataManager.dataReadInt("team_" + teamId + "_points", "total", 0);
             boolean coreAlive = !DataManager.dataReadBoolean("team_" + teamId + "_config", "team_eliminated", false);
 
             // Ajouter l'équipe à la liste

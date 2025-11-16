@@ -26,7 +26,7 @@ public class XIIDaysManagerModClient {
 
     public XIIDaysManagerModClient(ModContainer container, IEventBus modEventBus) {
         modEventBus.addListener(this::onClientSetup);
-        modEventBus.addListener(this::registerClientPackets);
+//        modEventBus.addListener(this::registerClientPackets);
         modEventBus.addListener(this::onRegisterKeyMappings);
     }
 
