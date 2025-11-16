@@ -15,6 +15,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -33,14 +34,7 @@ public class XIIDaysManagerMod {
 
     public XIIDaysManagerMod(IEventBus modEventBus, ModContainer modContainer) {
 
-        LOGGER.info(  "\n╔═══════════════════════════════════════════════╗\n"+
-                        "║                                               ║\n"+
-                        "║   Welcome to XII Days - Mod                   ║\n"+
-                        "║   Developing by FSS, MCE - fss.mceteams.com   ║\n"+
-                        "║                                               ║\n"+
-                        "║   Version " + modContainer.getModInfo().getVersion() + "                              ║\n"+
-                        "║                                               ║\n"+
-                        "╚═══════════════════════════════════════════════╝");
+        LOGGER.info("\n╔═══════════════════════════════════════════════╗\n║                                               ║\n║   Welcome to XII Days - Mod                   ║\n║   Developing by FSS, MCE - fss.mceteams.com   ║\n║                                               ║\n║   Version {}                              ║\n║                                               ║\n╚═══════════════════════════════════════════════╝", modContainer.getModInfo().getVersion());
 
         LOGGER.info("[XII Days - Mod]: Registering mod components...");
         modEventBus.addListener(this::commonSetup);
@@ -75,7 +69,7 @@ public class XIIDaysManagerMod {
         // Some common setup code
         LOGGER.info("[XII Days - Mod]: Common setup beginning...");
 
-        LOGGER.info("[XII Days - Mod]: Initializing default cinematics...");
+        LOGGER.info("[XII Days - Mod]: Initializing default cinematic...");
 
         LOGGER.info("[XII Days - Mod]: Common setup complete.");
     }
@@ -97,26 +91,31 @@ public class XIIDaysManagerMod {
     private void registerPackets(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
 
+        // Packets serveur → serveur : OK partout
         registrar.playToServer(
                 SpectatePackets.SpectateSwitchPayload.TYPE,
                 SpectatePackets.SpectateSwitchPayload.CODEC,
                 SpectatePackets.SpectateSwitchPayload::handle
         );
-
         registrar.playToServer(
                 ScoreboardPackets.RequestScoreboardPayload.TYPE,
                 ScoreboardPackets.RequestScoreboardPayload.CODEC,
                 ScoreboardPackets.RequestScoreboardPayload::handle
         );
 
-        registrar.playToClient(
-                ScoreboardPackets.ScoreboardDataPayload.TYPE,
-                ScoreboardPackets.ScoreboardDataPayload.CODEC,
-                ScoreboardPackets.ScoreboardDataPayload::handle
-        );
+        // Packets serveur → client : uniquement côté client
+        if (FMLEnvironment.dist.isClient()) {
+            registrar.playToClient(
+                    ScoreboardPackets.ScoreboardDataPayload.TYPE,
+                    ScoreboardPackets.ScoreboardDataPayload.CODEC,
+                    ScoreboardPackets.ScoreboardDataPayload::handle
+            );
+        }
 
         LOGGER.info("[XII Days - Mod]: Network packets registered");
     }
+
+
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
