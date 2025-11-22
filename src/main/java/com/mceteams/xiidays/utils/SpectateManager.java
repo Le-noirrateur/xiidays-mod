@@ -158,11 +158,10 @@ public class SpectateManager {
             });
         } else {
             // Phase combat : spec jusqu'au totem
-            player.sendSystemMessage(Component.literal(
-                    "§c§lVous êtes mort pendant la phase de combat !\n" +
-                            "§7Votre équipe doit utiliser un §6Totem de Revivalité§7 pour vous faire respawn.\n" +
-                            "§7Utilisez §e[Shift]§7 pour changer de coéquipier."
-            ));
+            String message = "§c§lVous êtes mort pendant la phase de combat !\n" +
+                    "§7Votre équipe doit utiliser un §6Totem de Revivalité§7 pour vous faire respawn.\n" +
+                    "§7Utilisez §e[Shift]§7 pour changer de coéquipier.";
+            player.sendSystemMessage(Component.literal(message));
         }
     }
 
