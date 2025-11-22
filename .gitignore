@@ -1,7 +1,6 @@
 # Directories
 run/
 build/
-.idea/
 .gradle/
 .vscode/
 
