@@ -1,7 +1,9 @@
 # Directories
 run/
 build/
+.idea/
 .gradle/
+.vscode/
 
 # Compiled class files
 *.class
