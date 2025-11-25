@@ -14,7 +14,7 @@ import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
+import static com.mceteams.xiidays.XIIDays.LOGGER;
 import static com.mceteams.xiidays.utils.NotifyOptions.notifyPlayer;
 
 public class PlayersHandler {

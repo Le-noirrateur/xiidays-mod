@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Set;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+import static com.mceteams.xiidays.XIIDays.MODID;
 
 public class ScoreboardScreen extends Screen {
 

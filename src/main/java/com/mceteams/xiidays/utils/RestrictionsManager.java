@@ -1,6 +1,6 @@
 package com.mceteams.xiidays.utils;
 
-import com.mceteams.xiidays.XIIDaysManagerMod;
+import com.mceteams.xiidays.XIIDays;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -375,7 +375,7 @@ public class RestrictionsManager {
 
             // 1) Retirer le produit déjà donné au joueur (évite la duplication)
             int removed = removeItemFromPlayerInventory(player, craftedStack.copy());
-            XIIDaysManagerMod.LOGGER.info("RestrictionsManager: removed {} of crafted {} from player {}", removed, craftedStack, player.getName().getString());
+            XIIDays.LOGGER.info("RestrictionsManager: removed {} of crafted {} from player {}", removed, craftedStack, player.getName().getString());
 
             // 2) Essayer de restituer les ingrédients présents dans la grille de craft
             if (event.getInventory() instanceof CraftingContainer craftingContainer) {
@@ -430,7 +430,7 @@ public class RestrictionsManager {
         if (isForbidden || isBlockForbidden) {
             // Retirer le smelted item du joueur / conteneur
             int removed = removeItemFromPlayerInventory(player, smeltedStack.copy());
-            XIIDaysManagerMod.LOGGER.info("RestrictionsManager: removed {} of smelted {} from player {}", removed, smeltedStack, player.getName().getString());
+            XIIDays.LOGGER.info("RestrictionsManager: removed {} of smelted {} from player {}", removed, smeltedStack, player.getName().getString());
 
             // Optionnel : si le smelt provient d'un four automatisé et qu'il existe un tile entity,
             // il faudrait vider la slot de sortie du four. Ici, on couvre le cas "joueur qui récupère".

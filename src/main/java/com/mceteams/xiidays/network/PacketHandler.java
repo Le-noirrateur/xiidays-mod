@@ -7,7 +7,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+import static com.mceteams.xiidays.XIIDays.MODID;
 
 /**
  * Gestionnaire central des paquets réseau

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+import static com.mceteams.xiidays.XIIDays.MODID;
 
 @EventBusSubscriber(modid = MODID) // ← AJOUTE CETTE LIGNE
 public class TaskScheduler {

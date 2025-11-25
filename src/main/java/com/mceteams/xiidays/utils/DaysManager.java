@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
+import static com.mceteams.xiidays.XIIDays.LOGGER;
 import static com.mceteams.xiidays.utils.DataManager.*;
 
 public class DaysManager {

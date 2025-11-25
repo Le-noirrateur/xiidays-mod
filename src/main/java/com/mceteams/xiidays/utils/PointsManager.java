@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
+import static com.mceteams.xiidays.XIIDays.LOGGER;
 import static com.mceteams.xiidays.utils.DataManager.*;
 
 public class PointsManager {

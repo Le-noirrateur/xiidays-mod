@@ -15,7 +15,7 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.UUID;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
+import static com.mceteams.xiidays.XIIDays.LOGGER;
 import static com.mceteams.xiidays.utils.DataManager.*;
 
 public class TeamManager {

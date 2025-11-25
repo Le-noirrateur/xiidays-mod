@@ -9,7 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+import static com.mceteams.xiidays.XIIDays.MODID;
 
 public class SpectatePackets {
 

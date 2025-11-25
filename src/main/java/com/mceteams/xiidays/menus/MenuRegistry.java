@@ -6,7 +6,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+import static com.mceteams.xiidays.XIIDays.MODID;
 
 public class MenuRegistry {
     public static final DeferredRegister<MenuType<?>> MENUS =

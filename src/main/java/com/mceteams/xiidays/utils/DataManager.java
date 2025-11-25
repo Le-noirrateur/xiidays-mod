@@ -1,7 +1,7 @@
 package com.mceteams.xiidays.utils;
 
 import com.google.gson.*;
-import com.mceteams.xiidays.XIIDaysManagerMod;
+import com.mceteams.xiidays.XIIDays;
 import net.minecraft.server.MinecraftServer;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
@@ -20,7 +20,7 @@ public class DataManager {
     private static void ensureLoaded() {
         if (mainData == null) {
             loadData();
-            XIIDaysManagerMod.LOGGER.info("Data loaded from file");
+            XIIDays.LOGGER.info("Data loaded from file");
         }
     }
 
@@ -30,7 +30,7 @@ public class DataManager {
     private static Path getDataFilePath() {
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server == null) {
-            XIIDaysManagerMod.LOGGER.error("Server is null, using fallback path");
+            XIIDays.LOGGER.error("Server is null, using fallback path");
             return Paths.get(DATA_FILE);
         }
 
@@ -41,7 +41,7 @@ public class DataManager {
         try {
             Files.createDirectories(dataPath);
         } catch (IOException e) {
-            XIIDaysManagerMod.LOGGER.error("Failed to create data directory: {}", e.getMessage());
+            XIIDays.LOGGER.error("Failed to create data directory: {}", e.getMessage());
         }
 
         return dataPath.resolve(DATA_FILE);
@@ -62,17 +62,17 @@ public class DataManager {
                 // Créer un fichier vide
                 mainData = new JsonObject();
                 saveData();
-                XIIDaysManagerMod.LOGGER.info("Created new data file: {}", DATA_FILE);
+                XIIDays.LOGGER.info("Created new data file: {}", DATA_FILE);
                 return;
             }
 
             try (FileReader reader = new FileReader(filePath.toFile())) {
                 mainData = JsonParser.parseReader(reader).getAsJsonObject();
-                XIIDaysManagerMod.LOGGER.debug("Loaded data file: {}", DATA_FILE);
+                XIIDays.LOGGER.debug("Loaded data file: {}", DATA_FILE);
             }
 
         } catch (IOException e) {
-            XIIDaysManagerMod.LOGGER.error("Failed to load data file: {}", e.getMessage());
+            XIIDays.LOGGER.error("Failed to load data file: {}", e.getMessage());
             mainData = new JsonObject();
         }
     }
@@ -88,12 +88,12 @@ public class DataManager {
 
             try (FileWriter writer = new FileWriter(filePath.toFile())) {
                 GSON.toJson(mainData, writer);
-                XIIDaysManagerMod.LOGGER.debug("Saved data file: {}", DATA_FILE);
+                XIIDays.LOGGER.debug("Saved data file: {}", DATA_FILE);
                 return true;
             }
 
         } catch (IOException e) {
-            XIIDaysManagerMod.LOGGER.error("Failed to save data file: {}", e.getMessage());
+            XIIDays.LOGGER.error("Failed to save data file: {}", e.getMessage());
             return false;
         }
     }
@@ -107,7 +107,7 @@ public class DataManager {
         ensureLoaded();
 
         if (mainData.has(dataTable)) {
-            XIIDaysManagerMod.LOGGER.debug("DataTable '{}' already exists", dataTable);
+            XIIDays.LOGGER.debug("DataTable '{}' already exists", dataTable);
             return;
         }
 
@@ -115,7 +115,7 @@ public class DataManager {
         boolean saved = saveData();
 
         if (saved) {
-            XIIDaysManagerMod.LOGGER.info("Created DataTable: {}", dataTable);
+            XIIDays.LOGGER.info("Created DataTable: {}", dataTable);
         }
 
     }
@@ -133,7 +133,7 @@ public class DataManager {
         // Créer la table si elle n'existe pas
         if (!mainData.has(dataTable)) {
             mainData.add(dataTable, new JsonObject());
-            XIIDaysManagerMod.LOGGER.debug("Auto-created DataTable: {}", dataTable);
+            XIIDays.LOGGER.debug("Auto-created DataTable: {}", dataTable);
         }
 
         JsonObject table = mainData.getAsJsonObject(dataTable);
@@ -144,9 +144,9 @@ public class DataManager {
 
         if (saved) {
             if (isNew) {
-                XIIDaysManagerMod.LOGGER.info("Created {}.{} = {}", dataTable, dataName, value);
+                XIIDays.LOGGER.info("Created {}.{} = {}", dataTable, dataName, value);
             } else {
-                XIIDaysManagerMod.LOGGER.info("Modified {}.{} = {}", dataTable, dataName, value);
+                XIIDays.LOGGER.info("Modified {}.{} = {}", dataTable, dataName, value);
             }
         }
 
@@ -165,7 +165,7 @@ public class DataManager {
         // Créer la table si elle n'existe pas
         if (!mainData.has(dataTable)) {
             mainData.add(dataTable, new JsonObject());
-            XIIDaysManagerMod.LOGGER.debug("Auto-created DataTable: {}", dataTable);
+            XIIDays.LOGGER.debug("Auto-created DataTable: {}", dataTable);
         }
 
         JsonObject table = mainData.getAsJsonObject(dataTable);
@@ -176,9 +176,9 @@ public class DataManager {
 
         if (saved) {
             if (isNew) {
-                XIIDaysManagerMod.LOGGER.info("Created {}.{} = {}", dataTable, dataName, value);
+                XIIDays.LOGGER.info("Created {}.{} = {}", dataTable, dataName, value);
             } else {
-                XIIDaysManagerMod.LOGGER.info("Modified {}.{} = {}", dataTable, dataName, value);
+                XIIDays.LOGGER.info("Modified {}.{} = {}", dataTable, dataName, value);
             }
         }
 
@@ -197,7 +197,7 @@ public class DataManager {
         // Créer la table si elle n'existe pas
         if (!mainData.has(dataTable)) {
             mainData.add(dataTable, new JsonObject());
-            XIIDaysManagerMod.LOGGER.debug("Auto-created DataTable: {}", dataTable);
+            XIIDays.LOGGER.debug("Auto-created DataTable: {}", dataTable);
         }
 
         JsonObject table = mainData.getAsJsonObject(dataTable);
@@ -208,9 +208,9 @@ public class DataManager {
 
         if (saved) {
             if (isNew) {
-                XIIDaysManagerMod.LOGGER.info("Created {}.{} = {}", dataTable, dataName, value);
+                XIIDays.LOGGER.info("Created {}.{} = {}", dataTable, dataName, value);
             } else {
-                XIIDaysManagerMod.LOGGER.info("Modified {}.{} = {}", dataTable, dataName, value);
+                XIIDays.LOGGER.info("Modified {}.{} = {}", dataTable, dataName, value);
             }
         }
 
@@ -226,13 +226,13 @@ public class DataManager {
         ensureLoaded();
 
         if (!mainData.has(dataTable)) {
-            XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
+            XIIDays.LOGGER.debug("DataTable '{}' does not exist", dataTable);
             return null;
         }
 
         JsonObject table = mainData.getAsJsonObject(dataTable);
         if (!table.has(dataName)) {
-            XIIDaysManagerMod.LOGGER.debug("DataName '{}.{}' does not exist", dataTable, dataName);
+            XIIDays.LOGGER.debug("DataName '{}.{}' does not exist", dataTable, dataName);
             return null;
         }
 
@@ -262,7 +262,7 @@ public class DataManager {
         try {
             return table.get(dataName).getAsInt();
         } catch (Exception e) {
-            XIIDaysManagerMod.LOGGER.warn("Failed to read int value for {}.{}: {}", dataTable, dataName, e.getMessage());
+            XIIDays.LOGGER.warn("Failed to read int value for {}.{}: {}", dataTable, dataName, e.getMessage());
             return defaultValue;
         }
     }
@@ -289,7 +289,7 @@ public class DataManager {
         try {
             return table.get(dataName).getAsBoolean();
         } catch (Exception e) {
-            XIIDaysManagerMod.LOGGER.warn("Failed to read boolean value for {}.{}: {}", dataTable, dataName, e.getMessage());
+            XIIDays.LOGGER.warn("Failed to read boolean value for {}.{}: {}", dataTable, dataName, e.getMessage());
             return defaultValue;
         }
     }
@@ -303,7 +303,7 @@ public class DataManager {
         ensureLoaded();
 
         if (!mainData.has(dataTable)) {
-            XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
+            XIIDays.LOGGER.debug("DataTable '{}' does not exist", dataTable);
             return;
         }
 
@@ -311,7 +311,7 @@ public class DataManager {
         boolean saved = saveData();
 
         if (saved) {
-            XIIDaysManagerMod.LOGGER.info("Deleted DataTable: {}", dataTable);
+            XIIDays.LOGGER.info("Deleted DataTable: {}", dataTable);
         }
 
     }
@@ -326,13 +326,13 @@ public class DataManager {
         ensureLoaded();
 
         if (!mainData.has(dataTable)) {
-            XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
+            XIIDays.LOGGER.debug("DataTable '{}' does not exist", dataTable);
             return;
         }
 
         JsonObject table = mainData.getAsJsonObject(dataTable);
         if (!table.has(dataName)) {
-            XIIDaysManagerMod.LOGGER.debug("DataName '{}.{}' does not exist", dataTable, dataName);
+            XIIDays.LOGGER.debug("DataName '{}.{}' does not exist", dataTable, dataName);
             return;
         }
 
@@ -340,7 +340,7 @@ public class DataManager {
         boolean saved = saveData();
 
         if (saved) {
-            XIIDaysManagerMod.LOGGER.info("Removed {}.{}", dataTable, dataName);
+            XIIDays.LOGGER.info("Removed {}.{}", dataTable, dataName);
         }
 
     }
@@ -356,13 +356,13 @@ public class DataManager {
         ensureLoaded();
 
         if (!mainData.has(dataTable)) {
-            XIIDaysManagerMod.LOGGER.debug("DataTable '{}' does not exist", dataTable);
+            XIIDays.LOGGER.debug("DataTable '{}' does not exist", dataTable);
             return false;
         }
 
         JsonObject table = mainData.getAsJsonObject(dataTable);
         if (!table.has(dataName)) {
-            XIIDaysManagerMod.LOGGER.debug("DataName '{}.{}' does not exist", dataTable, dataName);
+            XIIDays.LOGGER.debug("DataName '{}.{}' does not exist", dataTable, dataName);
             return false;
         }
 
@@ -386,11 +386,11 @@ public class DataManager {
                 table.add(dataName, newArray);
                 boolean saved = saveData();
                 if (saved) {
-                    XIIDaysManagerMod.LOGGER.info("Removed value '{}' from {}.{}", value, dataTable, dataName);
+                    XIIDays.LOGGER.info("Removed value '{}' from {}.{}", value, dataTable, dataName);
                 }
                 return saved;
             } else {
-                XIIDaysManagerMod.LOGGER.debug("Value '{}' not found in {}.{}", value, dataTable, dataName);
+                XIIDays.LOGGER.debug("Value '{}' not found in {}.{}", value, dataTable, dataName);
                 return false;
             }
         }
@@ -400,12 +400,12 @@ public class DataManager {
             table.remove(dataName);
             boolean saved = saveData();
             if (saved) {
-                XIIDaysManagerMod.LOGGER.info("Removed {}.{} = {}", dataTable, dataName, value);
+                XIIDays.LOGGER.info("Removed {}.{} = {}", dataTable, dataName, value);
             }
             return saved;
         }
 
-        XIIDaysManagerMod.LOGGER.debug("DataName '{}.{}' is not an array and does not match value '{}'", dataTable, dataName, value);
+        XIIDays.LOGGER.debug("DataName '{}.{}' is not an array and does not match value '{}'", dataTable, dataName, value);
         return false;
     }
 

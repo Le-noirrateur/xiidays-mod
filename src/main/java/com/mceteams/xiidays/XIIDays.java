@@ -23,14 +23,14 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
-@Mod(XIIDaysManagerMod.MODID)
-public class XIIDaysManagerMod {
+@Mod(XIIDays.MODID)
+public class XIIDays {
     // Define mod id in a common place for everything to reference
     public static final String MODID = "xiidays";
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public XIIDaysManagerMod(IEventBus modEventBus, ModContainer modContainer) {
+    public XIIDays(IEventBus modEventBus, ModContainer modContainer) {
 
         LOGGER.info("\n╔═══════════════════════════════════════════════╗\n║                                               ║\n║   Welcome to XII Days - Mod                   ║\n║   Developing by FSS, MCE - fss.mceteams.com   ║\n║                                               ║\n║   Version {}                              ║\n║                                               ║\n╚═══════════════════════════════════════════════╝", modContainer.getModInfo().getVersion());
 
@@ -43,7 +43,7 @@ public class XIIDaysManagerMod {
         BlockRegistry.BLOCKS.register(modEventBus);
         BlockEntityRegistry.BLOCK_ENTITIES.register(modEventBus);
 
-        // Dans la méthode XIIDaysManagerMod() du constructeur, ajoute cette ligne :
+        // Dans la méthode XIIDays() du constructeur, ajoute cette ligne :
         LOGGER.info("[XII Days - Mod]: Registering Events listeners & senders...");
         NeoForge.EVENT_BUS.register(RestrictionsManager.class);
         NeoForge.EVENT_BUS.register(SpectateManager.class);

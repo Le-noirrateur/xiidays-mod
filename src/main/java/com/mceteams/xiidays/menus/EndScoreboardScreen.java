@@ -16,7 +16,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+import static com.mceteams.xiidays.XIIDays.MODID;
 
 public class EndScoreboardScreen extends Screen {
 

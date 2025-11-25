@@ -9,7 +9,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
+import static com.mceteams.xiidays.XIIDays.LOGGER;
 import static com.mceteams.xiidays.utils.TeamManager.getTeamName;
 
 @EventBusSubscriber(modid = "xiidays")

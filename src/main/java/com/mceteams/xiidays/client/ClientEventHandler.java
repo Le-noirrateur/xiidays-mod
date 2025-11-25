@@ -8,11 +8,11 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+import static com.mceteams.xiidays.XIIDays.MODID;
 
 /**
  * Gère les événements d'input côté client (touche U)
- * L'enregistrement de la touche se fait maintenant dans XIIDaysManagerModClient
+ * L'enregistrement de la touche se fait maintenant dans XIIDaysClient
  */
 @EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
 public class ClientEventHandler {

@@ -13,8 +13,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import java.util.*;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.LOGGER;
-import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+import static com.mceteams.xiidays.XIIDays.LOGGER;
+import static com.mceteams.xiidays.XIIDays.MODID;
 
 @EventBusSubscriber(modid = MODID)
 public class SpectateManager {

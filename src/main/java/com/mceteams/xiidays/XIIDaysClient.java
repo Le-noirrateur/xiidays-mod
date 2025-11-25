@@ -19,12 +19,12 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+import static com.mceteams.xiidays.XIIDays.MODID;
 
 @Mod(value = MODID, dist = Dist.CLIENT)
-public class XIIDaysManagerModClient {
+public class XIIDaysClient {
 
-    public XIIDaysManagerModClient(ModContainer container, IEventBus modEventBus) {
+    public XIIDaysClient(ModContainer container, IEventBus modEventBus) {
         modEventBus.addListener(this::onClientSetup);
 //        modEventBus.addListener(this::registerClientPackets);
         modEventBus.addListener(this::onRegisterKeyMappings);
@@ -32,19 +32,19 @@ public class XIIDaysManagerModClient {
 
     @SubscribeEvent
     private void onClientSetup(FMLClientSetupEvent event) {
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Client setup started");
-        XIIDaysManagerMod.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+        XIIDays.LOGGER.info("[XII Days - Mod]: Client setup started");
+        XIIDays.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
 
         // Enregistrement des renderers de Block Entities
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Registering Block Entity Renderers");
+        XIIDays.LOGGER.info("[XII Days - Mod]: Registering Block Entity Renderers");
         BlockEntityRenderers.register(BlockEntityRegistry.TEAM_SPAWN.get(), TeamSpawnerRenderer::new);
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Block Entity Renderers registered");
+        XIIDays.LOGGER.info("[XII Days - Mod]: Block Entity Renderers registered");
 
         // Configuration des render layers
         event.enqueueWork(() -> {
-            XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Configuring render layers");
+            XIIDays.LOGGER.info("[XII Days - Mod]: Configuring render layers");
             ItemBlockRenderTypes.setRenderLayer(BlockRegistry.TEAM_SPAWNER.get(), RenderType.translucent());
-            XIIDaysManagerMod.LOGGER.info("[XII Days - Mod]: Render layers configured");
+            XIIDays.LOGGER.info("[XII Days - Mod]: Render layers configured");
         });
     }
 
@@ -55,7 +55,7 @@ public class XIIDaysManagerModClient {
     private void registerClientPackets(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1").optional();
 
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Client]: Registering client-bound packets...");
+        XIIDays.LOGGER.info("[XII Days - Client]: Registering client-bound packets...");
 
         // Serveur → Client : Données du scoreboard + ouverture de l'écran
         registrar.playToClient(
@@ -64,7 +64,7 @@ public class XIIDaysManagerModClient {
                 OpenScoreboardPacket::handle
         );
 
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Client]: Client-bound packets registered (1 channel)");
+        XIIDays.LOGGER.info("[XII Days - Client]: Client-bound packets registered (1 channel)");
     }
 
     /**
@@ -72,8 +72,8 @@ public class XIIDaysManagerModClient {
      */
     @SubscribeEvent
     private void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Client]: Registering key bindings...");
+        XIIDays.LOGGER.info("[XII Days - Client]: Registering key bindings...");
         event.register(KeyBindings.OPEN_SCOREBOARD);
-        XIIDaysManagerMod.LOGGER.info("[XII Days - Client]: Key bindings registered (1 key)");
+        XIIDays.LOGGER.info("[XII Days - Client]: Key bindings registered (1 key)");
     }
 }

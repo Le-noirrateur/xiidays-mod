@@ -18,7 +18,7 @@ import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.mceteams.xiidays.XIIDaysManagerMod.MODID;
+import static com.mceteams.xiidays.XIIDays.MODID;
 
 @EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
 public class TeamBlockOverlay {
