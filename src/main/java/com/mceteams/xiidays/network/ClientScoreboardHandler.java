@@ -1,6 +1,7 @@
 package com.mceteams.xiidays.network;
 
 import com.mceteams.xiidays.client.ScoreboardScreen;
+import com.mceteams.xiidays.utils.ScoreboardManager;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -22,12 +23,19 @@ public class ClientScoreboardHandler {
         List<ScoreboardScreen.TeamScore> teamScores = new ArrayList<>();
 
         for (OpenScoreboardPacket.TeamData data : packet.teams()) {
+            // Convertir int rankChange en enum RankChange
+            ScoreboardManager.RankChange rankChange = switch (data.rankChange()) {
+                case 1 -> ScoreboardManager.RankChange.UP;
+                case -1 -> ScoreboardManager.RankChange.DOWN;
+                default -> ScoreboardManager.RankChange.NONE;
+            };
+
             teamScores.add(new ScoreboardScreen.TeamScore(
                     data.teamName(),
                     data.uuid(),
                     data.points(),
                     data.coreAlive(),
-                    null
+                    rankChange
             ));
         }
 

@@ -31,11 +31,35 @@ public class PacketHandler {
                 RequestScoreboardPacket::handle
         );
 
+        registrar.playToServer(
+                CoreMazeAnswerPacket.TYPE,
+                CoreMazeAnswerPacket.CODEC,
+                CoreMazeAnswerPacket::handle
+        );
+
+        registrar.playToServer(
+                RequestTeamStatsPacket.TYPE,
+                RequestTeamStatsPacket.CODEC,
+                RequestTeamStatsPacket::handle
+        );
+
         // Serveur -> Client
         registrar.playToClient(
                 OpenScoreboardPacket.TYPE,
                 OpenScoreboardPacket.CODEC,
                 OpenScoreboardPacket::handle
+        );
+
+        registrar.playToClient(
+                CoreMazeOpenPacket.TYPE,
+                CoreMazeOpenPacket.CODEC,
+                CoreMazeOpenPacket::handle
+        );
+
+        registrar.playToClient(
+                OpenTeamStatsPacket.TYPE,
+                OpenTeamStatsPacket.CODEC,
+                OpenTeamStatsPacket::handle
         );
     }
 

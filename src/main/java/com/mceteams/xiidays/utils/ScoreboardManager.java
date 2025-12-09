@@ -142,8 +142,19 @@ public class ScoreboardManager {
             int points = DataManager.dataReadInt("team_" + teamId + "_points", "total", 0);
             boolean coreAlive = !DataManager.dataReadBoolean("team_" + teamId + "_config", "team_eliminated", false);
 
+            // Récupérer le changement de rang
+            TeamRankingEntry rankEntry = lastRankings.get(teamId);
+            int rankChange = 0; // NONE par défaut
+            if (rankEntry != null && shouldShowArrow(rankEntry)) {
+                rankChange = switch (rankEntry.change) {
+                    case UP -> 1;
+                    case DOWN -> -1;
+                    case NONE -> 0;
+                };
+            }
+
             // Ajouter l'équipe à la liste
-            teams.add(new OpenScoreboardPacket.TeamData(teamName, uuid, points, coreAlive));
+            teams.add(new OpenScoreboardPacket.TeamData(teamName, uuid, points, coreAlive, rankChange));
         }
 
         // Trier les équipes par points (ordre décroissant)

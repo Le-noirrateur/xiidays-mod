@@ -2,6 +2,7 @@ package com.mceteams.xiidays.client;
 
 import com.mceteams.xiidays.utils.DataManager;
 import com.mceteams.xiidays.utils.ScoreboardManager;
+import com.mceteams.xiidays.utils.ScoreboardManager.RankChange;
 import com.mceteams.xiidays.utils.TeamManager;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -9,6 +10,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
+
+import com.mceteams.xiidays.network.RequestTeamStatsPacket;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 import java.util.Set;
@@ -189,6 +193,37 @@ public class ScoreboardScreen extends Screen {
         int pointsX = heartX - heartGap - pointsWidth;
         int pointsY = rowY + (TEAM_ROW_HEIGHT - font.lineHeight) / 2;
         graphics.drawString(this.font, pointsText, pointsX, pointsY, 0xFFD700);
+
+        // Afficher la flèche de changement de rang si applicable
+        if (team.rankChange != null && team.rankChange != ScoreboardManager.RankChange.NONE) {
+            renderRankChangeArrow(graphics, pointsX - 20, pointsY, team.rankChange);
+        }
+    }
+
+    /**
+     * Affiche une flèche animée indiquant le changement de rang
+     */
+    private void renderRankChangeArrow(GuiGraphics graphics, int x, int y, ScoreboardManager.RankChange change) {
+        // Animation de pulsation
+        long time = System.currentTimeMillis();
+        float pulse = (float) (0.7 + 0.3 * Math.sin(time / 200.0));
+
+        String arrow;
+        int color;
+
+        if (change == ScoreboardManager.RankChange.UP) {
+            arrow = "▲"; // Flèche vers le haut
+            color = (int) (0xFF * pulse) << 24 | 0x00FF00; // Vert avec pulsation alpha
+        } else {
+            arrow = "▼"; // Flèche vers le bas
+            color = (int) (0xFF * pulse) << 24 | 0xFF0000; // Rouge avec pulsation alpha
+        }
+
+        // Petit mouvement vertical pour l'animation
+        int animOffset = (int) (2 * Math.sin(time / 150.0));
+        int finalY = y + (change == ScoreboardManager.RankChange.UP ? -animOffset : animOffset);
+
+        graphics.drawString(this.font, arrow, x, finalY, color);
     }
 
     private void renderSpecialTitle(GuiGraphics graphics, int x, int rowY, String teamName, boolean isGold) {
@@ -346,6 +381,44 @@ public class ScoreboardScreen extends Screen {
             graphics.fill(x, y + 3, x + 24, y + 13, color);
             graphics.fill(x + 3, y + 10, x + 21, y + 17, color);
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0) { // Clic gauche
+            int centerX = this.width / 2;
+            int centerY = this.height / 2;
+            int panelX = centerX - PANEL_WIDTH / 2;
+            int panelY = centerY - PANEL_HEIGHT / 2;
+
+            int contentY = panelY + CONTENT_START_Y;
+            int rowX = panelX + 20;
+            int rowWidth = PANEL_WIDTH - 40;
+
+            // Vérifier si le clic est dans la zone des équipes
+            int yOffset = contentY - (int) scrollOffset;
+            for (int i = 0; i < teams.size(); i++) {
+                TeamScore team = teams.get(i);
+                int rowTop = yOffset;
+                int rowBottom = yOffset + TEAM_ROW_HEIGHT;
+
+                // Vérifier si le clic est sur cette ligne (en tenant compte du scissor)
+                if (mouseX >= rowX && mouseX <= rowX + rowWidth &&
+                        mouseY >= Math.max(rowTop, contentY) &&
+                        mouseY <= Math.min(rowBottom, contentY + MAX_VISIBLE_ROWS * (TEAM_ROW_HEIGHT + TEAM_ROW_SPACING))) {
+
+                    // Seul le joueur peut voir les stats de son équipe
+                    if (team.teamName.equalsIgnoreCase(playerTeam)) {
+                        // Demander les stats détaillées au serveur
+                        PacketDistributor.sendToServer(new RequestTeamStatsPacket(team.teamName));
+                        return true;
+                    }
+                }
+
+                yOffset += TEAM_ROW_HEIGHT + TEAM_ROW_SPACING;
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
