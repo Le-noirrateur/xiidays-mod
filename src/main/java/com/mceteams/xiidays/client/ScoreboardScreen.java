@@ -1,13 +1,17 @@
 package com.mceteams.xiidays.client;
 
+import com.mceteams.xiidays.client.ClientRankTracker.BattleInfo;
+import com.mceteams.xiidays.client.ClientRankTracker.RankChangeInfo;
+import com.mceteams.xiidays.client.ClientRankTracker.RankChangeType;
+import com.mceteams.xiidays.network.RequestTeamStatsPacket;
 import com.mceteams.xiidays.utils.DataManager;
-import com.mceteams.xiidays.utils.ScoreboardManager;
 import com.mceteams.xiidays.utils.TeamManager;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -134,7 +138,19 @@ public class ScoreboardScreen extends Screen {
         int rowX = x + 20;
         int rowWidth = PANEL_WIDTH - 40;
 
-        // Dessiner le fond de la ligne
+        // Vérifier si cette équipe est en bataille avec une autre
+        BattleInfo battle = ClientRankTracker.getActiveBattleFor(team.teamName);
+        boolean inBattle = battle != null;
+
+        // Dessiner le fond de la ligne (surbrillance si en bataille)
+        if (inBattle) {
+            // Fond en surbrillance pour les équipes en bataille
+            long time = System.currentTimeMillis();
+            float pulse = (float) (0.6 + 0.4 * Math.sin(time / 300.0));
+            int alpha = (int) (0x40 * pulse);
+            graphics.fill(rowX, rowY, rowX + rowWidth, rowY + TEAM_ROW_HEIGHT, (alpha << 24) | 0xFFAA00);
+        }
+
         try {
             graphics.blit(TEAM_ROW_BG, rowX, rowY, 0, 0, rowWidth, TEAM_ROW_HEIGHT, rowWidth, TEAM_ROW_HEIGHT);
         } catch (Exception e) {
@@ -165,8 +181,7 @@ public class ScoreboardScreen extends Screen {
             graphics.drawString(this.font, "§7" + displayName, nameX, nameY + font.lineHeight, 0xC0C0C0);
         }
 
-
-        // Récupérer l’état du core depuis TeamManager
+        // Récupérer l'état du core depuis TeamManager
         boolean alive = true;
         int teamId = TeamManager.getTeamId(team.teamName);
         if (teamId != 0) {
@@ -189,6 +204,79 @@ public class ScoreboardScreen extends Screen {
         int pointsX = heartX - heartGap - pointsWidth;
         int pointsY = rowY + (TEAM_ROW_HEIGHT - font.lineHeight) / 2;
         graphics.drawString(this.font, pointsText, pointsX, pointsY, 0xFFD700);
+
+        // Afficher l'icône de bataille ou la flèche de changement
+        if (inBattle) {
+            renderBattleIcon(graphics, pointsX - 25, pointsY - 3);
+        } else {
+            // Afficher la flèche de changement de rang depuis le tracker client
+            RankChangeInfo changeInfo = ClientRankTracker.getActiveChange(team.teamName);
+            if (changeInfo != null) {
+                renderRankChangeArrow(graphics, pointsX - 20, pointsY, changeInfo);
+            }
+        }
+    }
+
+    /**
+     * Affiche une flèche animée indiquant le changement de rang
+     * Utilise le ClientRankTracker pour la durée et le fade-out
+     */
+    private void renderRankChangeArrow(GuiGraphics graphics, int x, int y, RankChangeInfo changeInfo) {
+        long time = System.currentTimeMillis();
+
+        // Calculer l'opacité en fonction du temps restant (fade-out sur la dernière seconde)
+        float progress = changeInfo.getProgress();
+        float fadeStart = 0.8f; // Commence le fade à 80% du temps
+        float alpha;
+        if (progress > fadeStart) {
+            // Fade-out progressif
+            alpha = 1.0f - ((progress - fadeStart) / (1.0f - fadeStart));
+        } else {
+            alpha = 1.0f;
+        }
+
+        // Animation de pulsation
+        float pulse = (float) (0.7 + 0.3 * Math.sin(time / 200.0));
+        alpha *= pulse;
+
+        String arrow;
+        int baseColor;
+
+        if (changeInfo.getType() == RankChangeType.UP) {
+            arrow = "▲"; // Flèche vers le haut
+            baseColor = 0x00FF00; // Vert
+        } else {
+            arrow = "▼"; // Flèche vers le bas
+            baseColor = 0xFF0000; // Rouge
+        }
+
+        int color = ((int) (0xFF * alpha) << 24) | baseColor;
+
+        // Petit mouvement vertical pour l'animation
+        int animOffset = (int) (2 * Math.sin(time / 150.0));
+        int finalY = y + (changeInfo.getType() == RankChangeType.UP ? -animOffset : animOffset);
+
+        graphics.drawString(this.font, arrow, x, finalY, color);
+    }
+
+    /**
+     * Affiche l'icône de bataille entre deux équipes (épées croisées)
+     */
+    private void renderBattleIcon(GuiGraphics graphics, int x, int y) {
+        long time = System.currentTimeMillis();
+
+        // Animation de pulsation plus intense pour la bataille
+        float pulse = (float) (0.5 + 0.5 * Math.sin(time / 150.0));
+        int alpha = (int) (0xFF * pulse);
+
+        // Symbole de bataille (épées croisées) - utilise ⚔ ou X stylisé
+        String battleSymbol = "⚔";
+        int color = (alpha << 24) | 0xFFAA00; // Orange
+
+        // Léger tremblement horizontal
+        int shake = (int) (1 * Math.sin(time / 50.0));
+
+        graphics.drawString(this.font, battleSymbol, x + shake, y, color);
     }
 
     private void renderSpecialTitle(GuiGraphics graphics, int x, int rowY, String teamName, boolean isGold) {
@@ -349,6 +437,44 @@ public class ScoreboardScreen extends Screen {
     }
 
     @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0) { // Clic gauche
+            int centerX = this.width / 2;
+            int centerY = this.height / 2;
+            int panelX = centerX - PANEL_WIDTH / 2;
+            int panelY = centerY - PANEL_HEIGHT / 2;
+
+            int contentY = panelY + CONTENT_START_Y;
+            int rowX = panelX + 20;
+            int rowWidth = PANEL_WIDTH - 40;
+
+            // Vérifier si le clic est dans la zone des équipes
+            int yOffset = contentY - (int) scrollOffset;
+            for (int i = 0; i < teams.size(); i++) {
+                TeamScore team = teams.get(i);
+                int rowTop = yOffset;
+                int rowBottom = yOffset + TEAM_ROW_HEIGHT;
+
+                // Vérifier si le clic est sur cette ligne (en tenant compte du scissor)
+                if (mouseX >= rowX && mouseX <= rowX + rowWidth &&
+                        mouseY >= Math.max(rowTop, contentY) &&
+                        mouseY <= Math.min(rowBottom, contentY + MAX_VISIBLE_ROWS * (TEAM_ROW_HEIGHT + TEAM_ROW_SPACING))) {
+
+                    // Seul le joueur peut voir les stats de son équipe
+                    if (team.teamName.equalsIgnoreCase(playerTeam)) {
+                        // Demander les stats détaillées au serveur
+                        PacketDistributor.sendToServer(new RequestTeamStatsPacket(team.teamName));
+                        return true;
+                    }
+                }
+
+                yOffset += TEAM_ROW_HEIGHT + TEAM_ROW_SPACING;
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
     public boolean isPauseScreen() {
         return false;
     }
@@ -358,6 +484,10 @@ public class ScoreboardScreen extends Screen {
         return true;
     }
 
-    public record TeamScore(String teamName, String uuid, int points, boolean coreAlive, ScoreboardManager.RankChange rankChange) {
+    /**
+     * Données d'une équipe pour l'affichage
+     * Note: le changement de rang est géré par ClientRankTracker, pas ici
+     */
+    public record TeamScore(String teamName, String uuid, int points, boolean coreAlive) {
     }
 }

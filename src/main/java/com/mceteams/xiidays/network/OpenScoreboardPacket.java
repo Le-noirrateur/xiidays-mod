@@ -33,6 +33,7 @@ public record OpenScoreboardPacket(List<TeamData> teams, String playerTeam) impl
                 buf.writeUtf(team.uuid != null ? team.uuid : UUID.randomUUID().toString());
                 buf.writeInt(team.points);
                 buf.writeBoolean(team.coreAlive);
+                buf.writeInt(team.rankChange); // 0=NONE, 1=UP, -1=DOWN
             }
         }
 
@@ -47,7 +48,8 @@ public record OpenScoreboardPacket(List<TeamData> teams, String playerTeam) impl
                         buf.readUtf(),
                         buf.readUtf(),
                         buf.readInt(),
-                        buf.readBoolean()
+                        buf.readBoolean(),
+                        buf.readInt()
                 ));
             }
 
@@ -69,5 +71,8 @@ public record OpenScoreboardPacket(List<TeamData> teams, String playerTeam) impl
         context.enqueueWork(() -> ClientScoreboardHandler.openScoreboard(packet));
     }
 
-    public record TeamData(String teamName, String uuid, int points, boolean coreAlive) {}
+    /**
+     * @param rankChange 1=UP (monté), -1=DOWN (descendu), 0=NONE (pas de changement)
+     */
+    public record TeamData(String teamName, String uuid, int points, boolean coreAlive, int rankChange) {}
 }

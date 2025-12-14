@@ -1,5 +1,6 @@
 package com.mceteams.xiidays.network;
 
+import com.mceteams.xiidays.client.ClientRankTracker;
 import com.mceteams.xiidays.client.ScoreboardScreen;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -19,15 +20,24 @@ public class ClientScoreboardHandler {
      * Ouvre l'écran du scoreboard avec les données reçues
      */
     public static void openScoreboard(OpenScoreboardPacket packet) {
-        List<ScoreboardScreen.TeamScore> teamScores = new ArrayList<>();
+        // Extraire la liste des noms d'équipes dans l'ordre du classement
+        List<String> rankingOrder = new ArrayList<>();
+        for (OpenScoreboardPacket.TeamData data : packet.teams()) {
+            rankingOrder.add(data.teamName());
+        }
 
+        // Mettre à jour le tracker côté client (détecte les changements)
+        ClientRankTracker.updateRanking(rankingOrder);
+        ClientRankTracker.cleanup(); // Nettoyer les entrées expirées
+
+        // Construire la liste pour l'écran
+        List<ScoreboardScreen.TeamScore> teamScores = new ArrayList<>();
         for (OpenScoreboardPacket.TeamData data : packet.teams()) {
             teamScores.add(new ScoreboardScreen.TeamScore(
                     data.teamName(),
                     data.uuid(),
                     data.points(),
-                    data.coreAlive(),
-                    null
+                    data.coreAlive()
             ));
         }
 
