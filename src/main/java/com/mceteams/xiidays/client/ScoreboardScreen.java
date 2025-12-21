@@ -15,7 +15,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Set;
 
 import static com.mceteams.xiidays.XIIDays.MODID;
 
@@ -29,8 +28,6 @@ public class ScoreboardScreen extends Screen {
     private static final ResourceLocation HEART_DEAD = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/heart_dead.png");
 
     private static ResourceLocation customBackground = null; // null par défaut
-
-    private static final Set<String> SPECIAL_TEAMS = Set.of("jaune", "vert", "rouge", "bleu");
 
     private final List<TeamScore> teams;
     private final String playerTeam;
@@ -165,21 +162,15 @@ public class ScoreboardScreen extends Screen {
         // Calculer position du texte
         int nameX = rowX + badgeWidth + badgeToNameGap;
         boolean isPlayerTeam = team.teamName.equalsIgnoreCase(playerTeam);
-        boolean useGoldTitle = (rank == 1) && SPECIAL_TEAMS.contains(team.teamName.toLowerCase());
 
-        if (isPlayerTeam && (useGoldTitle || SPECIAL_TEAMS.contains(team.teamName.toLowerCase()))) {
-            // Special title
-            renderSpecialTitle(graphics, nameX, rowY, team.teamName.toLowerCase(), useGoldTitle);
-        } else {
-            // Nom normal
-            int lines = 2; // titre + sous-titre
-            int totalHeight = font.lineHeight * lines;
-            int nameY = rowY + (TEAM_ROW_HEIGHT - totalHeight) / 2;
+        // Afficher le nom de l'équipe (visible seulement pour sa propre équipe)
+        int lines = 2; // titre + sous-titre
+        int totalHeight = font.lineHeight * lines;
+        int nameY = rowY + (TEAM_ROW_HEIGHT - totalHeight) / 2;
 
-            String displayName = isPlayerTeam ? team.teamName.toUpperCase() : "§kXXXXXXXX";
-            graphics.drawString(this.font, "§f§lEQUIPE", nameX, nameY, 0xFFFFFF);
-            graphics.drawString(this.font, "§7" + displayName, nameX, nameY + font.lineHeight, 0xC0C0C0);
-        }
+        String displayName = isPlayerTeam ? team.teamName.toUpperCase() : "§kXXXXXXXX";
+        graphics.drawString(this.font, "§f§lEQUIPE", nameX, nameY, 0xFFFFFF);
+        graphics.drawString(this.font, "§7" + displayName, nameX, nameY + font.lineHeight, 0xC0C0C0);
 
         // Récupérer l'état du core depuis TeamManager
         boolean alive = true;
@@ -277,34 +268,6 @@ public class ScoreboardScreen extends Screen {
         int shake = (int) (1 * Math.sin(time / 50.0));
 
         graphics.drawString(this.font, battleSymbol, x + shake, y, color);
-    }
-
-    private void renderSpecialTitle(GuiGraphics graphics, int x, int rowY, String teamName, boolean isGold) {
-        String suffix = isGold ? "_gold" : "_silver";
-        ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/team/" + teamName + suffix + ".png");
-
-        try {
-            int textureWidth = 822;  // largeur originale
-            int textureHeight = 221; // hauteur originale
-            int maxHeight = 32;      // hauteur fixe
-
-            float scale = (float) maxHeight / textureHeight;
-            int scaledWidth = (int)(textureWidth * scale); // largeur adaptée pour garder le ratio
-
-            int centeredY = rowY + (TEAM_ROW_HEIGHT - maxHeight)/2;
-
-            graphics.pose().pushPose();
-            graphics.pose().translate(x, centeredY, 0);
-            graphics.pose().scale(scale, scale, 1.0f);
-
-            graphics.blit(texture, 0, 0, 0, 0, textureWidth, textureHeight, textureWidth, textureHeight);
-            graphics.pose().popPose();
-
-        } catch (Exception e) {
-            String color = isGold ? "§6§l" : "§7§l";
-            graphics.drawString(this.font, color + teamName.toUpperCase(), x, rowY + (TEAM_ROW_HEIGHT - font.lineHeight) / 2,
-                    isGold ? 0xFFD700 : 0xC0C0C0);
-        }
     }
 
     private void renderRankBadge(GuiGraphics graphics, int x, int y, int rank) {
