@@ -11,6 +11,12 @@ public class ClientRankTracker {
     // Durée d'affichage des flèches en millisecondes
     public static final long ARROW_DURATION_MS = 5000; // 5 secondes
 
+    // Durée avant qu'une bataille expire (pas d'échange)
+    public static final long BATTLE_TIMEOUT_MS = 10000; // 10 secondes
+
+    // Nombre minimum d'échanges pour activer le mode bataille
+    public static final int MIN_EXCHANGES_FOR_BATTLE = 3;
+
     // Map teamName → RankChangeInfo
     private static final Map<String, RankChangeInfo> rankChanges = new HashMap<>();
 
@@ -51,6 +57,9 @@ public class ClientRankTracker {
         // Détecter les batailles (2 équipes qui échangent)
         detectBattles(newRanking, now);
 
+        // Vérifier si des batailles doivent être terminées
+        checkBattleEndings(newRanking);
+
         lastRanking = new ArrayList<>(newRanking);
     }
 
@@ -58,45 +67,77 @@ public class ClientRankTracker {
      * Enregistre un changement de rang
      */
     private static void registerChange(String teamName, RankChangeType type, int oldPos, int newPos, long timestamp) {
-        RankChangeInfo existing = rankChanges.get(teamName);
-
-        if (existing != null && !existing.isExpired()) {
-            // Un changement existe déjà et n'est pas expiré
-            // On le remplace par le nouveau
-            rankChanges.put(teamName, new RankChangeInfo(type, oldPos, newPos, timestamp));
-        } else {
-            rankChanges.put(teamName, new RankChangeInfo(type, oldPos, newPos, timestamp));
-        }
+        rankChanges.put(teamName, new RankChangeInfo(type, oldPos, newPos, timestamp));
     }
 
     /**
      * Détecte les batailles entre équipes
+     * Une bataille nécessite que 2 équipes adjacentes échangent leurs positions
      */
     private static void detectBattles(List<String> newRanking, long now) {
-        // Chercher des paires d'équipes qui ont échangé leurs positions
-        for (int i = 0; i < newRanking.size(); i++) {
-            for (int j = i + 1; j < newRanking.size(); j++) {
-                String team1 = newRanking.get(i);
-                String team2 = newRanking.get(j);
+        // Chercher des paires d'équipes adjacentes qui ont échangé leurs positions
+        for (int i = 0; i < newRanking.size() - 1; i++) {
+            String teamAtI = newRanking.get(i);
+            String teamAtIPlus1 = newRanking.get(i + 1);
 
-                int oldPos1 = lastRanking.indexOf(team1);
-                int oldPos2 = lastRanking.indexOf(team2);
+            int oldPosTeamI = lastRanking.indexOf(teamAtI);
+            int oldPosTeamIPlus1 = lastRanking.indexOf(teamAtIPlus1);
 
-                if (oldPos1 == -1 || oldPos2 == -1) continue;
+            if (oldPosTeamI == -1 || oldPosTeamIPlus1 == -1) continue;
 
-                // Si les équipes ont échangé leurs positions
-                if (oldPos1 == j && oldPos2 == i) {
-                    String battleKey = getBattleKey(team1, team2);
-                    BattleInfo existing = battles.get(battleKey);
+            // Vérifier si c'est un échange adjacent (pas un grand saut)
+            // L'équipe à la position i était à i+1, et celle à i+1 était à i
+            boolean isAdjacentExchange = (oldPosTeamI == i + 1) && (oldPosTeamIPlus1 == i);
 
-                    if (existing != null && !existing.isExpired()) {
-                        // Bataille déjà en cours, on incrémente
-                        existing.incrementExchanges(now);
-                    } else {
-                        // Nouvelle bataille
-                        battles.put(battleKey, new BattleInfo(team1, team2, now));
-                    }
+            if (isAdjacentExchange) {
+                String battleKey = getBattleKey(teamAtI, teamAtIPlus1);
+                BattleInfo existing = battles.get(battleKey);
+
+                if (existing != null && !existing.isExpired()) {
+                    // Bataille en cours, on incrémente et met à jour les positions
+                    existing.incrementExchanges(now, i, i + 1);
+                } else {
+                    // Nouvelle bataille potentielle
+                    battles.put(battleKey, new BattleInfo(teamAtI, teamAtIPlus1, now, i, i + 1));
                 }
+            }
+        }
+    }
+
+    /**
+     * Vérifie si des batailles doivent être terminées
+     * Une bataille se termine si une des équipes sort des positions contestées
+     */
+    private static void checkBattleEndings(List<String> newRanking) {
+        Iterator<Map.Entry<String, BattleInfo>> iterator = battles.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            BattleInfo battle = iterator.next().getValue();
+
+            int pos1 = newRanking.indexOf(battle.getTeam1());
+            int pos2 = newRanking.indexOf(battle.getTeam2());
+
+            // Si une équipe n'est plus trouvée, terminer la bataille
+            if (pos1 == -1 || pos2 == -1) {
+                iterator.remove();
+                continue;
+            }
+
+            // Si les équipes ne sont plus adjacentes, terminer la bataille
+            if (Math.abs(pos1 - pos2) != 1) {
+                iterator.remove();
+                continue;
+            }
+
+            // Si les équipes sont sorties des positions de bataille originales
+            int minBattlePos = battle.getMinPosition();
+            int maxBattlePos = battle.getMaxPosition();
+
+            boolean team1InRange = (pos1 >= minBattlePos && pos1 <= maxBattlePos);
+            boolean team2InRange = (pos2 >= minBattlePos && pos2 <= maxBattlePos);
+
+            if (!team1InRange || !team2InRange) {
+                iterator.remove();
             }
         }
     }
@@ -128,18 +169,18 @@ public class ClientRankTracker {
     public static BattleInfo getActiveBattle(String team1, String team2) {
         String key = getBattleKey(team1, team2);
         BattleInfo battle = battles.get(key);
-        if (battle != null && !battle.isExpired()) {
+        if (battle != null && !battle.isExpired() && battle.isActive()) {
             return battle;
         }
         return null;
     }
 
     /**
-     * Récupère toutes les batailles actives impliquant une équipe
+     * Récupère la bataille active impliquant une équipe (si elle atteint le seuil)
      */
     public static BattleInfo getActiveBattleFor(String teamName) {
         for (BattleInfo battle : battles.values()) {
-            if (!battle.isExpired() && battle.involves(teamName)) {
+            if (!battle.isExpired() && battle.isActive() && battle.involves(teamName)) {
                 return battle;
             }
         }
@@ -189,6 +230,13 @@ public class ClientRankTracker {
         public int getNewPosition() { return newPosition; }
         public long getTimestamp() { return timestamp; }
 
+        /**
+         * Vérifie si c'est un "grand saut" (plus de 1 position)
+         */
+        public boolean isBigJump() {
+            return Math.abs(newPosition - oldPosition) > 1;
+        }
+
         public boolean isExpired() {
             return System.currentTimeMillis() - timestamp > ARROW_DURATION_MS;
         }
@@ -215,34 +263,50 @@ public class ClientRankTracker {
         private final String team2;
         private long lastExchangeTime;
         private int exchangeCount;
+        private int position1; // Position de la bataille
+        private int position2; // Position adjacente
 
-        public BattleInfo(String team1, String team2, long timestamp) {
+        public BattleInfo(String team1, String team2, long timestamp, int pos1, int pos2) {
             this.team1 = team1;
             this.team2 = team2;
             this.lastExchangeTime = timestamp;
             this.exchangeCount = 1;
+            this.position1 = Math.min(pos1, pos2);
+            this.position2 = Math.max(pos1, pos2);
         }
 
-        public void incrementExchanges(long timestamp) {
+        public void incrementExchanges(long timestamp, int pos1, int pos2) {
             this.exchangeCount++;
             this.lastExchangeTime = timestamp;
+            // Mettre à jour les positions
+            this.position1 = Math.min(pos1, pos2);
+            this.position2 = Math.max(pos1, pos2);
         }
 
         public String getTeam1() { return team1; }
         public String getTeam2() { return team2; }
         public int getExchangeCount() { return exchangeCount; }
+        public int getMinPosition() { return position1; }
+        public int getMaxPosition() { return position2; }
 
         public boolean involves(String teamName) {
             return team1.equalsIgnoreCase(teamName) || team2.equalsIgnoreCase(teamName);
         }
 
+        /**
+         * La bataille est "active" seulement si le seuil minimum d'échanges est atteint
+         */
+        public boolean isActive() {
+            return exchangeCount >= MIN_EXCHANGES_FOR_BATTLE;
+        }
+
         public boolean isExpired() {
-            return System.currentTimeMillis() - lastExchangeTime > ARROW_DURATION_MS;
+            return System.currentTimeMillis() - lastExchangeTime > BATTLE_TIMEOUT_MS;
         }
 
         public long getRemainingTime() {
             long elapsed = System.currentTimeMillis() - lastExchangeTime;
-            return Math.max(0, ARROW_DURATION_MS - elapsed);
+            return Math.max(0, BATTLE_TIMEOUT_MS - elapsed);
         }
     }
 }
