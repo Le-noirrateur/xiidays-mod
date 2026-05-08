@@ -1,6 +1,7 @@
 package com.mceteams.xiidays.utils;
 
 import com.mceteams.xiidays.enums.PointType;
+import com.mceteams.xiidays.utils.data.TeamStatsData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -14,25 +15,16 @@ import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 
-import static com.mceteams.xiidays.XIIDays.LOGGER;
 import static com.mceteams.xiidays.utils.NotifyOptions.notifyPlayer;
 
 public class PlayersHandler {
-    // #################################################################################################################
-    // Fonctions
-    // #################################################################################################################
 
-    // Retourne le nom standard d’un bloc minéral
     private static String getBlockName(Block block) {
-
-        // Special
         if (block == Blocks.MEDIUM_AMETHYST_BUD) return "AMETHYST_ORE";
         if (block == Blocks.LARGE_AMETHYST_BUD) return "AMETHYST_ORE";
         if (block == Blocks.SMALL_AMETHYST_BUD) return "AMETHYST_ORE";
         if (block == Blocks.NETHERITE_BLOCK) return "NETHERITE_ORE";
         if (block == Blocks.ANCIENT_DEBRIS) return "NETHERITE_ORE";
-
-        // Overworld
         if (block == Blocks.REDSTONE_ORE) return "REDSTONE_ORE";
         if (block == Blocks.DIAMOND_ORE) return "DIAMOND_ORE";
         if (block == Blocks.EMERALD_ORE) return "EMERALD_ORE";
@@ -41,8 +33,6 @@ public class PlayersHandler {
         if (block == Blocks.GOLD_ORE) return "GOLD_ORE";
         if (block == Blocks.IRON_ORE) return "IRON_ORE";
         if (block == Blocks.COAL_ORE) return "COAL_ORE";
-
-        // Deepslate
         if (block == Blocks.DEEPSLATE_REDSTONE_ORE) return "REDSTONE_ORE";
         if (block == Blocks.DEEPSLATE_DIAMOND_ORE) return "DIAMOND_ORE";
         if (block == Blocks.DEEPSLATE_EMERALD_ORE) return "EMERALD_ORE";
@@ -51,23 +41,16 @@ public class PlayersHandler {
         if (block == Blocks.DEEPSLATE_GOLD_ORE) return "GOLD_ORE";
         if (block == Blocks.DEEPSLATE_IRON_ORE) return "IRON_ORE";
         if (block == Blocks.DEEPSLATE_COAL_ORE) return "COAL_ORE";
-
-        return null; // pas un minerai
+        return null;
     }
-
-    // #################################################################################################################
-    // Events
-    // #################################################################################################################
 
     @SubscribeEvent
     public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
         Entity entity = event.getEntity();
-
         if (entity instanceof ServerPlayer serverPlayer) {
             if (DaysManager.isDayInProgress()) {
                 serverPlayer.removeEffectNoUpdate(net.minecraft.world.effect.MobEffects.DARKNESS);
                 serverPlayer.removeEffectNoUpdate(net.minecraft.world.effect.MobEffects.BLINDNESS);
-
                 serverPlayer.sendSystemMessage(Component.literal("Bienvenu(e) §l" + serverPlayer.getName().getString() + "§r, le jour §l" + DaysManager.getCurrentDay() + "§r est en cours !"));
                 serverPlayer.playNotifySound(SoundEvents.VILLAGER_NO, SoundSource.MASTER, 1.0f, 1.0f);
             }
@@ -89,9 +72,7 @@ public class PlayersHandler {
         String blockName = getBlockName(block);
 
         if (blockName != null) {
-            DataManager.dataModify("team_" + teamId + "_stats", "blocks_mined", DataManager.dataReadInt("team_" + teamId + "_stats", "blocks_mined", 0) + 1);
-
-            // Vérifie si le bloc est un minerai
+            TeamStatsData.incrementBlocksMined(teamId);
             switch (blockName) {
                 case "DIAMOND_ORE", "NETHERITE_ORE", "EMERALD_ORE",
                      "GOLD_ORE", "IRON_ORE", "COAL_ORE",
@@ -109,13 +90,11 @@ public class PlayersHandler {
             String attackerTeam = TeamManager.getPlayerCurrentTeam(serverAttacker.getUUID().toString());
             String targetTeam = TeamManager.getPlayerCurrentTeam(serverTarget.getUUID().toString());
 
-            // Vérifie si un jour est en cours
             if (!DaysManager.isDayInProgress()) {
                 event.setCanceled(true);
                 return;
             }
 
-            // Si les deux joueurs sont dans la même équipe, annule l'attaque
             if (attackerTeam != null && attackerTeam.equals(targetTeam)) {
                 event.setCanceled(true);
                 notifyPlayer(serverAttacker, "§cVous ne pouvez pas attaquer un membre de votre équipe !", new NotifyOptions().sound(SoundEvents.LAVA_EXTINGUISH, SoundSource.MASTER, 1.0f, 1.0f).actionBar(true));
@@ -126,62 +105,23 @@ public class PlayersHandler {
 
     @SubscribeEvent
     public void onPlayerDamage(LivingDamageEvent.Post event) {
-        // Vérifier que la victime est un joueur
         if (!(event.getEntity() instanceof ServerPlayer target)) return;
-
-        // Vérifier que l'attaquant est un joueur
         if (!(event.getSource().getEntity() instanceof ServerPlayer attacker)) return;
-
-        // Vérifier qu'un jour est en cours
         if (!DaysManager.isDayInProgress()) return;
 
-        float damage = event.getNewDamage(); // Dégâts réellement appliqués (après armure)
+        float damage = event.getNewDamage();
 
         String attackerTeam = TeamManager.getPlayerCurrentTeam(attacker.getUUID().toString());
         String targetTeam = TeamManager.getPlayerCurrentTeam(target.getUUID().toString());
 
-        // Vérifier que l'attaquant a une équipe
         if (attackerTeam == null) return;
-
-        // Ne pas compter les dégâts entre coéquipiers
         if (attackerTeam.equals(targetTeam)) return;
 
         int teamId = TeamManager.getTeamId(attackerTeam);
         int victimTeamId = TeamManager.getTeamId(targetTeam);
         if (teamId == 0) return;
 
-        // Récupérer les valeurs actuelles
-        int currentDamageDealt = DataManager.dataReadInt(
-                "team_" + teamId + "_stats",
-                "damage_dealt",
-                0
-        );
-
-        int currentDamageReceived = DataManager.dataReadInt(
-                "team_" + teamId + "_stats",
-                "damage_received",
-                0
-        );
-
-        // Incrémenter avec les nouveaux dégâts
-        DataManager.dataModify(
-                "team_" + teamId + "_stats",
-                "damage_dealt",
-                currentDamageDealt + (int) damage
-        );
-
-        DataManager.dataModify(
-                "team_" + victimTeamId + "_stats",
-                "damage_received",
-                currentDamageReceived + (int) damage
-        );
-
-        LOGGER.debug("{} a infligé {} dégâts à {} (équipe {})",
-                attacker.getName().getString(),
-                (int) damage,
-                target.getName().getString(),
-                targetTeam
-        );
+        TeamStatsData.addDamageDealt(teamId, (int) damage);
+        TeamStatsData.addDamageReceived(victimTeamId, (int) damage);
     }
-
 }

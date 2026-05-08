@@ -1,6 +1,9 @@
 package com.mceteams.xiidays.utils;
 
 import com.mceteams.xiidays.enums.PointType;
+import com.mceteams.xiidays.utils.data.PlayerStatsData;
+import com.mceteams.xiidays.utils.data.TeamData;
+import com.mceteams.xiidays.utils.data.TeamStatsData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,22 +21,11 @@ import static com.mceteams.xiidays.XIIDays.MODID;
 
 @EventBusSubscriber(modid = MODID)
 public class SpectateManager {
-
-    // Joueurs en spectate
     private static final Set<UUID> spectatingPlayers = new HashSet<>();
-
-    // Map spectateur → cible actuelle
     private static final Map<UUID, UUID> spectatorTargets = new HashMap<>();
-
-    // Zones de free cam par équipe
     private static final Map<String, FreeCamZone> freeCamZones = new HashMap<>();
-
-    // Joueurs en mode free cam (autorisé uniquement hors jour actif)
     private static final Set<UUID> freeCamPlayers = new HashSet<>();
 
-    /**
-     * Classe représentant une zone de free cam
-     */
     public static class FreeCamZone {
         public final BlockPos min;
         public final BlockPos max;
@@ -58,17 +50,10 @@ public class SpectateManager {
         }
     }
 
-    /**
-     * Event mort du joueur
-     */
     @SubscribeEvent
     public static void onPlayerDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-
-        // Vérifier si un jour est actif
-        if (!DaysManager.isDayInProgress()) {
-            return; // Respawn normal
-        }
+        if (!DaysManager.isDayInProgress()) return;
 
         String playerUUID = player.getUUID().toString();
         String teamName = TeamManager.getPlayerCurrentTeam(playerUUID);
@@ -78,33 +63,24 @@ public class SpectateManager {
             return;
         }
 
-        // Marquer comme spectateur
         spectatingPlayers.add(player.getUUID());
 
-        // Attribution des points
         int teamId = TeamManager.getTeamId(teamName);
         if (teamId > 0) {
-            DataManager.dataModify("player_" + player.getUUID() + "_stats", "deaths",
-                    DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 0) + 1);
-            DataManager.dataModify("team_" + teamId + "_stats", "kill_streak", 0);
+            PlayerStatsData.incrementDeaths(player.getUUID().toString());
+            TeamStatsData.setKillStreak(teamId, 0);
             PointsManager.addPoints(teamId, PointType.DEATH, player);
         }
 
-        // Gestion de l'attaquant
         if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
             String attackerTeamName = TeamManager.getPlayerCurrentTeam(attacker.getUUID().toString());
             int attackerTeamId = TeamManager.getTeamId(attackerTeamName);
 
             if (attackerTeamId > 0) {
-                DataManager.dataModify("team_" + attackerTeamId + "_stats", "kills",
-                        DataManager.dataReadInt("team_" + attackerTeamId + "_stats", "kills", 0) + 1);
-                DataManager.dataModify("team_" + attackerTeamId + "_stats", "kill_streak",
-                        DataManager.dataReadInt("team_" + attackerTeamId + "_stats", "kill_streak", 0) + 1);
-                DataManager.dataModify("team_" + attackerTeamId + "_stats", "max_kill_streak",
-                        Math.max(
-                                DataManager.dataReadInt("team_" + attackerTeamId + "_stats", "max_kill_streak", 0),
-                                DataManager.dataReadInt("team_" + attackerTeamId + "_stats", "kill_streak", 0)
-                        ));
+                TeamStatsData.incrementKills(attackerTeamId);
+                int newStreak = TeamStatsData.getKillStreak(attackerTeamId) + 1;
+                TeamStatsData.setKillStreak(attackerTeamId, newStreak);
+                TeamStatsData.updateMaxKillStreak(attackerTeamId);
 
                 PointsManager.addPoints(attackerTeamId, PointType.KILL, attacker);
                 PointsManager.addPoints(attackerTeamId, PointType.KILL_STREAK, attacker);
@@ -114,19 +90,13 @@ public class SpectateManager {
         LOGGER.info("Player {} died, will spectate teammates only", player.getName().getString());
     }
 
-    /**
-     * Event respawn
-     */
     @SubscribeEvent
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-
         if (!spectatingPlayers.contains(player.getUUID())) return;
 
-        // Passer en spectateur
         player.setGameMode(GameType.SPECTATOR);
 
-        // Trouver un coéquipier à spectater
         ServerPlayer teammate = findTeammateToSpectate(player);
         if (teammate != null) {
             spectatePlayer(player, teammate);
@@ -135,8 +105,7 @@ public class SpectateManager {
         int currentDay = DaysManager.getCurrentDay();
 
         if (currentDay <= 6) {
-            // Phase préparation : respawn avec délai
-            int deaths = DataManager.dataReadInt("player_" + player.getUUID() + "_stats", "deaths", 0);
+            int deaths = PlayerStatsData.getDeaths(player.getUUID().toString());
             int delaySeconds = Math.min(deaths * 3, 10);
 
             for (int i = 0; i < delaySeconds; i++) {
@@ -157,7 +126,6 @@ public class SpectateManager {
                 }
             });
         } else {
-            // Phase combat : spec jusqu'au totem
             String message = "§c§lVous êtes mort pendant la phase de combat !\n" +
                     "§7Votre équipe doit utiliser un §6Totem de Revivalité§7 pour vous faire respawn.\n" +
                     "§7Utilisez §e[Shift]§7 pour changer de coéquipier.";
@@ -165,24 +133,18 @@ public class SpectateManager {
         }
     }
 
-    /**
-     * Vérifie automatiquement si la cible est toujours valide
-     */
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer spectator)) return;
         if (spectator.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) return;
         if (!spectatingPlayers.contains(spectator.getUUID())) return;
 
-        // Vérifier toutes les secondes
         if (spectator.tickCount % 20 != 0) return;
 
         UUID targetUUID = spectatorTargets.get(spectator.getUUID());
         if (targetUUID == null) return;
 
         ServerPlayer target = getPlayerByUUID(targetUUID);
-
-        // Vérifier validité + équipe
         String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
         String targetTeam = target != null ? TeamManager.getPlayerCurrentTeam(target.getUUID().toString()) : null;
 
@@ -191,7 +153,6 @@ public class SpectateManager {
                 target.gameMode.getGameModeForPlayer() != GameType.SPECTATOR ||
                 !spectatorTeam.equals(targetTeam)) {
 
-            // Cible invalide, trouver un autre coéquipier
             ServerPlayer newTarget = findTeammateToSpectate(spectator);
             if (newTarget != null) {
                 spectatePlayer(spectator, newTarget);
@@ -199,11 +160,6 @@ public class SpectateManager {
         }
     }
 
-    // ===== MÉTHODES PUBLIQUES =====
-
-    /**
-     * Fait spectater un joueur (UNIQUEMENT coéquipiers)
-     */
     public static void spectatePlayer(ServerPlayer spectator, ServerPlayer target) {
         if (target == null) {
             spectator.setCamera(spectator);
@@ -211,7 +167,6 @@ public class SpectateManager {
             return;
         }
 
-        // VÉRIFICATION ÉQUIPE
         String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
         String targetTeam = TeamManager.getPlayerCurrentTeam(target.getUUID().toString());
 
@@ -223,16 +178,11 @@ public class SpectateManager {
             return;
         }
 
-        // Spectater
         spectator.setCamera(target);
         spectatorTargets.put(spectator.getUUID(), target.getUUID());
-
         spectator.sendSystemMessage(Component.literal("§eSpectate : §a" + target.getName().getString()), true);
     }
 
-    /**
-     * Change de coéquipier (appelé par les flèches ou Shift)
-     */
     public static void switchTeammate(ServerPlayer spectator, boolean next) {
         String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
         if (spectatorTeam == null) return;
@@ -260,23 +210,16 @@ public class SpectateManager {
         spectatePlayer(spectator, teammates.get(newIndex));
     }
 
-    /**
-     * Trouve un coéquipier à spectater
-     */
     private static ServerPlayer findTeammateToSpectate(ServerPlayer spectator) {
         List<ServerPlayer> teammates = getTeammates(spectator);
         return teammates.isEmpty() ? null : teammates.get(0);
     }
 
-    /**
-     * Récupère la liste des coéquipiers vivants
-     */
     private static List<ServerPlayer> getTeammates(ServerPlayer spectator) {
         String spectatorTeam = TeamManager.getPlayerCurrentTeam(spectator.getUUID().toString());
         if (spectatorTeam == null) return Collections.emptyList();
 
         List<ServerPlayer> teammates = new ArrayList<>();
-
         for (ServerPlayer player : spectator.serverLevel().getServer().getPlayerList().getPlayers()) {
             if (player.getUUID().equals(spectator.getUUID())) continue;
             if (player.gameMode.getGameModeForPlayer() != GameType.SURVIVAL) continue;
@@ -286,13 +229,9 @@ public class SpectateManager {
                 teammates.add(player);
             }
         }
-
         return teammates;
     }
 
-    /**
-     * Respawn un joueur
-     */
     public static boolean respawnPlayer(ServerPlayer player) {
         if (!spectatingPlayers.contains(player.getUUID())) return false;
 
@@ -301,14 +240,25 @@ public class SpectateManager {
 
         String teamName = TeamManager.getPlayerCurrentTeam(player.getUUID().toString());
         if (teamName != null) {
-            BlockPos spawnPos = getTeamSpawnPosition(teamName);
-            if (spawnPos != null) {
-                player.teleportTo(player.serverLevel(),
-                        spawnPos.getX() + 0.5,
-                        spawnPos.getY(),
-                        spawnPos.getZ() + 0.5,
-                        player.getYRot(),
-                        player.getXRot());
+            int teamId = TeamManager.getTeamId(teamName);
+            String spawnData = TeamData.getSpawn(teamId);
+            if (spawnData != null) {
+                try {
+                    String[] coords = spawnData.split(",");
+                    BlockPos spawnPos = new BlockPos(
+                            Integer.parseInt(coords[0].trim()),
+                            Integer.parseInt(coords[1].trim()),
+                            Integer.parseInt(coords[2].trim())
+                    );
+                    player.teleportTo(player.serverLevel(),
+                            spawnPos.getX() + 0.5,
+                            spawnPos.getY(),
+                            spawnPos.getZ() + 0.5,
+                            player.getYRot(),
+                            player.getXRot());
+                } catch (NumberFormatException e) {
+                    LOGGER.error("Invalid spawn data for team {}: {}", teamName, spawnData);
+                }
             }
         }
 
@@ -319,9 +269,6 @@ public class SpectateManager {
         return true;
     }
 
-    /**
-     * Respawn tous les spectateurs
-     */
     public static void respawnAllSpectators() {
         Set<UUID> toRespawn = new HashSet<>(spectatingPlayers);
         for (UUID uuid : toRespawn) {
@@ -360,21 +307,5 @@ public class SpectateManager {
             if (player.getUUID().equals(uuid)) return player;
         }
         return null;
-    }
-
-    private static BlockPos getTeamSpawnPosition(String teamName) {
-        String spawnData = DataManager.dataRead(teamName, "spawn");
-        if (spawnData == null) return null;
-
-        try {
-            String[] coords = spawnData.split(",");
-            return new BlockPos(
-                    Integer.parseInt(coords[0].trim()),
-                    Integer.parseInt(coords[1].trim()),
-                    Integer.parseInt(coords[2].trim())
-            );
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 }

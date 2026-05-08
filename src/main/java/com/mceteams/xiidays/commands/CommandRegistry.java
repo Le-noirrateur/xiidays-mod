@@ -3,6 +3,9 @@ package com.mceteams.xiidays.commands;
 import com.mceteams.xiidays.network.OpenScoreboardPacket;
 import com.mceteams.xiidays.network.PacketHandler;
 import com.mceteams.xiidays.utils.*;
+import com.mceteams.xiidays.utils.data.DataManager;
+import com.mceteams.xiidays.utils.data.DayCycleData;
+import com.mceteams.xiidays.utils.data.TeamData;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -28,8 +31,6 @@ import net.minecraft.world.level.block.Block;
 
 import java.util.Map;
 import java.util.Objects;
-
-import static com.mceteams.xiidays.utils.DataManager.*;
 
 public class CommandRegistry {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -97,8 +98,8 @@ public class CommandRegistry {
                 .then(Commands.literal("status")
                         .executes(context -> {
 
-                            int Day = dataReadInt("days", "currentDay", 0);
-                            boolean isInProgress = dataReadBoolean("days", "isInProgress", false);
+                            int Day = DayCycleData.getCurrentDay();
+                            boolean isInProgress = DayCycleData.isInProgress();
 
                             Objects.requireNonNull(context.getSource().getPlayer()).playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.MASTER, 1f, 1f);
                             context.getSource().sendSystemMessage(Component.literal("Jours: " + Day + ", En cours: " + isInProgress));
@@ -111,12 +112,12 @@ public class CommandRegistry {
                         .then(Commands.argument("integer", IntegerArgumentType.integer())
                                 .executes(context -> {
                                     int value = IntegerArgumentType.getInteger(context, "integer");
-                                    int OldDay = dataReadInt("days", "currentDay", 0);
-                                    dataModify("days", "currentDay", value);
+                                    int OldDay = DayCycleData.getCurrentDay();
+                                    DayCycleData.setCurrentDay(value);
 
                                     context.getSource().sendSystemMessage(Component.literal("Vous avez modifié le jour actuel de §8§l" + OldDay + "§r à §2§l" + value));
 
-                                    if (dataReadBoolean("days", "isInProgress", false)) {
+                                    if (DayCycleData.isInProgress()) {
                                         context.getSource().getServer().getPlayerList()
                                                 .broadcastSystemMessage(Component.literal("Le jour actuel n'est plus, nous désormais le §2§l" + value + " jour"), false);
 
@@ -431,46 +432,11 @@ public class CommandRegistry {
                 .requires(source -> source.hasPermission(4))
 
                 .then(Commands.literal("data")
-                        // /xgame data modify <table> <key> <value>
-                        .then(Commands.literal("modify")
-                                .then(Commands.argument("table", StringArgumentType.string())
-                                        .suggests((context, builder) -> {
-                                            // Suggest all tables
-                                            for (String table : DataManager.getAllTables()) {
-                                                builder.suggest(table);
-                                            }
-                                            return builder.buildFuture();
-                                        })
-                                        .then(Commands.argument("key", StringArgumentType.string())
-                                                .suggests((context, builder) -> {
-                                                    String table = StringArgumentType.getString(context, "table");
-                                                    for (String key : DataManager.getAllDataNames(table)) {
-                                                        builder.suggest(key);
-                                                    }
-                                                    return builder.buildFuture();
-                                                })
-                                                .then(Commands.argument("value", StringArgumentType.string())
-                                                        .executes(context -> {
-                                                            String table = StringArgumentType.getString(context, "table");
-                                                            String key = StringArgumentType.getString(context, "key");
-                                                            String value = StringArgumentType.getString(context, "value");
-
-                                                            DataManager.dataModify(table, key, value);
-
-                                                            context.getSource().sendSystemMessage(Component.literal("§aDonnée modifiée : " + table + "." + key + " = " + value));
-
-                                                            return 1;
-                                                        })
-                                                )
-                                        )
-                                )
-                        )
-
                         // /xgame data reload
                         .then(Commands.literal("reload")
                                 .executes(context -> {
-                                    DataManager.reloadData();
-                                    context.getSource().sendSystemMessage(Component.literal("§eData rechargées depuis le fichier !"));
+                                    DataManager.reloadAll();
+                                    context.getSource().sendSystemMessage(Component.literal("§eData rechargées depuis les fichiers !"));
                                     return 1;
                                 })
                         )
@@ -478,8 +444,21 @@ public class CommandRegistry {
                         // /xgame data save
                         .then(Commands.literal("save")
                                 .executes(context -> {
-                                    DataManager.forceSave();
+                                    DataManager.saveAll();
                                     context.getSource().sendSystemMessage(Component.literal("§eData sauvegardées !"));
+                                    return 1;
+                                })
+                        )
+
+                        // /xgame data status
+                        .then(Commands.literal("domains")
+                                .executes(context -> {
+                                    String[] domains = DataManager.getAllDomains();
+                                    if (domains.length == 0) {
+                                        context.getSource().sendSystemMessage(Component.literal("§7Aucun domaine chargé"));
+                                    } else {
+                                        context.getSource().sendSystemMessage(Component.literal("§eDomaines chargés : §f" + String.join(", ", domains)));
+                                    }
                                     return 1;
                                 })
                         )
@@ -879,7 +858,7 @@ public class CommandRegistry {
                                                                     ServerPlayer sender = context.getSource().getPlayerOrException();
 
                                                                     // Vérifier que l'équipe existe
-                                                                    if (!DataManager.hasData("Teams", teamName)) {
+                                                                    if (!TeamData.teamExists(teamName)) {
                                                                         sender.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
                                                                         context.getSource().sendFailure(Component.literal("§cL'équipe \"" + teamName + "\" n'existe pas !"));
                                                                         return 0;

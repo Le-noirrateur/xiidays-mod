@@ -2,6 +2,8 @@ package com.mceteams.xiidays.utils;
 
 import com.mceteams.xiidays.enums.PointType;
 import com.mceteams.xiidays.events.PointsChangedEvent;
+import com.mceteams.xiidays.utils.data.PlayerStatsData;
+import com.mceteams.xiidays.utils.data.TeamStatsData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -12,21 +14,20 @@ import java.util.List;
 import java.util.Map;
 
 import static com.mceteams.xiidays.XIIDays.LOGGER;
-import static com.mceteams.xiidays.utils.DataManager.*;
 
 public class PointsManager {
     private static final Map<Integer, Integer> teamPoints = new HashMap<>();
 
     public static void addPoints(int teamId, PointType type, Player player, Object... args) {
-        int oldPoints = dataReadInt("team_" + teamId + "_points", "total", 0);
+        int oldPoints = TeamStatsData.getPoints(teamId);
         int newPoints;
-        int playerPoints = dataReadInt("player_" + player.getUUID() + "_stats", "team_points", 0);
+        int playerPoints = PlayerStatsData.getTeamPoints(player.getUUID().toString());
         int pointsAdded = 0;
 
         switch (type) {
-            case KILL -> pointsAdded = 50; // Points for a kill
-            case DEATH -> pointsAdded = -25; // Penalty for death
-            case MINING -> { // Points for mining different ores
+            case KILL -> pointsAdded = 50;
+            case DEATH -> pointsAdded = -25;
+            case MINING -> {
                 String blockType = (String) args[0];
                 switch (blockType) {
                     case "DIAMOND_ORE", "NETHERITE_ORE" -> pointsAdded = 100;
@@ -37,11 +38,9 @@ public class PointsManager {
                     case "COPPER_ORE" -> pointsAdded = 5;
                 }
             }
-
-            case FIRST_BLOOD -> pointsAdded = 2000; // Points for first kill of the game
-            case KILL_STREAK -> { // Points for kill streaks
-                int streak = dataReadInt("team_" + teamId + "_stats", "kill_streak", 0);
-
+            case FIRST_BLOOD -> pointsAdded = 2000;
+            case KILL_STREAK -> {
+                int streak = TeamStatsData.getKillStreak(teamId);
                 if (streak >= 3 && streak < 5) {
                     pointsAdded = 25;
                 } else if (streak >= 5 && streak < 10) {
@@ -50,34 +49,32 @@ public class PointsManager {
                     pointsAdded = 100;
                 }
             }
-
-            case CRATE -> pointsAdded = 75; // Points for opening a crate
-            case TOTEM -> pointsAdded = 200; // Points for finding a reviving totem
-            case CORE_MAZE -> pointsAdded = 300; // Points for completing the core maze
-            default -> LOGGER.error("PointType non géré: {}", type); // Log unhandled PointType
+            case CRATE -> pointsAdded = 75;
+            case TOTEM -> pointsAdded = 200;
+            case CORE_MAZE -> pointsAdded = 300;
+            default -> LOGGER.error("PointType non géré: {}", type);
         }
 
-        newPoints = oldPoints + pointsAdded; // Update team points
-        playerPoints += pointsAdded; // Update player points
+        newPoints = oldPoints + pointsAdded;
+        playerPoints += pointsAdded;
 
         if (pointsAdded != 0) {
             NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, oldPoints, newPoints));
         }
 
-        teamPoints.put(teamId, newPoints); // Update in-memory team points
+        teamPoints.put(teamId, newPoints);
 
-        dataModify("team_" + teamId + "_points", "total", newPoints); // Update team's total points
-        dataModify("player_" + player.getUUID() + "_stats", "team_points", playerPoints); // Update player's total points
-        if ((pointsAdded >= 25 || type == PointType.DEATH) && type != PointType.KILL_STREAK) { // Log significant point changes
-            dataModify("team_" + teamId + "_points", "list_3", dataRead("team_" + teamId + "_points", "list_2"));
-            dataModify("team_" + teamId + "_points", "list_2", dataRead("team_" + teamId + "_points", "list_1"));
-            dataModify("team_" + teamId + "_points", "list_1", player.getName().getString() + ":" + type + ":" + pointsAdded);
+        TeamStatsData.setPoints(teamId, newPoints);
+        PlayerStatsData.setTeamPoints(player.getUUID().toString(), playerPoints);
+
+        if ((pointsAdded >= 25 || type == PointType.DEATH) && type != PointType.KILL_STREAK) {
+            TeamStatsData.pushPointHistory(teamId, player.getName().getString() + ":" + type + ":" + pointsAdded);
         }
 
         if (pointsAdded < 0) {
-            dataModify("team_" + teamId + "_stats", "pointloss", dataReadInt("team_" + teamId + "_stats", "pointloss", 0) - pointsAdded);
+            TeamStatsData.addPointLoss(teamId, -pointsAdded);
         } else {
-            dataModify("team_" + teamId + "_stats", "pointgain", dataReadInt("team_" + teamId + "_stats", "pointgain", 0) + pointsAdded);
+            TeamStatsData.addPointGain(teamId, pointsAdded);
         }
 
         if (player instanceof ServerPlayer srvp) {
@@ -85,34 +82,22 @@ public class PointsManager {
             srvp.sendSystemMessage(Component.literal("Vous avez ajouté §4§l" + addedStr + "§r à votre équipe (§6§l" + type +"§r)"));
             TeamManager.sendMessageToTeam(teamId, Component.literal(player.getName().getString() + " à ajouté §4§l" + addedStr + "§r à votre équipe (§6§l" + type + "§r)"), player.getUUID());
         }
-        NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, oldPoints, newPoints)); // Trigger event for points change
+        NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, oldPoints, newPoints));
     }
 
-    // Ajoute cette méthode dans PointsManager.java
-
-    /**
-     * Initialise les points de toutes les équipes existantes
-     * À appeler au démarrage du serveur
-     */
     public static void initializeTeamPoints() {
         String[] allTeams = TeamManager.getAllTeams();
-
         for (String teamName : allTeams) {
             int teamId = TeamManager.getTeamId(teamName);
             if (teamId > 0) {
-                // Charger les points depuis DataManager
-                int points = dataReadInt("team_" + teamId + "_points", "total", 0);
+                int points = TeamStatsData.getPoints(teamId);
                 teamPoints.put(teamId, points);
                 LOGGER.info("Loaded team {} (ID: {}) with {} points", teamName, teamId, points);
             }
         }
-
         LOGGER.info("Initialized {} teams in leaderboard", teamPoints.size());
     }
 
-    /**
-     * Recharge tous les points depuis DataManager (utile après création d'équipe)
-     */
     public static void refreshTeamPoints() {
         teamPoints.clear();
         initializeTeamPoints();
@@ -121,8 +106,7 @@ public class PointsManager {
     public static List<Map.Entry<Integer, Integer>> getLeaderboard() {
         return teamPoints.entrySet()
                 .stream()
-                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue())) // tri desc
+                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
                 .toList();
     }
-
 }
