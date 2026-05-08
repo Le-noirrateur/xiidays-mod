@@ -1,8 +1,8 @@
 package com.mceteams.xiidays.network;
 
-import com.mceteams.xiidays.utils.data.PlayerStatsData;
-import com.mceteams.xiidays.utils.data.TeamData;
-import com.mceteams.xiidays.utils.data.TeamStatsData;
+import com.mceteams.xiidays.data.PlayerStatsData;
+import com.mceteams.xiidays.data.TeamData;
+import com.mceteams.xiidays.data.TeamStatsData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

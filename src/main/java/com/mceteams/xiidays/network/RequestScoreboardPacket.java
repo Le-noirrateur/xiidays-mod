@@ -1,6 +1,6 @@
 package com.mceteams.xiidays.network;
 
-import com.mceteams.xiidays.utils.ScoreboardManager;
+import com.mceteams.xiidays.game.ScoreboardManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

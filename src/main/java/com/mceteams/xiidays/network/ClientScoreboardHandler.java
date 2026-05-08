@@ -1,7 +1,7 @@
 package com.mceteams.xiidays.network;
 
-import com.mceteams.xiidays.client.ClientRankTracker;
-import com.mceteams.xiidays.client.ScoreboardScreen;
+import com.mceteams.xiidays.player.ClientRankTracker;
+import com.mceteams.xiidays.screen.ScoreboardScreen;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;

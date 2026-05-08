@@ -1,10 +1,10 @@
 package com.mceteams.xiidays;
 
-import com.mceteams.xiidays.blocks.BlockEntityRegistry;
-import com.mceteams.xiidays.blocks.BlockRegistry;
-import com.mceteams.xiidays.client.KeyBindings;
 import com.mceteams.xiidays.network.OpenScoreboardPacket;
-import com.mceteams.xiidays.render.TeamSpawnerRenderer;
+import com.mceteams.xiidays.visual.KeyBindings;
+import com.mceteams.xiidays.visual.TeamSpawnerRenderer;
+import com.mceteams.xiidays.world.BlockEntityRegistry;
+import com.mceteams.xiidays.world.BlockRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;

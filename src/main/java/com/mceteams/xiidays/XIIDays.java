@@ -1,13 +1,21 @@
 package com.mceteams.xiidays;
 
-import com.mceteams.xiidays.blocks.BlockEntityRegistry;
-import com.mceteams.xiidays.blocks.BlockRegistry;
 import com.mceteams.xiidays.commands.CommandRegistry;
-import com.mceteams.xiidays.items.ItemRegistry;
-import com.mceteams.xiidays.menus.MenuRegistry;
+import com.mceteams.xiidays.config.Config;
+import com.mceteams.xiidays.game.PointsManager;
+import com.mceteams.xiidays.game.ScoreboardManager;
+import com.mceteams.xiidays.game.TaskScheduler;
+import com.mceteams.xiidays.item.ItemRegistry;
 import com.mceteams.xiidays.network.RequestScoreboardPacket;
-import com.mceteams.xiidays.utils.*;
+import com.mceteams.xiidays.player.PlayersHandler;
+import com.mceteams.xiidays.restriction.RestrictionsManager;
+import com.mceteams.xiidays.screen.MenuRegistry;
+import com.mceteams.xiidays.spectator.SpectateManager;
+import com.mceteams.xiidays.visual.ZoneVisualizer;
+import com.mceteams.xiidays.world.BlockEntityRegistry;
+import com.mceteams.xiidays.world.BlockRegistry;
 import com.mojang.logging.LogUtils;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -73,8 +81,13 @@ public class XIIDays {
         LOGGER.info("[XII Days - Mod]: Common setup complete.");
     }
 
-    // Add the example block item to the building blocks tab
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
+            event.accept(ItemRegistry.TOTEM_REVIVALITE.get());
+        }
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(ItemRegistry.CORE_DESTROYER.get());
+        }
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call

@@ -1,6 +1,6 @@
 package com.mceteams.xiidays.network;
 
-import com.mceteams.xiidays.utils.spectate.SpectatePackets;
+import com.mceteams.xiidays.spectator.SpectatePackets;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;

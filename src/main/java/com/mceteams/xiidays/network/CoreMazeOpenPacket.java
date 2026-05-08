@@ -1,6 +1,6 @@
 package com.mceteams.xiidays.network;
 
-import com.mceteams.xiidays.menus.CoreMazeScreen;
+import com.mceteams.xiidays.screen.CoreMazeScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

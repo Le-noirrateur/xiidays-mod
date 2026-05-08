@@ -1,9 +1,9 @@
 package com.mceteams.xiidays.network;
 
-import com.mceteams.xiidays.enums.PointType;
-import com.mceteams.xiidays.utils.PointsManager;
-import com.mceteams.xiidays.utils.TeamManager;
-import com.mceteams.xiidays.utils.data.TeamData;
+import com.mceteams.xiidays.data.TeamData;
+import com.mceteams.xiidays.game.PointType;
+import com.mceteams.xiidays.game.PointsManager;
+import com.mceteams.xiidays.game.TeamManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
