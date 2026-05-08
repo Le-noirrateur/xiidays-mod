@@ -71,6 +71,11 @@ public class DaysManager {
                 }
 
                 int days = DayCycleData.getCurrentDay();
+
+                if (days > 6) {
+                    SpectateManager.handlePhase2DayStart();
+                }
+
                 Component msg;
 
                 if (days == 1) {
@@ -115,7 +120,11 @@ public class DaysManager {
     public static boolean stop(CommandContext<CommandSourceStack> context) {
         try {
             DayCycleData.setInProgress(false);
-            SpectateManager.respawnAllSpectators();
+
+            // Phase 1: respawn at day end. Phase 2: stay dead, respawn at next day start.
+            if (DayCycleData.getCurrentDay() <= 6) {
+                SpectateManager.respawnAllSpectators();
+            }
 
             for (Player player : context.getSource().getServer().getPlayerList().getPlayers()) {
                 player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 99999, 255, true, false));

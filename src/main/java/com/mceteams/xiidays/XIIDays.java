@@ -47,6 +47,7 @@ public class XIIDays {
         LOGGER.info("[XII Days - Mod]: Registering Events listeners & senders...");
         NeoForge.EVENT_BUS.register(RestrictionsManager.class);
         NeoForge.EVENT_BUS.register(SpectateManager.class);
+        NeoForge.EVENT_BUS.register(ZoneVisualizer.class);
         NeoForge.EVENT_BUS.register(TaskScheduler.class);
         NeoForge.EVENT_BUS.register(new PlayersHandler());
         NeoForge.EVENT_BUS.register(ScoreboardManager.class); // ← AJOUTE CETTE LIGNE

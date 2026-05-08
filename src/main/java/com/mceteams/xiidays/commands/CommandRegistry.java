@@ -34,6 +34,7 @@ import java.util.Objects;
 
 public class CommandRegistry {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        SpectatorZoneCommand.register(dispatcher);
 
         // ################
         // ## SCOREBOARD ##
@@ -864,8 +865,12 @@ public class CommandRegistry {
                                                                         return 0;
                                                                     }
 
-                                                                    // Définir la zone
-//                                                                    SpectateManager.setFreeCamZone(teamName, corner1, corner2);
+                                                                    // Définir la zone FCZ
+                                                                    int teamId = TeamData.getTeamId(teamName);
+                                                                    if (teamId > 0) {
+                                                                        TeamData.setFreeCamZoneMin(teamId, corner1.getX() + "," + corner1.getY() + "," + corner1.getZ());
+                                                                        TeamData.setFreeCamZoneMax(teamId, corner2.getX() + "," + corner2.getY() + "," + corner2.getZ());
+                                                                    }
 
                                                                     // Calculer les dimensions
                                                                     int sizeX = Math.abs(corner2.getX() - corner1.getX()) + 1;

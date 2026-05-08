@@ -262,4 +262,34 @@ public class TeamData {
         getConfig(teamId).addProperty("maze_solved", val);
         DataManager.save(DOMAIN);
     }
+
+    public static String getFreeCamZoneMin(int teamId) {
+        JsonObject config = getConfig(teamId);
+        return config.has("fcz_min") ? config.get("fcz_min").getAsString() : null;
+    }
+
+    public static void setFreeCamZoneMin(int teamId, String coords) {
+        JsonObject config = getConfig(teamId);
+        if (coords != null) {
+            config.addProperty("fcz_min", coords);
+        } else {
+            config.remove("fcz_min");
+        }
+        DataManager.save(DOMAIN);
+    }
+
+    public static String getFreeCamZoneMax(int teamId) {
+        JsonObject config = getConfig(teamId);
+        return config.has("fcz_max") ? config.get("fcz_max").getAsString() : null;
+    }
+
+    public static void setFreeCamZoneMax(int teamId, String coords) {
+        JsonObject config = getConfig(teamId);
+        if (coords != null) {
+            config.addProperty("fcz_max", coords);
+        } else {
+            config.remove("fcz_max");
+        }
+        DataManager.save(DOMAIN);
+    }
 }

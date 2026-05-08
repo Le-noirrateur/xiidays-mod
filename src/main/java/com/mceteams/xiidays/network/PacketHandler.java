@@ -1,5 +1,6 @@
 package com.mceteams.xiidays.network;
 
+import com.mceteams.xiidays.utils.spectate.SpectatePackets;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -41,6 +42,12 @@ public class PacketHandler {
                 RequestTeamStatsPacket.TYPE,
                 RequestTeamStatsPacket.CODEC,
                 RequestTeamStatsPacket::handle
+        );
+
+        registrar.playToServer(
+                SpectatePackets.SpectateSwitchPayload.TYPE,
+                SpectatePackets.SpectateSwitchPayload.CODEC,
+                SpectatePackets.SpectateSwitchPayload::handle
         );
 
         // Serveur -> Client
