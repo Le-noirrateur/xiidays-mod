@@ -30,6 +30,8 @@ public record OpenEndScoreboardPacket(
             buf.writeUtf(packet.mvp.teamName());
             buf.writeInt(packet.mvp.pointsContributed());
             buf.writeInt(packet.mvp.kills());
+            buf.writeInt(packet.mvp.deaths());
+            buf.writeInt(packet.mvp.score());
             buf.writeInt(packet.teamStats.size());
             for (TeamEntry team : packet.teamStats) {
                 buf.writeUtf(team.teamName());
@@ -49,6 +51,8 @@ public record OpenEndScoreboardPacket(
                     buf.readUtf(),
                     buf.readUtf(),
                     buf.readUtf(),
+                    buf.readInt(),
+                    buf.readInt(),
                     buf.readInt(),
                     buf.readInt()
             );
@@ -78,7 +82,7 @@ public record OpenEndScoreboardPacket(
         context.enqueueWork(() -> ClientEndScoreboardHandler.openEndScoreboard(packet));
     }
 
-    public record MvpData(String playerName, String playerUUID, String teamName, int pointsContributed, int kills) {}
+    public record MvpData(String playerName, String playerUUID, String teamName, int pointsContributed, int kills, int deaths, int score) {}
 
     public record TeamEntry(String teamName, int points, int kills, int deaths, int blocksMined, int damageDealt, int finalPosition) {}
 }

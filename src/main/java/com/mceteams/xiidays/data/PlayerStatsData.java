@@ -34,6 +34,20 @@ public class PlayerStatsData {
         setTeamPoints(uuid, getTeamPoints(uuid) + amount);
     }
 
+    public static int getKills(String uuid) {
+        JsonObject player = getPlayer(uuid);
+        return player.has("kills") ? player.get("kills").getAsInt() : 0;
+    }
+
+    public static void setKills(String uuid, int kills) {
+        getPlayer(uuid).addProperty("kills", kills);
+        DataManager.save(DOMAIN);
+    }
+
+    public static void incrementKills(String uuid) {
+        setKills(uuid, getKills(uuid) + 1);
+    }
+
     public static int getDeaths(String uuid) {
         JsonObject player = getPlayer(uuid);
         return player.has("deaths") ? player.get("deaths").getAsInt() : 0;

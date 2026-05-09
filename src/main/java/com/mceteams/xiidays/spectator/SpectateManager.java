@@ -9,7 +9,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -73,6 +78,62 @@ public class SpectateManager {
     }
 
     // ──────────────────────────────────────────────
+    // Saved Inventory (first 3 days)
+    // ──────────────────────────────────────────────
+
+    private static final Map<UUID, SavedInventory> savedInventories = new HashMap<>();
+
+    public record SavedInventory(List<ItemStack> items, int xpLevels, float xpProgress) {}
+
+    private static boolean isOreItem(ItemStack stack) {
+        return stack.is(Items.RAW_IRON) || stack.is(Items.RAW_GOLD) || stack.is(Items.RAW_COPPER)
+                || stack.is(Items.IRON_INGOT) || stack.is(Items.GOLD_INGOT) || stack.is(Items.COPPER_INGOT)
+                || stack.is(Items.DIAMOND) || stack.is(Items.EMERALD)
+                || stack.is(Items.LAPIS_LAZULI) || stack.is(Items.REDSTONE)
+                || stack.is(Items.COAL) || stack.is(Items.AMETHYST_SHARD)
+                || stack.is(Items.NETHERITE_SCRAP) || stack.is(Items.NETHERITE_INGOT);
+    }
+
+    private static void savePlayerInventory(ServerPlayer player) {
+        Inventory inv = player.getInventory();
+        List<ItemStack> saved = new ArrayList<>();
+        Level level = player.serverLevel();
+        BlockPos pos = player.blockPosition();
+
+        // Save main inventory + armor + offhand
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack stack = inv.getItem(i);
+            if (stack.isEmpty()) continue;
+            if (isOreItem(stack)) {
+                // Drop ore items on the ground
+                level.addFreshEntity(new ItemEntity(level, pos.getX(), pos.getY(), pos.getZ(), stack.copy()));
+            } else {
+                saved.add(stack.copy());
+            }
+        }
+
+        savedInventories.put(player.getUUID(), new SavedInventory(
+                saved, player.experienceLevel, player.experienceProgress
+        ));
+
+        player.getInventory().clearContent();
+        player.setExperienceLevels(0);
+        player.experienceProgress = 0.0f;
+    }
+
+    private static void restorePlayerInventory(ServerPlayer player) {
+        SavedInventory saved = savedInventories.remove(player.getUUID());
+        if (saved == null) return;
+
+        player.getInventory().clearContent();
+        for (int i = 0; i < saved.items.size() && i < player.getInventory().getContainerSize(); i++) {
+            player.getInventory().setItem(i, saved.items.get(i));
+        }
+        player.setExperienceLevels(saved.xpLevels);
+        player.experienceProgress = saved.xpProgress;
+    }
+
+    // ──────────────────────────────────────────────
     // Events
     // ──────────────────────────────────────────────
 
@@ -104,6 +165,7 @@ public class SpectateManager {
 
             if (attackerTeamId > 0) {
                 TeamStatsData.incrementKills(attackerTeamId);
+                PlayerStatsData.incrementKills(attacker.getUUID().toString());
                 int newStreak = TeamStatsData.getKillStreak(attackerTeamId) + 1;
                 TeamStatsData.setKillStreak(attackerTeamId, newStreak);
                 TeamStatsData.updateMaxKillStreak(attackerTeamId);
@@ -111,6 +173,10 @@ public class SpectateManager {
                 PointsManager.addPoints(attackerTeamId, PointType.KILL, attacker);
                 PointsManager.addPoints(attackerTeamId, PointType.KILL_STREAK, attacker);
             }
+        }
+
+        if (DaysManager.getCurrentDay() <= 3) {
+            savePlayerInventory(player);
         }
 
         LOGGER.info("Player {} died, entering spectator mode (phase {})",
@@ -526,6 +592,8 @@ public class SpectateManager {
         player.setGameMode(GameType.SURVIVAL);
         player.setHealth(player.getMaxHealth());
         player.getFoodData().setFoodLevel(20);
+
+        restorePlayerInventory(player);
 
         return true;
     }

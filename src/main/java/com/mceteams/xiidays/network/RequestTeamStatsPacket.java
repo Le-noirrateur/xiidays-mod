@@ -68,7 +68,7 @@ public record RequestTeamStatsPacket(String teamName) implements CustomPacketPay
                 ServerPlayer memberPlayer = player.server.getPlayerList().getPlayer(UUID.fromString(playerUUID));
                 String playerName = memberPlayer != null ? memberPlayer.getName().getString() : "Joueur hors ligne";
 
-                int pKills = 0;
+                int pKills = PlayerStatsData.getKills(playerUUID);
                 int pDeaths = PlayerStatsData.getDeaths(playerUUID);
                 int pPoints = PlayerStatsData.getTeamPoints(playerUUID);
                 int pBlocksMined = 0;

@@ -106,12 +106,28 @@ public class PointsPopupClientHandler {
             this.typeName = typeName;
             this.createdAt = createdAt;
             this.lifetimeMs = lifetimeMs;
-            this.visualY = createdAt; // will be smoothed immediately on first render
+            this.visualY = createdAt;
+        }
+
+        String displayName() {
+            return switch (typeName) {
+                case "KILL" -> "Kill";
+                case "DEATH" -> "Death";
+                case "MINING" -> "Mining";
+                case "FIRST_BLOOD" -> "First Blood";
+                case "KILL_STREAK" -> "Kill Streak";
+                case "CRATE" -> "Crate";
+                case "TOTEM" -> "Totem";
+                case "CORE_MAZE" -> "Core Maze";
+                case "REVIVED" -> "Ressuscite";
+                default -> typeName.replace('_', ' ');
+            };
         }
 
         String formattedText() {
+            if (points == 0) return "§a" + displayName();
             String sign = points >= 0 ? "§a+" : "§c";
-            return "§7" + typeName + " " + sign + points;
+            return "§7" + displayName() + " " + sign + points;
         }
     }
 }

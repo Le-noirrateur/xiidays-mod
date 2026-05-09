@@ -223,11 +223,14 @@ public class TeamManager {
         }
         teamStats.sort(Comparator.comparingInt(OpenEndScoreboardPacket.TeamEntry::finalPosition));
 
-        // Compute MVP: player with highest team_points contribution
+        // Compute MVP: player with highest weighted score
         String bestUUID = null;
         String bestName = null;
         String bestTeam = null;
         int bestPoints = -1;
+        int bestKills = 0;
+        int bestDeaths = 0;
+        int bestScore = -1;
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
 
         for (String teamName : TeamData.getAllTeamNames()) {
@@ -236,9 +239,15 @@ public class TeamManager {
             JsonArray members = TeamData.getMembers(tid);
             for (int i = 0; i < members.size(); i++) {
                 String uuid = members.get(i).getAsString();
-                int points = PlayerStatsData.getTeamPoints(uuid);
-                if (points > bestPoints) {
-                    bestPoints = points;
+                int pPoints = PlayerStatsData.getTeamPoints(uuid);
+                int pKills = PlayerStatsData.getKills(uuid);
+                int pDeaths = PlayerStatsData.getDeaths(uuid);
+                int pScore = pPoints + pKills * 50 - pDeaths * 10;
+                if (pScore > bestScore) {
+                    bestScore = pScore;
+                    bestPoints = pPoints;
+                    bestKills = pKills;
+                    bestDeaths = pDeaths;
                     bestUUID = uuid;
                     bestTeam = teamName;
                     if (server != null) {
@@ -256,7 +265,9 @@ public class TeamManager {
                 bestUUID != null ? bestUUID : "",
                 bestTeam != null ? bestTeam : "",
                 Math.max(bestPoints, 0),
-                0
+                Math.max(bestKills, 0),
+                Math.max(bestDeaths, 0),
+                Math.max(bestScore, 0)
         );
 
         return new OpenEndScoreboardPacket(winnerTeam, mvp, teamStats);

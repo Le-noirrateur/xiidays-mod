@@ -30,7 +30,7 @@ public class EndScoreboardScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        int contentHeight = 220 + teamStatsList.size() * 22;
+        int contentHeight = 230 + teamStatsList.size() * 22;
         maxScroll = Math.max(0, contentHeight - (PANEL_HEIGHT - 120));
     }
 
@@ -72,24 +72,30 @@ public class EndScoreboardScreen extends Screen {
         yOffset += 40;
 
         // ── WINNER STATS ──
-        int pts = 0, kills = 0, deaths = 0;
+        int pts = 0, kills = 0, deaths = 0, blocks = 0, damage = 0;
         for (OpenEndScoreboardPacket.TeamEntry t : teamStatsList) {
             if (t.teamName().equals(winningTeam)) {
                 pts = t.points();
                 kills = t.kills();
                 deaths = t.deaths();
+                blocks = t.blocksMined();
+                damage = t.damageDealt();
                 break;
             }
         }
-        graphics.drawString(font, "§7Points: §6" + pts + "  §7Kills: §c" + kills + "  §7Morts: §8" + deaths, contentX + 10, yOffset, 0xAAAAAA);
+        graphics.drawString(font, "§7Points: §6" + pts + "  §7Kills: §c" + kills + "  §7Morts: §8" + deaths
+                + "  §7Blocs: §b" + blocks + "  §7Degats: §4" + damage, contentX + 10, yOffset, 0xAAAAAA);
         yOffset += 20;
 
         // ── MVP ──
         if (mvpData != null && !mvpData.playerUUID().isEmpty()) {
-            graphics.fill(contentX, yOffset, contentX + contentWidth, yOffset + 26, 0x3000FF00);
+            graphics.fill(contentX, yOffset, contentX + contentWidth, yOffset + 34, 0x3000FF00);
             graphics.drawString(font, "\u2B50 §6§lMVP §7» §e" + mvpData.playerName()
-                    + " §7(§6" + mvpData.pointsContributed() + " pts§7) — Équipe §6" + mvpData.teamName(), contentX + 10, yOffset + 6, 0xFFFFFF);
-            yOffset += 36;
+                    + " §7(§6" + mvpData.pointsContributed() + " pts§7) — Équipe §6" + mvpData.teamName(), contentX + 10, yOffset + 3, 0xFFFFFF);
+            String mvpLine = "§7Score: §a" + mvpData.score() + "  §7=  §6" + mvpData.pointsContributed() + " pts"
+                    + " §7+ §c" + mvpData.kills() + "K*50 §7- §8" + mvpData.deaths() + "M*10";
+            graphics.drawString(font, mvpLine, contentX + 10, yOffset + 15, 0xAAAAAA);
+            yOffset += 44;
         }
 
         // ── RANKING ──

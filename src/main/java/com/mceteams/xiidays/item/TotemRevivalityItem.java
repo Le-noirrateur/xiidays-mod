@@ -3,6 +3,7 @@ package com.mceteams.xiidays.item;
 import com.mceteams.xiidays.game.PointType;
 import com.mceteams.xiidays.game.PointsManager;
 import com.mceteams.xiidays.game.TeamManager;
+import com.mceteams.xiidays.network.PointsPopupPayload;
 import com.mceteams.xiidays.spectator.SpectateManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,6 +16,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 public class TotemRevivalityItem extends Item {
@@ -62,10 +64,9 @@ public class TotemRevivalityItem extends Item {
         level.playSound(null, targetPlayer.blockPosition(),
                 SoundEvents.TOTEM_USE, SoundSource.PLAYERS, 1.0F, 1.0F);
 
+        PacketDistributor.sendToPlayer(targetPlayer, new PointsPopupPayload(0, "REVIVED"));
         serverPlayer.sendSystemMessage(Component.literal(
                 "§aVous avez revivifié §e" + targetPlayer.getName().getString() + "§a !"));
-        targetPlayer.sendSystemMessage(Component.literal(
-                "§aVous avez été revivifié par §e" + serverPlayer.getName().getString() + "§a !"));
 
         return InteractionResult.SUCCESS;
     }

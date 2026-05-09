@@ -16,6 +16,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.Objects;
@@ -88,6 +89,9 @@ public class DaysManager {
                 // Teleport all alive players to their team spawn at day start
                 for (Player player : context.getSource().getServer().getPlayerList().getPlayers()) {
                     if (player instanceof ServerPlayer serverPlayer) {
+                        if (serverPlayer.gameMode.getGameModeForPlayer() != GameType.SURVIVAL) {
+                            serverPlayer.setGameMode(GameType.SURVIVAL);
+                        }
                         String teamName = TeamManager.getPlayerCurrentTeam(serverPlayer.getUUID().toString());
                         if (teamName == null) continue;
                         int teamId = TeamData.getTeamId(teamName);

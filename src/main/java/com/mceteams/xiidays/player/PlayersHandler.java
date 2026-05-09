@@ -10,12 +10,16 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 
 import static com.mceteams.xiidays.player.NotifyOptions.notifyPlayer;
@@ -82,6 +86,26 @@ public class PlayersHandler {
                      "LAPIS_ORE", "REDSTONE_ORE", "COPPER_ORE", "AMETHYST_ORE" -> PointsManager.addPoints(teamId, PointType.MINING, player, blockName);
             }
         }
+    }
+
+    @SubscribeEvent
+    public void onBlockDrops(BlockDropsEvent event) {
+        if (!(event.getBreaker() instanceof ServerPlayer)) return;
+        if (!DaysManager.isDayInProgress()) return;
+        for (ItemEntity itemEntity : event.getDrops()) {
+            ItemStack stack = itemEntity.getItem();
+            ItemStack smelted = getSmelted(stack);
+            if (smelted != null) {
+                itemEntity.setItem(smelted);
+            }
+        }
+    }
+
+    private static ItemStack getSmelted(ItemStack stack) {
+        if (stack.is(Items.RAW_IRON)) return new ItemStack(Items.IRON_INGOT, stack.getCount());
+        if (stack.is(Items.RAW_GOLD)) return new ItemStack(Items.GOLD_INGOT, stack.getCount());
+        if (stack.is(Items.RAW_COPPER)) return new ItemStack(Items.COPPER_INGOT, stack.getCount());
+        return null;
     }
 
     @SubscribeEvent
