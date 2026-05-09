@@ -26,6 +26,12 @@ public class PacketHandler {
         PayloadRegistrar registrar = event.registrar("1.0.0");
 
         // Client -> Serveur
+        registrar.playToClient(
+                PointsPopupPayload.TYPE,
+                PointsPopupPayload.CODEC,
+                PointsPopupPayload::handle
+        );
+
         registrar.playToServer(
                 RequestScoreboardPacket.TYPE,
                 RequestScoreboardPacket.CODEC,
@@ -67,6 +73,12 @@ public class PacketHandler {
                 OpenTeamStatsPacket.TYPE,
                 OpenTeamStatsPacket.CODEC,
                 OpenTeamStatsPacket::handle
+        );
+
+        registrar.playToClient(
+                OpenEndScoreboardPacket.TYPE,
+                OpenEndScoreboardPacket.CODEC,
+                OpenEndScoreboardPacket::handle
         );
     }
 

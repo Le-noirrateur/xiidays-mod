@@ -1,323 +1,158 @@
 package com.mceteams.xiidays.screen;
 
-import com.mceteams.xiidays.data.DataManager;
-import com.mceteams.xiidays.game.TeamManager;
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.Minecraft;
+import com.mceteams.xiidays.network.OpenEndScoreboardPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
-
-import static com.mceteams.xiidays.XIIDays.MODID;
 
 public class EndScoreboardScreen extends Screen {
 
-    // Textures
-    private static final ResourceLocation BACKGROUND = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/end_scoreboard_bg.png");
-    private static final ResourceLocation MVP_FRAME = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/mvp_frame.png");
-    private static final ResourceLocation TROPHY = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/trophy.png");
+    private static final int PANEL_WIDTH = 560;
+    private static final int PANEL_HEIGHT = 420;
 
     private final String winningTeam;
-    private final MVPData mvpData;
-    private final List<TeamStats> teamStatsList;
-    private TeamStats hoveredTeam = null;
+    private final OpenEndScoreboardPacket.MvpData mvpData;
+    private final List<OpenEndScoreboardPacket.TeamEntry> teamStatsList;
+    private float scrollOffset = 0;
+    private float maxScroll = 0;
 
-    public EndScoreboardScreen(String winningTeam) {
+    public EndScoreboardScreen(String winningTeam, List<OpenEndScoreboardPacket.TeamEntry> teamStats, OpenEndScoreboardPacket.MvpData mvpData) {
         super(Component.literal("Fin de Partie"));
         this.winningTeam = winningTeam;
-        this.mvpData = calculateMVP();
-        this.teamStatsList = loadTeamStats();
+        this.mvpData = mvpData;
+        this.teamStatsList = teamStats;
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        int contentHeight = 220 + teamStatsList.size() * 22;
+        maxScroll = Math.max(0, contentHeight - (PANEL_HEIGHT - 120));
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (maxScroll > 0) {
+            scrollOffset = Mth.clamp(scrollOffset - (float) scrollY * 20, 0, maxScroll);
+            return true;
+        }
+        return false;
     }
 
     @Override
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Background principal
-        renderBackground(graphics, mouseX, mouseY, partialTick);
-
-        // Titre "FIN DE PARTIE"
-        graphics.drawCenteredString(font, "§6§lFIN DE PARTIE", width / 2, 20, 0xFFFFFF);
-
-        // Équipe gagnante (gauche)
-        renderWinningTeam(graphics);
-
-        // MVP (droite)
-        renderMVP(graphics);
-
-        // Liste des équipes (centre bas)
-        renderTeamList(graphics, mouseX, mouseY);
-
-        // Tooltip si hover équipe
-        if (hoveredTeam != null) {
-            renderTeamStatsTooltip(graphics, mouseX, mouseY, hoveredTeam);
-        }
-    }
-
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Fond semi-transparent noir
         graphics.fill(0, 0, width, height, 0xCC000000);
 
-        // Background texture si existe
-        RenderSystem.setShaderTexture(0, BACKGROUND);
-        graphics.blit(BACKGROUND, 0, 0, 0, 0, width, height, width, height);
-    }
+        int centerX = width / 2;
+        int centerY = height / 2;
+        int panelX = centerX - PANEL_WIDTH / 2;
+        int panelY = centerY - PANEL_HEIGHT / 2;
 
-    private void renderWinningTeam(GuiGraphics graphics) {
-        int x = 50;
-        int y = 80;
+        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, 0xFF1A1A2E);
+        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + 3, 0xFFFFD700);
 
-        // Trophée
-        graphics.blit(TROPHY, x, y, 0, 0, 64, 64, 64, 64);
+        graphics.drawCenteredString(font, "§6§lFIN DE PARTIE", centerX, panelY + 15, 0xFFD700);
 
-        // Texte équipe gagnante
-        graphics.drawString(font, "§e§lÉQUIPE GAGNANTE", x + 80, y + 10, 0xFFD700);
-        graphics.drawString(font, "§6" + winningTeam, x + 80, y + 30, 0xFFFFFF);
+        int contentX = panelX + 15;
+        int contentY = panelY + 40;
+        int contentWidth = PANEL_WIDTH - 30;
+        int contentHeight = PANEL_HEIGHT - 60;
 
-        int teamId = TeamManager.getTeamId(winningTeam);
-        if (teamId > 0) {
-            int points = DataManager.dataReadInt("team_" + teamId + "_points", "total", 0);
-            graphics.drawString(font, "§7Points totaux: §f" + points, x + 80, y + 50, 0xAAAAAA);
-        }
-    }
+        graphics.enableScissor(contentX, contentY, contentX + contentWidth, contentY + contentHeight);
 
-    private void renderMVP(GuiGraphics graphics) {
-        int x = width - 250;
-        int y = 80;
+        int yOffset = contentY - (int) scrollOffset;
 
-        // Frame MVP
-        graphics.blit(MVP_FRAME, x, y, 0, 0, 200, 250, 200, 250);
+        // ── WINNER BANNER ──
+        graphics.fill(contentX, yOffset, contentX + contentWidth, yOffset + 30, 0x40FFD700);
+        graphics.drawCenteredString(font, "\uD83C\uDFC6 §6§l" + winningTeam + " §r§6a gagné la partie !", contentX + contentWidth / 2, yOffset + 8, 0xFFD700);
+        yOffset += 40;
 
-        // Titre MVP avec police custom (voir plus bas)
-        graphics.drawCenteredString(font, "§6§lMVP DE LA PARTIE", x + 100, y + 10, 0xFFD700);
-
-        // Skin du joueur MVP (64x64)
-        if (mvpData != null) {
-            // Render skin (voir méthode dédiée)
-            renderPlayerSkin(graphics, x + 68, y + 40, mvpData.playerUUID);
-
-            // Nom joueur
-            graphics.drawCenteredString(font, "§e" + mvpData.playerName, x + 100, y + 120, 0xFFFFFF);
-
-            // Stats
-            graphics.drawCenteredString(font, "§7Points apportés: §a" + mvpData.pointsContributed, x + 100, y + 140, 0xAAAAAA);
-            graphics.drawCenteredString(font, "§7Kills: §c" + mvpData.kills, x + 100, y + 155, 0xAAAAAA);
-            graphics.drawCenteredString(font, "§7Équipe: §6" + mvpData.teamName, x + 100, y + 170, 0xAAAAAA);
-        }
-    }
-
-    private void renderTeamList(GuiGraphics graphics, int mouseX, int mouseY) {
-        int startX = width / 2 - 150;
-        int startY = height - 200;
-        int barWidth = 300;
-        int barHeight = 30;
-
-        graphics.drawCenteredString(font, "§e§lCLASSEMENT FINAL", width / 2, startY - 20, 0xFFD700);
-
-        hoveredTeam = null;
-
-        for (int i = 0; i < teamStatsList.size(); i++) {
-            TeamStats team = teamStatsList.get(i);
-            int y = startY + (i * (barHeight + 5));
-
-            // Détection hover
-            boolean isHovered = mouseX >= startX && mouseX <= startX + barWidth &&
-                    mouseY >= y && mouseY <= y + barHeight;
-
-            if (isHovered) hoveredTeam = team;
-
-            // Couleur barre
-            int color = getRankColor(i + 1, isHovered);
-            graphics.fill(startX, y, startX + barWidth, y + barHeight, color);
-
-            // Médaille
-            String medal = getRankMedal(i + 1);
-            graphics.drawString(font, medal + " #" + (i + 1), startX + 10, y + 10, 0xFFFFFF);
-
-            // Nom équipe
-            graphics.drawString(font, team.teamName, startX + 80, y + 10, 0xFFFFFF);
-
-            // Points
-            graphics.drawString(font, "§6" + team.points + " pts", startX + barWidth - 80, y + 10, 0xFFD700);
-        }
-    }
-
-    private void renderTeamStatsTooltip(GuiGraphics graphics, int mouseX, int mouseY, TeamStats team) {
-        int tooltipWidth = 200;
-        int tooltipHeight = 120;
-        int x = mouseX + 15;
-        int y = mouseY - 60;
-
-        // Ajustement si déborde écran
-        if (x + tooltipWidth > width) x = mouseX - tooltipWidth - 15;
-        if (y < 0) y = 10;
-
-        // Fond tooltip
-        graphics.fill(x, y, x + tooltipWidth, y + tooltipHeight, 0xE0000000);
-        graphics.fill(x, y, x + tooltipWidth, y + 2, 0xFFFFD700); // Bordure or
-
-        // Titre
-        graphics.drawString(font, "§6§l" + team.teamName, x + 10, y + 10, 0xFFD700);
-
-        // Stats détaillées
-        graphics.drawString(font, "§7Points: §f" + team.points, x + 10, y + 30, 0xAAAAAA);
-        graphics.drawString(font, "§7Kills: §c" + team.kills, x + 10, y + 45, 0xFF5555);
-        graphics.drawString(font, "§7Morts: §8" + team.deaths, x + 10, y + 60, 0x888888);
-        graphics.drawString(font, "§7Blocs minés: §e" + team.blocksMined, x + 10, y + 75, 0xFFFF55);
-        graphics.drawString(font, "§7Dégâts infligés: §4" + team.damageDealt, x + 10, y + 90, 0xAA0000);
-    }
-
-    private void renderPlayerSkin(GuiGraphics graphics, int x, int y, UUID playerUUID) {
-        Minecraft mc = Minecraft.getInstance();
-        assert mc.level != null;
-        Player player = mc.level.getPlayerByUUID(playerUUID);
-
-        if (player != null) {
-            // Render la tête du joueur
-            graphics.pose().pushPose();
-            graphics.pose().translate(x, y, 0);
-            graphics.pose().scale(64 / 8f, 64 / 8f, 1);
-
-            mc.getEntityRenderDispatcher().getRenderer(player)
-                    .render(player, 0, 0, graphics.pose(), graphics.bufferSource(), 15728880);
-
-            graphics.pose().popPose();
-        }
-    }
-
-    // ===== CALCUL MVP =====
-
-    private MVPData calculateMVP() {
-        String[] allTeams = TeamManager.getAllTeams();
-        MVPData bestMVP = null;
-        int maxPoints = 0;
-
-        for (String teamName : allTeams) {
-            int teamId = TeamManager.getTeamId(teamName);
-            if (teamId == 0) continue;
-
-            String[] members = DataManager.getAllDataNames("team_" + teamId + "_members");
-
-            for (String memberKey : members) {
-                String playerUUID = DataManager.dataRead("team_" + teamId + "_members", memberKey);
-                int points = DataManager.dataReadInt("player_" + playerUUID + "_stats", "team_points", 0);
-
-                if (points > maxPoints) {
-                    maxPoints = points;
-
-                    // Récupérer infos joueur
-                    Minecraft mc = Minecraft.getInstance();
-                    assert mc.level != null;
-                    assert playerUUID != null;
-                    Player player = mc.level.getPlayerByUUID(UUID.fromString(playerUUID));
-                    String playerName = player != null ? player.getName().getString() : "Joueur inconnu";
-
-                    int kills = DataManager.dataReadInt("player_" + playerUUID + "_stats", "kills", 0);
-
-                    bestMVP = new MVPData(
-                            UUID.fromString(playerUUID),
-                            playerName,
-                            teamName,
-                            maxPoints,
-                            kills
-                    );
-                }
+        // ── WINNER STATS ──
+        int pts = 0, kills = 0, deaths = 0;
+        for (OpenEndScoreboardPacket.TeamEntry t : teamStatsList) {
+            if (t.teamName().equals(winningTeam)) {
+                pts = t.points();
+                kills = t.kills();
+                deaths = t.deaths();
+                break;
             }
         }
+        graphics.drawString(font, "§7Points: §6" + pts + "  §7Kills: §c" + kills + "  §7Morts: §8" + deaths, contentX + 10, yOffset, 0xAAAAAA);
+        yOffset += 20;
 
-        return bestMVP;
-    }
-
-    private List<TeamStats> loadTeamStats() {
-        String[] allTeams = TeamManager.getAllTeams();
-        List<TeamStats> stats = new ArrayList<>();
-
-        for (String teamName : allTeams) {
-            int teamId = TeamManager.getTeamId(teamName);
-            if (teamId == 0) continue;
-
-            int finalPos = DataManager.dataReadInt("team_" + teamId + "_config", "finalpos", 999);
-            int points = DataManager.dataReadInt("team_" + teamId + "_points", "total", 0);
-            int kills = DataManager.dataReadInt("team_" + teamId + "_stats", "kills", 0);
-            int deaths = DataManager.dataReadInt("team_" + teamId + "_stats", "deaths", 0);
-            int blocksMined = DataManager.dataReadInt("team_" + teamId + "_stats", "blocks_mined", 0);
-            int damageDealt = DataManager.dataReadInt("team_" + teamId + "_stats", "damage_dealt", 0);
-
-            stats.add(new TeamStats(teamName, points, kills, deaths, blocksMined, damageDealt, finalPos));
+        // ── MVP ──
+        if (mvpData != null && !mvpData.playerUUID().isEmpty()) {
+            graphics.fill(contentX, yOffset, contentX + contentWidth, yOffset + 26, 0x3000FF00);
+            graphics.drawString(font, "\u2B50 §6§lMVP §7» §e" + mvpData.playerName()
+                    + " §7(§6" + mvpData.pointsContributed() + " pts§7) — Équipe §6" + mvpData.teamName(), contentX + 10, yOffset + 6, 0xFFFFFF);
+            yOffset += 36;
         }
 
-        // 🔥 TRIER PAR POSITION FINALE (1er, 2ème, 3ème...)
-        stats.sort(Comparator.comparingInt(s -> s.finalPos));
+        // ── RANKING ──
+        graphics.drawString(font, "§6§l▸ CLASSEMENT FINAL", contentX + 10, yOffset, 0xFFD700);
+        yOffset += 20;
 
-        return stats;
-    }
+        for (int i = 0; i < teamStatsList.size(); i++) {
+            OpenEndScoreboardPacket.TeamEntry team = teamStatsList.get(i);
 
-    private static class TeamStats {
-        String teamName;
-        int points;
-        int kills;
-        int deaths;
-        int blocksMined;
-        int damageDealt;
-        int finalPos; // 🆕 NOUVEAU
+            String medal;
+            String color;
+            switch (i) {
+                case 0 -> { medal = "\uD83E\uDD47"; color = "§6"; }
+                case 1 -> { medal = "\uD83E\uDD48"; color = "§7"; }
+                case 2 -> { medal = "\uD83E\uDD49"; color = "§e"; }
+                default -> { medal = "  "; color = "§8"; }
+            }
 
-        TeamStats(String name, int pts, int k, int d, int bm, int dd, int fp) {
-            this.teamName = name;
-            this.points = pts;
-            this.kills = k;
-            this.deaths = d;
-            this.blocksMined = bm;
-            this.damageDealt = dd;
-            this.finalPos = fp;
+            boolean isWinner = team.teamName().equals(winningTeam);
+            if (isWinner) {
+                graphics.fill(contentX, yOffset - 2, contentX + contentWidth, yOffset + 14, 0x40FFD700);
+            } else if (i % 2 == 0) {
+                graphics.fill(contentX, yOffset - 2, contentX + contentWidth, yOffset + 14, 0x10FFFFFF);
+            }
+
+            graphics.drawString(font, medal + " " + color + "#" + (i + 1) + " §f" + team.teamName()
+                    + " §7- §6" + team.points() + " pts", contentX + 10, yOffset, 0xFFFFFF);
+
+            graphics.drawString(font, "§7K:§c" + team.kills() + " §7M:§8" + team.deaths()
+                    + " §7B:§b" + team.blocksMined() + " §7D:§4" + team.damageDealt(),
+                    contentX + contentWidth - 200, yOffset, 0xAAAAAA);
+
+            yOffset += 20;
         }
+
+        graphics.disableScissor();
+
+        // Scrollbar
+        if (maxScroll > 0) {
+            int scrollX = panelX + PANEL_WIDTH - 12;
+            graphics.fill(scrollX, contentY, scrollX + 4, contentY + contentHeight, 0x40FFFFFF);
+            float pct = scrollOffset / maxScroll;
+            int barH = Math.max(15, (int) ((float) contentHeight / (contentHeight + maxScroll) * contentHeight));
+            int barY = contentY + (int) (pct * (contentHeight - barH));
+            graphics.fill(scrollX, barY, scrollX + 4, barY + barH, 0xFFFFD700);
+        }
+
+        graphics.drawCenteredString(font, "§8[ESC pour fermer]", centerX, panelY + PANEL_HEIGHT - 12, 0x555555);
+
+        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    private int getRankColor(int rank, boolean hovered) {
-        int base = switch(rank) {
-            case 1 -> 0xFFD700; // Or
-            case 2 -> 0xC0C0C0; // Argent
-            case 3 -> 0xCD7F32; // Bronze
-            default -> 0x404040; // Gris
-        };
-
-        return hovered ? (base | 0xFF000000) : (0xAA000000 | (base & 0x00FFFFFF));
-    }
-
-    private String getRankMedal(int rank) {
-        return switch(rank) {
-            case 1 -> "🥇";
-            case 2 -> "🥈";
-            case 3 -> "🥉";
-            default -> "  ";
-        };
+    @Override
+    protected void renderBlurredBackground(float partialTick) {
     }
 
     @Override
     public boolean isPauseScreen() {
-        return false; // Ne met pas le jeu en pause
+        return false;
     }
 
-    // ===== CLASSES DE DONNÉES =====
-
-    private static class MVPData {
-        UUID playerUUID;
-        String playerName;
-        String teamName;
-        int pointsContributed;
-        int kills;
-
-        MVPData(UUID uuid, String name, String team, int points, int kills) {
-            this.playerUUID = uuid;
-            this.playerName = name;
-            this.teamName = team;
-            this.pointsContributed = points;
-            this.kills = kills;
-        }
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return true;
     }
 }

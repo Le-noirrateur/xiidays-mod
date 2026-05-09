@@ -181,6 +181,20 @@ public class XiidaysCommand {
                                                 })
                                         )
                                 )
+                                .then(Commands.literal("revive")
+                                        .then(Commands.argument("team", StringArgumentType.string()).suggests(TEAM_MANAGER_SUGGESTIONS)
+                                                .executes(ctx -> {
+                                                    String teamName = StringArgumentType.getString(ctx, "team");
+                                                    if (TeamManager.reviveTeam(teamName)) {
+                                                        ctx.getSource().sendSystemMessage(Component.literal("§aÉquipe " + teamName + " réhabilitée !"));
+                                                        return 1;
+                                                    } else {
+                                                        ctx.getSource().sendFailure(Component.literal("§cImpossible de réhabiliter l'équipe (déjà en vie ou inexistante)"));
+                                                        return 0;
+                                                    }
+                                                })
+                                        )
+                                )
                                 .then(Commands.literal("add")
                                         .then(Commands.argument("team", StringArgumentType.string()).suggests(TEAM_MANAGER_SUGGESTIONS)
                                                 .then(Commands.argument("player", EntityArgument.player())
@@ -513,7 +527,7 @@ public class XiidaysCommand {
                             ctx.getSource().sendSystemMessage(Component.literal(
                                     "§6╔══════ XII Days — Commandes ══════╗\n" +
                                             "§e/xiidays day §7start|stop|status|set\n" +
-                                            "§e/xiidays team §7create|remove|add|spawn|core|eliminate|list\n" +
+                                            "§e/xiidays team §7create|remove|add|spawn|core|eliminate|revive|list\n" +
                                             "§e/xiidays spec §7respawn <player>|respawnall|list\n" +
                                             "§e/xiidays zone §7set|remove|show|hide\n" +
                                             "§e/xiidays restrict §7status|items|blocks|bypass\n" +

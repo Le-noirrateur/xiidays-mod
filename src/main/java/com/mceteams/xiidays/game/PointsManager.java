@@ -2,10 +2,12 @@ package com.mceteams.xiidays.game;
 
 import com.mceteams.xiidays.data.PlayerStatsData;
 import com.mceteams.xiidays.data.TeamStatsData;
+import com.mceteams.xiidays.network.PointsPopupPayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashMap;
 import java.util.List;
@@ -76,9 +78,9 @@ public class PointsManager {
         }
 
         if (player instanceof ServerPlayer srvp) {
-            String addedStr = pointsAdded >= 0 ? "§r§2§l+" + pointsAdded : String.valueOf(pointsAdded);
-            srvp.sendSystemMessage(Component.literal("Vous avez ajouté §4§l" + addedStr + "§r à votre équipe (§6§l" + type +"§r)"));
-            TeamManager.sendMessageToTeam(teamId, Component.literal(player.getName().getString() + " à ajouté §4§l" + addedStr + "§r à votre équipe (§6§l" + type + "§r)"), player.getUUID());
+            PointsPopupPayload popup = new PointsPopupPayload(pointsAdded, type.name());
+            PacketDistributor.sendToPlayer(srvp, popup);
+            TeamManager.sendMessageToTeam(teamId, Component.literal(player.getName().getString() + " à ajouté §4§l" + (pointsAdded >= 0 ? "+" : "") + pointsAdded + "§r à votre équipe (§6§l" + type + "§r)"), player.getUUID());
         }
         NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, oldPoints, newPoints));
     }

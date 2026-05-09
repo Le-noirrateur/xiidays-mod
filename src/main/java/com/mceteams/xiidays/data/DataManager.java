@@ -20,23 +20,26 @@ import java.util.Map;
 public class DataManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<String, JsonObject> cache = new HashMap<>();
-    private static Path dataDir = null;
+    private static MinecraftServer cachedServer = null;
 
     private static Path getDataDir() {
-        if (dataDir == null) {
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-            if (server == null) {
-                dataDir = Path.of(System.getProperty("java.io.tmpdir"), "xiidaysdata");
-            } else {
-                dataDir = server.getWorldPath(LevelResource.ROOT).resolve("xiidaysdata");
-            }
-            try {
-                Files.createDirectories(dataDir);
-            } catch (IOException e) {
-                XIIDays.LOGGER.error("Failed to create data directory: {}", e.getMessage());
-            }
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server != cachedServer) {
+            cache.clear();
+            cachedServer = server;
         }
-        return dataDir;
+        Path dir;
+        if (server == null) {
+            dir = Path.of(System.getProperty("java.io.tmpdir"), "xiidaysdata");
+        } else {
+            dir = server.getWorldPath(LevelResource.ROOT).resolve("xiidaysdata");
+        }
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException e) {
+            XIIDays.LOGGER.error("Failed to create data directory: {}", e.getMessage());
+        }
+        return dir;
     }
 
     public static JsonObject load(String domain) {

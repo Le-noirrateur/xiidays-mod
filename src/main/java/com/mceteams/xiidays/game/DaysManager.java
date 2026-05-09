@@ -9,12 +9,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +34,10 @@ public class DaysManager {
 
     public static boolean start(CommandContext<CommandSourceStack> context) {
         try {
+            if (TeamManager.isGameOver()) {
+                context.getSource().sendSystemMessage(Component.literal("§cLa partie est déjà terminée !"));
+                return false;
+            }
             if (!DayCycleData.isInProgress() && DayCycleData.getCurrentDay() < 12) {
                 DayCycleData.setInProgress(true);
                 DayCycleData.incrementDay();
@@ -144,26 +150,32 @@ public class DaysManager {
         return true;
     }
 
-    public static boolean stop(CommandContext<CommandSourceStack> context) {
+    public static boolean stop() {
         try {
+            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+            if (server == null) return false;
+
             DayCycleData.setInProgress(false);
 
-            // Phase 1: respawn at day end. Phase 2: stay dead, respawn at next day start.
             if (DayCycleData.getCurrentDay() <= 6) {
                 SpectateManager.respawnAllSpectators();
             }
 
-            for (Player player : context.getSource().getServer().getPlayerList().getPlayers()) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 99999, 255, true, false));
                 player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 99999, 255, true, false));
             }
 
-            context.getSource().getServer().getPlayerList()
+            server.getPlayerList()
                     .broadcastSystemMessage(Component.literal("§cLe jour est terminé"), false);
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             return false;
         }
         return true;
+    }
+
+    public static boolean stop(CommandContext<CommandSourceStack> context) {
+        return stop();
     }
 }

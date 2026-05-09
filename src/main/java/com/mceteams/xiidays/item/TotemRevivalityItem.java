@@ -1,5 +1,7 @@
 package com.mceteams.xiidays.item;
 
+import com.mceteams.xiidays.game.PointType;
+import com.mceteams.xiidays.game.PointsManager;
 import com.mceteams.xiidays.game.TeamManager;
 import com.mceteams.xiidays.spectator.SpectateManager;
 import net.minecraft.network.chat.Component;
@@ -50,6 +52,8 @@ public class TotemRevivalityItem extends Item {
         if (!success) {
             return InteractionResult.FAIL;
         }
+
+        PointsManager.addPoints(TeamManager.getTeamId(userTeam), PointType.TOTEM, serverPlayer);
 
         if (!serverPlayer.hasInfiniteMaterials()) {
             stack.shrink(1);

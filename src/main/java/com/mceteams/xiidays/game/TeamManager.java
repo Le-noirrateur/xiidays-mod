@@ -1,6 +1,10 @@
 package com.mceteams.xiidays.game;
 
+import com.google.gson.JsonArray;
+import com.mceteams.xiidays.data.PlayerStatsData;
 import com.mceteams.xiidays.data.TeamData;
+import com.mceteams.xiidays.data.TeamStatsData;
+import com.mceteams.xiidays.network.OpenEndScoreboardPacket;
 import com.mceteams.xiidays.world.BlockRegistry;
 import com.mceteams.xiidays.world.CoreBlockEntity;
 import com.mceteams.xiidays.world.SpawnerBlockEntity;
@@ -12,8 +16,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 import static com.mceteams.xiidays.XIIDays.LOGGER;
@@ -176,11 +184,106 @@ public class TeamManager {
             String winnerTeam = getLastRemainingTeam();
             if (winnerTeam != null) {
                 setWinningTeam(winnerTeam);
-                triggerEndScreen(winnerTeam);
+
+                // Stop the ongoing day first
+                DaysManager.stop();
+
+                // Compute and send end-screen data to all players
+                MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+                if (server != null) {
+                    OpenEndScoreboardPacket packet = buildEndPacket(winnerTeam);
+                    PacketDistributor.sendToAllPlayers(packet);
+                }
             }
         }
 
         return true;
+    }
+
+    private static OpenEndScoreboardPacket buildEndPacket(String winnerTeam) {
+        List<OpenEndScoreboardPacket.TeamEntry> teamStats = new ArrayList<>();
+        for (String teamName : TeamData.getAllTeamNames()) {
+            int tid = TeamData.getTeamId(teamName);
+            if (tid == 0) continue;
+            int deaths = 0;
+            JsonArray members = TeamData.getMembers(tid);
+            for (int i = 0; i < members.size(); i++) {
+                String uuid = members.get(i).getAsString();
+                deaths += PlayerStatsData.getDeaths(uuid);
+            }
+            teamStats.add(new OpenEndScoreboardPacket.TeamEntry(
+                    teamName,
+                    TeamStatsData.getPoints(tid),
+                    TeamStatsData.getKills(tid),
+                    deaths,
+                    TeamStatsData.getBlocksMined(tid),
+                    TeamStatsData.getDamageDealt(tid),
+                    TeamData.getFinalPosition(tid)
+            ));
+        }
+        teamStats.sort(Comparator.comparingInt(OpenEndScoreboardPacket.TeamEntry::finalPosition));
+
+        // Compute MVP: player with highest team_points contribution
+        String bestUUID = null;
+        String bestName = null;
+        String bestTeam = null;
+        int bestPoints = -1;
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+
+        for (String teamName : TeamData.getAllTeamNames()) {
+            int tid = TeamData.getTeamId(teamName);
+            if (tid == 0) continue;
+            JsonArray members = TeamData.getMembers(tid);
+            for (int i = 0; i < members.size(); i++) {
+                String uuid = members.get(i).getAsString();
+                int points = PlayerStatsData.getTeamPoints(uuid);
+                if (points > bestPoints) {
+                    bestPoints = points;
+                    bestUUID = uuid;
+                    bestTeam = teamName;
+                    if (server != null) {
+                        ServerPlayer p = server.getPlayerList().getPlayer(UUID.fromString(uuid));
+                        bestName = p != null ? p.getName().getString() : "Inconnu";
+                    } else {
+                        bestName = "Inconnu";
+                    }
+                }
+            }
+        }
+
+        OpenEndScoreboardPacket.MvpData mvp = new OpenEndScoreboardPacket.MvpData(
+                bestName != null ? bestName : "Personne",
+                bestUUID != null ? bestUUID : "",
+                bestTeam != null ? bestTeam : "",
+                Math.max(bestPoints, 0),
+                0
+        );
+
+        return new OpenEndScoreboardPacket(winnerTeam, mvp, teamStats);
+    }
+
+    public static boolean reviveTeam(String teamName) {
+        int teamId = TeamData.getTeamId(teamName);
+        if (teamId == 0) return false;
+        if (!TeamData.isEliminated(teamId)) return false;
+
+        TeamData.setEliminated(teamId, false);
+        TeamData.setFinalPosition(teamId, 0);
+
+        // Reset final position for all teams — the winner state is no longer valid
+        for (String t : TeamData.getAllTeamNames()) {
+            int tid = TeamData.getTeamId(t);
+            if (tid > 0 && TeamData.getFinalPosition(tid) == 1) {
+                TeamData.setFinalPosition(tid, 0);
+            }
+        }
+
+        LOGGER.info("Team {} has been revived! Game reset.", teamName);
+        return true;
+    }
+
+    public static boolean isGameOver() {
+        return countRemainingTeams() <= 1 || getWinningTeam() != null;
     }
 
     private static int countRemainingTeams() {

@@ -223,6 +223,14 @@ public class SpectateManager {
             return;
         }
 
+        // Maintain flight and noclip (adventure mode resets these every tick)
+        if (!spectator.getAbilities().mayfly) {
+            spectator.getAbilities().mayfly = true;
+            spectator.getAbilities().flying = true;
+            spectator.onUpdateAbilities();
+        }
+        spectator.noPhysics = true;
+
         enforceBaseZone(spectator);
     }
 
@@ -255,6 +263,10 @@ public class SpectateManager {
 
         spectator.setGameMode(GameType.ADVENTURE);
         spectator.setInvulnerable(true);
+        spectator.noPhysics = true;
+        spectator.getAbilities().mayfly = true;
+        spectator.getAbilities().flying = true;
+        spectator.onUpdateAbilities();
         applySpectatorEffects(spectator);
         spectatorTargets.remove(spectator.getUUID());
         spectator.setCamera(spectator);

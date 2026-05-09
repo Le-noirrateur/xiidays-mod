@@ -52,7 +52,7 @@ public class ScoreboardScreen extends Screen {
 
     @Override
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        graphics.fill(0, 0, width, height, 0xCC000000);
 
         int centerX = width / 2;
         int centerY = height / 2;
@@ -97,11 +97,6 @@ public class ScoreboardScreen extends Screen {
         graphics.drawCenteredString(font, "§8[ESC pour fermer]", centerX, panelY + PANEL_HEIGHT - 12, 0x555555);
 
         super.render(graphics, mouseX, mouseY, partialTick);
-    }
-
-    @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(0, 0, width, height, 0xCC000000);
     }
 
     @Override
