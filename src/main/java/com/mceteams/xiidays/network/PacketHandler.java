@@ -80,6 +80,66 @@ public class PacketHandler {
                 OpenEndScoreboardPacket.CODEC,
                 OpenEndScoreboardPacket::handle
         );
+
+        registrar.playToClient(
+                OpenAdminMenuPacket.TYPE,
+                OpenAdminMenuPacket.CODEC,
+                OpenAdminMenuPacket::handle
+        );
+
+        registrar.playToServer(
+                AdminActionPayload.TYPE,
+                AdminActionPayload.CODEC,
+                AdminActionPayload::handle
+        );
+
+        registrar.playToServer(
+                RequestAdminDataPayload.TYPE,
+                RequestAdminDataPayload.CODEC,
+                RequestAdminDataPayload::handle
+        );
+
+        registrar.playToServer(
+                RequestOpenAdminMenuPacket.TYPE,
+                RequestOpenAdminMenuPacket.CODEC,
+                RequestOpenAdminMenuPacket::handle
+        );
+
+        registrar.playToClient(
+                AdminDataResponsePayload.TYPE,
+                AdminDataResponsePayload.CODEC,
+                AdminDataResponsePayload::handle
+        );
+
+        registrar.playToClient(
+                DayNotificationPayload.TYPE,
+                DayNotificationPayload.CODEC,
+                DayNotificationPayload::handle
+        );
+
+        registrar.playToClient(
+                DeathNotificationPayload.TYPE,
+                DeathNotificationPayload.CODEC,
+                DeathNotificationPayload::handle
+        );
+
+        registrar.playToClient(
+                SpectatorStatusPayload.TYPE,
+                SpectatorStatusPayload.CODEC,
+                SpectatorStatusPayload::handle
+        );
+
+        registrar.playToClient(
+                EliminationNotificationPayload.TYPE,
+                EliminationNotificationPayload.CODEC,
+                EliminationNotificationPayload::handle
+        );
+
+        registrar.playToClient(
+                GameOverPayload.TYPE,
+                GameOverPayload.CODEC,
+                GameOverPayload::handle
+        );
     }
 
     public static void sendToServer(RequestScoreboardPacket packet) {

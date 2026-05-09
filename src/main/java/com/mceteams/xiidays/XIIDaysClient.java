@@ -26,7 +26,6 @@ public class XIIDaysClient {
 
     public XIIDaysClient(ModContainer container, IEventBus modEventBus) {
         modEventBus.addListener(this::onClientSetup);
-//        modEventBus.addListener(this::registerClientPackets);
         modEventBus.addListener(this::onRegisterKeyMappings);
     }
 
@@ -67,13 +66,11 @@ public class XIIDaysClient {
         XIIDays.LOGGER.info("[XII Days - Client]: Client-bound packets registered (1 channel)");
     }
 
-    /**
-     * Enregistre la touche U pour ouvrir le scoreboard
-     */
     @SubscribeEvent
     private void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         XIIDays.LOGGER.info("[XII Days - Client]: Registering key bindings...");
         event.register(KeyBindings.OPEN_SCOREBOARD);
-        XIIDays.LOGGER.info("[XII Days - Client]: Key bindings registered (1 key)");
+        event.register(KeyBindings.OPEN_ADMIN_MENU);
+        XIIDays.LOGGER.info("[XII Days - Client]: Key bindings registered (2 keys)");
     }
 }

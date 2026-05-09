@@ -4,6 +4,8 @@ import com.google.gson.JsonArray;
 import com.mceteams.xiidays.data.PlayerStatsData;
 import com.mceteams.xiidays.data.TeamData;
 import com.mceteams.xiidays.data.TeamStatsData;
+import com.mceteams.xiidays.network.EliminationNotificationPayload;
+import com.mceteams.xiidays.network.GameOverPayload;
 import com.mceteams.xiidays.network.OpenEndScoreboardPacket;
 import com.mceteams.xiidays.world.BlockRegistry;
 import com.mceteams.xiidays.world.CoreBlockEntity;
@@ -12,6 +14,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -171,6 +175,17 @@ public class TeamManager {
 
         TeamData.setEliminated(teamId, true);
 
+        boolean gameOver = countRemainingTeams() == 1;
+        var elimNotif = new EliminationNotificationPayload(teamName, gameOver);
+        PacketDistributor.sendToAllPlayers(elimNotif);
+
+        var server = ServerLifecycleHooks.getCurrentServer();
+        if (server != null) {
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                p.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.3f);
+            }
+        }
+
         int totalTeams = TeamData.getAllTeamNames().length;
         int remainingTeams = countRemainingTeams();
         int finalPosition = totalTeams - remainingTeams;
@@ -188,9 +203,18 @@ public class TeamManager {
                 // Stop the ongoing day first
                 DaysManager.stop();
 
-                // Compute and send end-screen data to all players
-                MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
                 if (server != null) {
+                    // Send per-player game over (winner/loser) then end scoreboard
+                    for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                        String playerTeam = getPlayerCurrentTeam(player.getUUID().toString());
+                        boolean isWinner = winnerTeam.equals(playerTeam);
+                        PacketDistributor.sendToPlayer(player, new GameOverPayload(isWinner));
+                        if (isWinner) {
+                            player.playNotifySound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1f, 1f);
+                        } else {
+                            player.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.3f);
+                        }
+                    }
                     OpenEndScoreboardPacket packet = buildEndPacket(winnerTeam);
                     PacketDistributor.sendToAllPlayers(packet);
                 }

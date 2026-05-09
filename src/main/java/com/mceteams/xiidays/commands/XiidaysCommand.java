@@ -6,6 +6,7 @@ import com.mceteams.xiidays.data.TeamData;
 import com.mceteams.xiidays.game.DaysManager;
 import com.mceteams.xiidays.game.ScoreboardManager;
 import com.mceteams.xiidays.game.TeamManager;
+import com.mceteams.xiidays.network.OpenAdminMenuPacket;
 import com.mceteams.xiidays.network.OpenScoreboardPacket;
 import com.mceteams.xiidays.network.PacketHandler;
 import com.mceteams.xiidays.restriction.RestrictionsManager;
@@ -36,6 +37,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Map;
 import java.util.Objects;
@@ -521,6 +523,17 @@ public class XiidaysCommand {
                                 })
                         )
                         // ──────────────────────────────────────
+                        //  ADMIN MENU
+                        // ──────────────────────────────────────
+                        .then(Commands.literal("admin")
+                                .requires(s -> s.hasPermission(4))
+                                .executes(ctx -> {
+                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                    PacketDistributor.sendToPlayer(player, new OpenAdminMenuPacket());
+                                    return 1;
+                                })
+                        )
+                        // ──────────────────────────────────────
                         //  HELP (default when no subcommand)
                         // ──────────────────────────────────────
                         .executes(ctx -> {
@@ -533,6 +546,7 @@ public class XiidaysCommand {
                                             "§e/xiidays restrict §7status|items|blocks|bypass\n" +
                                             "§e/xiidays data §7reload|save|domains\n" +
                                             "§e/xiidays score §7<ouvre le scoreboard>\n" +
+                                            "§e/xiidays admin §7<menu d'administration>\n" +
                                             "§6╚══════════════════════════════════╝"));
                             return 1;
                         })

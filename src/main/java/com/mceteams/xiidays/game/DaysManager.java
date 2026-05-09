@@ -2,6 +2,7 @@ package com.mceteams.xiidays.game;
 
 import com.mceteams.xiidays.data.DayCycleData;
 import com.mceteams.xiidays.data.TeamData;
+import com.mceteams.xiidays.network.DayNotificationPayload;
 import com.mceteams.xiidays.spectator.SpectateManager;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -17,6 +18,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.Objects;
@@ -78,6 +80,12 @@ public class DaysManager {
                     TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
+                }
+
+                var notifStart = new DayNotificationPayload(DayNotificationPayload.NotificationType.START,
+                        DayCycleData.getCurrentDay(), DayCycleData.getCurrentDay() - 1);
+                for (ServerPlayer player : context.getSource().getServer().getPlayerList().getPlayers()) {
+                    PacketDistributor.sendToPlayer(player, notifStart);
                 }
 
                 int days = DayCycleData.getCurrentDay();
@@ -161,6 +169,12 @@ public class DaysManager {
 
             DayCycleData.setInProgress(false);
 
+            var notifEnd = new DayNotificationPayload(DayNotificationPayload.NotificationType.END,
+                    DayCycleData.getCurrentDay(), DayCycleData.getCurrentDay());
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                PacketDistributor.sendToPlayer(player, notifEnd);
+            }
+
             if (DayCycleData.getCurrentDay() <= 6) {
                 SpectateManager.respawnAllSpectators();
             }
@@ -172,6 +186,10 @@ public class DaysManager {
 
             server.getPlayerList()
                     .broadcastSystemMessage(Component.literal("§cLe jour est terminé"), false);
+
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                player.playNotifySound(SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.MASTER, 1.0f, 0.5f);
+            }
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             return false;

@@ -4,9 +4,13 @@ import com.mceteams.xiidays.data.PlayerStatsData;
 import com.mceteams.xiidays.data.TeamData;
 import com.mceteams.xiidays.data.TeamStatsData;
 import com.mceteams.xiidays.game.*;
+import com.mceteams.xiidays.network.DeathNotificationPayload;
+import com.mceteams.xiidays.network.SpectatorStatusPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -20,6 +24,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.*;
 
@@ -158,6 +163,15 @@ public class SpectateManager {
             TeamStatsData.setKillStreak(teamId, 0);
             PointsManager.addPoints(teamId, PointType.DEATH, player);
         }
+
+        int deathDelay = 0;
+        if (DaysManager.getCurrentDay() <= 6) {
+            int deaths = PlayerStatsData.getDeaths(playerUUID);
+            deathDelay = Math.min(deaths * 3, RESPAWN_DELAY_MAX);
+        }
+        PacketDistributor.sendToPlayer(player, new DeathNotificationPayload(deathDelay));
+
+        player.playNotifySound(SoundEvents.ANVIL_BREAK, SoundSource.MASTER, 1.0f, 1.0f);
 
         if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
             String attackerTeamName = TeamManager.getPlayerCurrentTeam(attacker.getUUID().toString());
@@ -322,6 +336,8 @@ public class SpectateManager {
         clearSpectatorEffects(spectator);
 
         spectatePlayer(spectator, target);
+
+        sendSpectatorStatus(spectator);
     }
 
     private static void enterBaseSpectate(ServerPlayer spectator) {
@@ -336,6 +352,8 @@ public class SpectateManager {
         applySpectatorEffects(spectator);
         spectatorTargets.remove(spectator.getUUID());
         spectator.setCamera(spectator);
+
+        sendSpectatorStatus(spectator);
 
         String playerUUID = spectator.getUUID().toString();
         int teamId = TeamManager.getTeamId(TeamManager.getPlayerCurrentTeam(playerUUID));
@@ -363,6 +381,8 @@ public class SpectateManager {
         clearSpectatorEffects(spectator);
         spectatorTargets.remove(spectator.getUUID());
         spectator.setCamera(spectator);
+
+        sendSpectatorStatus(spectator);
 
         // Teleport to world spawn as a neutral vantage point
         BlockPos worldSpawn = spectator.serverLevel().getSharedSpawnPos();
@@ -561,6 +581,26 @@ public class SpectateManager {
         spectatePlayer(spectator, teammates.get(newIndex));
     }
 
+    private static void sendSpectatorStatus(ServerPlayer player) {
+        SpectatorMode mode = spectatorModes.get(player.getUUID());
+        if (mode == null) {
+            PacketDistributor.sendToPlayer(player, new SpectatorStatusPayload(SpectatorStatusPayload.MODE_NONE, ""));
+            return;
+        }
+        int modeId = switch (mode) {
+            case TEAMMATE_WATCH -> SpectatorStatusPayload.MODE_TEAMMATE_WATCH;
+            case BASE_SPECTATE -> SpectatorStatusPayload.MODE_BASE_SPECTATE;
+            case FREE_SPECTATE -> SpectatorStatusPayload.MODE_FREE_SPECTATE;
+        };
+        UUID targetId = spectatorTargets.get(player.getUUID());
+        String targetName = "";
+        if (targetId != null) {
+            ServerPlayer target = player.server.getPlayerList().getPlayer(targetId);
+            if (target != null) targetName = target.getName().getString();
+        }
+        PacketDistributor.sendToPlayer(player, new SpectatorStatusPayload(modeId, targetName));
+    }
+
     /**
      * Force-respawns a player from any spectator mode.
      * Returns true if the player was successfully respawned.
@@ -571,6 +611,8 @@ public class SpectateManager {
         spectatingPlayers.remove(player.getUUID());
         spectatorTargets.remove(player.getUUID());
         spectatorModes.remove(player.getUUID());
+
+        PacketDistributor.sendToPlayer(player, new SpectatorStatusPayload(SpectatorStatusPayload.MODE_NONE, ""));
 
         player.setInvulnerable(false);
         clearSpectatorEffects(player);

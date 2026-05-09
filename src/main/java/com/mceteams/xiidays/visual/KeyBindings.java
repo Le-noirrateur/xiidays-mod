@@ -10,10 +10,18 @@ public class KeyBindings {
     public static final String CATEGORY = "key.categories.xiidays";
 
     public static final KeyMapping OPEN_SCOREBOARD = new KeyMapping(
-            "key.xiidays.open_scoreboard",           // Clé de traduction
-            KeyConflictContext.IN_GAME,              // Contexte (en jeu uniquement)
-            InputConstants.Type.KEYSYM,              // Type d'input
-            GLFW.GLFW_KEY_U,                         // Touche U
-            CATEGORY                                 // Catégorie dans les options
+            "key.xiidays.open_scoreboard",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_U,
+            CATEGORY
+    );
+
+    public static final KeyMapping OPEN_ADMIN_MENU = new KeyMapping(
+            "key.xiidays.open_admin_menu",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_KP_0,
+            CATEGORY
     );
 }
