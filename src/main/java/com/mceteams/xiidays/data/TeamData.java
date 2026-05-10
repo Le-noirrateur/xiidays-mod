@@ -8,11 +8,9 @@ import java.util.UUID;
 
 public class TeamData {
     private static final String DOMAIN = "teams";
-    private static JsonObject data;
 
     private static JsonObject get() {
-        if (data == null) data = DataManager.load(DOMAIN);
-        return data;
+        return DataManager.load(DOMAIN);
     }
 
     private static JsonObject getEntries() {

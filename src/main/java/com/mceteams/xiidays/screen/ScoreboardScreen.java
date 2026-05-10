@@ -28,7 +28,7 @@ public class ScoreboardScreen extends Screen {
     private float maxScroll = 0;
 
     public ScoreboardScreen(List<TeamScore> teams, String playerTeam) {
-        super(Component.literal("Classement"));
+        super(Component.translatable("xiidays.scoreboard.title"));
         this.teams = teams;
         this.playerTeam = playerTeam;
     }
@@ -64,7 +64,7 @@ public class ScoreboardScreen extends Screen {
         graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + 3, 0xFFFFD700);
 
         // Title
-        graphics.drawCenteredString(font, "§6§lCLASSEMENT", centerX, panelY + 15, 0xFFD700);
+        graphics.drawCenteredString(font, Component.translatable("xiidays.scoreboard.title"), centerX, panelY + 15, 0xFFD700);
 
         int contentX = panelX + 15;
         int contentY = panelY + 40;
@@ -94,7 +94,7 @@ public class ScoreboardScreen extends Screen {
             graphics.fill(scrollX, barY, scrollX + 4, barY + barH, 0xFFFFD700);
         }
 
-        graphics.drawCenteredString(font, "§8[ESC pour fermer]", centerX, panelY + PANEL_HEIGHT - 12, 0x555555);
+        graphics.drawCenteredString(font, Component.translatable("xiidays.scoreboard.close"), centerX, panelY + PANEL_HEIGHT - 12, 0x555555);
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -118,7 +118,7 @@ public class ScoreboardScreen extends Screen {
         if (rank == 1) prefix = "🥇";
         else if (rank == 2) prefix = "🥈";
         else if (rank == 3) prefix = "🥉";
-        else prefix = " §7#" + rank;
+        else prefix = Component.translatable("xiidays.scoreboard.rank", rank).getString();
 
         int medalWidth = font.width(prefix);
         graphics.drawString(font, prefix, x + 4, y + 6, 0xFFFFFF);
@@ -129,21 +129,22 @@ public class ScoreboardScreen extends Screen {
         graphics.drawString(font, team.teamName, nameX, y + 6, nameColor);
 
         // Points
-        String pts = "§6" + team.points + " pts";
+        String pts = Component.translatable("xiidays.scoreboard.points", team.points).getString();
         int ptsWidth = font.width(" " + team.points + " pts");
         graphics.drawString(font, pts, x + width - ptsWidth - 28, y + 6, 0xFFD700);
 
         // Heart
-        String heart = team.coreAlive() ? "§c❤" : "§8💔";
+        String heart = team.coreAlive() ? Component.translatable("xiidays.scoreboard.heart_alive").getString() : Component.translatable("xiidays.scoreboard.heart_dead").getString();
         graphics.drawString(font, heart, x + width - 18, y + 6, 0xFFFFFF);
 
-        // Battle / rank change
+        // Battle / rank change (between points and heart)
+        int iconX = x + width - 38;
         BattleInfo battle = ClientRankTracker.getActiveBattleFor(team.teamName);
         if (battle != null) {
             float pulse = (float) (0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 150.0));
             int alpha = (int) (0xFF * pulse);
             int shake = (int) (1 * Math.sin(System.currentTimeMillis() / 50.0));
-            graphics.drawString(font, "⚔", x + width - medalWidth - 38 + shake, y + 6, (alpha << 24) | 0xFFAA00);
+            graphics.drawString(font, "⚔", iconX + shake, y + 6, (alpha << 24) | 0xFFAA00);
         } else {
             RankChangeInfo change = ClientRankTracker.getActiveChange(team.teamName);
             if (change != null) {
@@ -154,7 +155,7 @@ public class ScoreboardScreen extends Screen {
                 String arrow = change.getType() == RankChangeType.UP ? "▲" : "▼";
                 int base = change.getType() == RankChangeType.UP ? 0x00FF00 : 0xFF0000;
                 int dir = (int) (2 * Math.sin(System.currentTimeMillis() / 150.0)) * (change.getType() == RankChangeType.UP ? -1 : 1);
-                graphics.drawString(font, arrow, x + width - medalWidth - 38, y + 6 + dir, ((int) (0xFF * alpha) << 24) | base);
+                graphics.drawString(font, arrow, iconX, y + 6 + dir, ((int) (0xFF * alpha) << 24) | base);
             }
         }
 

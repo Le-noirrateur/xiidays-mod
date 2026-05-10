@@ -42,7 +42,7 @@ public class AdminScreen extends Screen {
     private record Entry(ItemStack icon, String name, String action, List<String> staticLore, int x, int y, int w, int h) {}
 
     public AdminScreen() {
-        super(Component.literal("XII Days - Administration"));
+        super(Component.translatable("xiidays.admin.title"));
     }
 
     @Override
@@ -65,12 +65,12 @@ public class AdminScreen extends Screen {
         graphics.fill(cx - 210, panelY - 10, cx + 210, panelY + 270, 0xFF1A1A2E);
         graphics.fill(cx - 210, panelY - 10, cx + 210, panelY - 7, 0xFFFFD700);
 
-        String title = switch (currentPage) {
-            case PAGE_DAYS -> "§6§lGESTION DES JOURS";
-            case PAGE_TEAMS -> "§6§lGESTION DES ÉQUIPES";
-            case PAGE_SPECTATORS -> "§6§lGESTION DES SPECTATEURS";
-            case PAGE_DATA -> "§6§lGESTION DES DONNÉES";
-            default -> "§6§lADMINISTRATION";
+        Component title = switch (currentPage) {
+            case PAGE_DAYS -> Component.translatable("xiidays.admin.page_days");
+            case PAGE_TEAMS -> Component.translatable("xiidays.admin.page_teams");
+            case PAGE_SPECTATORS -> Component.translatable("xiidays.admin.page_spectators");
+            case PAGE_DATA -> Component.translatable("xiidays.admin.page_data");
+            default -> Component.translatable("xiidays.admin.page_home");
         };
         graphics.drawCenteredString(font, title, cx, panelY + 8, 0xFFD700);
 
@@ -89,7 +89,7 @@ public class AdminScreen extends Screen {
             int by = panelY + 240;
             boolean bh = mouseX >= bx && mouseX <= bx + 70 && mouseY >= by && mouseY <= by + 16;
             graphics.fill(bx, by, bx + 70, by + 16, bh ? 0xFF444466 : 0xFF333355);
-            graphics.drawCenteredString(font, "§7← Retour", bx + 35, by + 3, 0xAAAAAA);
+            graphics.drawCenteredString(font, Component.translatable("xiidays.admin.back"), bx + 35, by + 3, 0xAAAAAA);
         }
 
         // Home button
@@ -98,25 +98,25 @@ public class AdminScreen extends Screen {
             int hy = panelY + 240;
             boolean hh = mouseX >= hx && mouseX <= hx + 70 && mouseY >= hy && mouseY <= hy + 16;
             graphics.fill(hx, hy, hx + 70, hy + 16, hh ? 0xFF444466 : 0xFF333355);
-            graphics.drawCenteredString(font, "§6Accueil", hx + 35, hy + 3, 0xFFD700);
+            graphics.drawCenteredString(font, Component.translatable("xiidays.admin.home"), hx + 35, hy + 3, 0xFFD700);
         }
 
         if (inputBox != null) {
             inputBox.render(graphics, mouseX, mouseY, partialTick);
-            String prompt = switch (pendingInputAction != null ? pendingInputAction : "") {
-                case "day_set" -> "§7Entrez le numéro du jour (1-12) :";
-                case "team_create" -> "§7Entrez le nom de la nouvelle équipe :";
-                case "team_eliminate" -> "§7Entrez le nom de l'équipe à éliminer :";
-                case "team_revive" -> "§7Entrez le nom de l'équipe à réhabiliter :";
-                case "team_remove" -> "§7Entrez le nom de l'équipe à supprimer :";
-                case "team_add" -> "§7Entrez: <equipe> <joueur>";
-                case "team_remove_member" -> "§7Entrez: <equipe> <joueur>";
-                case "team_spawn" -> "§7Entrez le nom de l'équipe :";
-                case "team_core" -> "§7Entrez le nom de l'équipe :";
-                default -> "§7Entrez la valeur :";
+            Component prompt = switch (pendingInputAction != null ? pendingInputAction : "") {
+                case "day_set" -> Component.translatable("xiidays.admin.input_day_set");
+                case "team_create" -> Component.translatable("xiidays.admin.input_team_create");
+                case "team_eliminate" -> Component.translatable("xiidays.admin.input_team_eliminate");
+                case "team_revive" -> Component.translatable("xiidays.admin.input_team_revive");
+                case "team_remove" -> Component.translatable("xiidays.admin.input_team_remove");
+                case "team_add" -> Component.translatable("xiidays.admin.input_team_add");
+                case "team_remove_member" -> Component.translatable("xiidays.admin.input_team_remove_member");
+                case "team_spawn" -> Component.translatable("xiidays.admin.input_team_spawn");
+                case "team_core" -> Component.translatable("xiidays.admin.input_team_core");
+                default -> Component.translatable("xiidays.admin.input_default");
             };
-            graphics.drawCenteredString(font, prompt, cx, panelY + 220, 0xAAAAAA);
-            graphics.drawCenteredString(font, "§8[Entrée: valider  |  ESC: annuler]", cx, panelY + 235, 0x555555);
+            graphics.drawCenteredString(font, prompt.getString(), cx, panelY + 220, 0xAAAAAA);
+            graphics.drawCenteredString(font, Component.translatable("xiidays.admin.input_instructions"), cx, panelY + 235, 0x555555);
         }
 
         if (System.currentTimeMillis() < feedbackEndTime) {
@@ -134,7 +134,7 @@ public class AdminScreen extends Screen {
                 String dataType = hovered.action().substring(8);
                 String data = cachedData.get(dataType);
                 if (data != null) {
-                    tooltip.add(Component.literal("§8─ ─ ─ ─ ─ ─"));
+                    tooltip.add(Component.translatable("xiidays.admin.tooltip_separator"));
                     for (String line : data.split("\n")) {
                         tooltip.add(Component.literal(line));
                     }
@@ -143,7 +143,7 @@ public class AdminScreen extends Screen {
             graphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);
         }
 
-        graphics.drawCenteredString(font, "§8[ESC pour fermer]", cx, panelY + 260, 0x555555);
+        graphics.drawCenteredString(font, Component.translatable("xiidays.admin.close"), cx, panelY + 260, 0x555555);
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -174,7 +174,7 @@ public class AdminScreen extends Screen {
                 String value = inputBox.getValue().strip();
                 if (!value.isEmpty() && pendingInputAction != null) {
                     PacketDistributor.sendToServer(new AdminActionPayload(pendingInputAction, value));
-                    feedbackMessage = "§aAction envoyée !";
+                    feedbackMessage = Component.translatable("xiidays.admin.feedback_sent").getString();
                     feedbackEndTime = System.currentTimeMillis() + 2000;
                 }
                 exitInputMode();
@@ -263,44 +263,44 @@ public class AdminScreen extends Screen {
     // ── Pages ──
 
     private void buildHome() {
-        addEntry(0, 0, Items.CLOCK.getDefaultInstance(), "§eJours", "page:1", "§7Gérer les cycles de jour");
-        addEntry(1, 0, Items.DIAMOND.getDefaultInstance(), "§bÉquipes", "page:2", "§7Gérer les équipes");
-        addEntry(2, 0, Items.ENDER_EYE.getDefaultInstance(), "§aSpectateurs", "page:3", "§7Gérer les spectateurs");
-        addEntry(3, 0, Items.BOOK.getDefaultInstance(), "§dDonnées", "page:4", "§7Sauvegarder / Recharger");
+        addEntry(0, 0, Items.CLOCK.getDefaultInstance(), Component.translatable("xiidays.admin.home.days").getString(), "page:1", Component.translatable("xiidays.admin.home.days_lore").getString());
+        addEntry(1, 0, Items.DIAMOND.getDefaultInstance(), Component.translatable("xiidays.admin.home.teams").getString(), "page:2", Component.translatable("xiidays.admin.home.teams_lore").getString());
+        addEntry(2, 0, Items.ENDER_EYE.getDefaultInstance(), Component.translatable("xiidays.admin.home.spectators").getString(), "page:3", Component.translatable("xiidays.admin.home.spectators_lore").getString());
+        addEntry(3, 0, Items.BOOK.getDefaultInstance(), Component.translatable("xiidays.admin.home.data").getString(), "page:4", Component.translatable("xiidays.admin.home.data_lore").getString());
 
-        addEntry(0, 2, Items.COMPASS.getDefaultInstance(), "§6Scoreboard", "score_open", "§7Ouvrir le scoreboard");
-        addEntry(1, 2, Items.TOTEM_OF_UNDYING.getDefaultInstance(), "§cRespawn All", "spec_respawnall", "§7Respawn tous les spectateurs");
-        addEntry(2, 2, Items.WRITABLE_BOOK.getDefaultInstance(), "§aSauvegarder", "data_save", "§7Sauvegarder les données");
+        addEntry(0, 2, Items.COMPASS.getDefaultInstance(), Component.translatable("xiidays.admin.home.scoreboard").getString(), "score_open", Component.translatable("xiidays.admin.home.scoreboard_lore").getString());
+        addEntry(1, 2, Items.TOTEM_OF_UNDYING.getDefaultInstance(), Component.translatable("xiidays.admin.home.respawn_all").getString(), "spec_respawnall", Component.translatable("xiidays.admin.home.respawn_all_lore").getString());
+        addEntry(2, 2, Items.WRITABLE_BOOK.getDefaultInstance(), Component.translatable("xiidays.admin.home.save").getString(), "data_save", Component.translatable("xiidays.admin.home.save_lore").getString());
     }
 
     private void buildDays() {
-        addEntry(0, 0, Items.LIME_DYE.getDefaultInstance(), "§aDémarrer le jour", "day_start", "§7Commence le cycle du jour");
-        addEntry(1, 0, Items.RED_DYE.getDefaultInstance(), "§cArrêter le jour", "day_stop", "§7Arrête le cycle du jour");
-        addEntry(2, 0, Items.SUGAR.getDefaultInstance(), "§6Définir jour", "day_set", "§7Définit le jour (1-12)");
-        addEntry(3, 0, Items.CLOCK.getDefaultInstance(), "§eStatut du jour", "request:day_status", "§7Cliquez pour le statut");
+        addEntry(0, 0, Items.LIME_DYE.getDefaultInstance(), Component.translatable("xiidays.admin.days.start").getString(), "day_start", Component.translatable("xiidays.admin.days.start_lore").getString());
+        addEntry(1, 0, Items.RED_DYE.getDefaultInstance(), Component.translatable("xiidays.admin.days.stop").getString(), "day_stop", Component.translatable("xiidays.admin.days.stop_lore").getString());
+        addEntry(2, 0, Items.SUGAR.getDefaultInstance(), Component.translatable("xiidays.admin.days.set").getString(), "day_set", Component.translatable("xiidays.admin.days.set_lore").getString());
+        addEntry(3, 0, Items.CLOCK.getDefaultInstance(), Component.translatable("xiidays.admin.days.status").getString(), "request:day_status", Component.translatable("xiidays.admin.days.status_lore").getString());
     }
 
     private void buildTeams() {
-        addEntry(0, 0, Items.EMERALD.getDefaultInstance(), "§aCréer équipe", "team_create", "§7Crée une nouvelle équipe");
-        addEntry(1, 0, Items.REDSTONE_BLOCK.getDefaultInstance(), "§cÉliminer équipe", "team_eliminate", "§7Élimine une équipe");
-        addEntry(2, 0, Items.LIME_WOOL.getDefaultInstance(), "§aRéhabiliter équipe", "team_revive", "§7Réhabilite une équipe");
-        addEntry(3, 0, Items.BARRIER.getDefaultInstance(), "§cSupprimer équipe", "team_remove", "§7Supprime définitivement");
+        addEntry(0, 0, Items.EMERALD.getDefaultInstance(), Component.translatable("xiidays.admin.teams.create").getString(), "team_create", Component.translatable("xiidays.admin.teams.create_lore").getString());
+        addEntry(1, 0, Items.REDSTONE_BLOCK.getDefaultInstance(), Component.translatable("xiidays.admin.teams.eliminate").getString(), "team_eliminate", Component.translatable("xiidays.admin.teams.eliminate_lore").getString());
+        addEntry(2, 0, Items.LIME_WOOL.getDefaultInstance(), Component.translatable("xiidays.admin.teams.revive").getString(), "team_revive", Component.translatable("xiidays.admin.teams.revive_lore").getString());
+        addEntry(3, 0, Items.BARRIER.getDefaultInstance(), Component.translatable("xiidays.admin.teams.remove").getString(), "team_remove", Component.translatable("xiidays.admin.teams.remove_lore").getString());
 
-        addEntry(0, 1, Items.PLAYER_HEAD.getDefaultInstance(), "§bAjouter membre", "team_add", "§7Ajoute un joueur");
-        addEntry(1, 1, Items.SKELETON_SKULL.getDefaultInstance(), "§cRetirer membre", "team_remove_member", "§7Retire un joueur");
-        addEntry(2, 1, Items.ENDER_PEARL.getDefaultInstance(), "§dDéfinir spawn", "team_spawn", "§7Définit le spawn");
-        addEntry(3, 1, Items.BEACON.getDefaultInstance(), "§6Définir cœur", "team_core", "§7Définit le cœur");
+        addEntry(0, 1, Items.PLAYER_HEAD.getDefaultInstance(), Component.translatable("xiidays.admin.teams.add_member").getString(), "team_add", Component.translatable("xiidays.admin.teams.add_member_lore").getString());
+        addEntry(1, 1, Items.SKELETON_SKULL.getDefaultInstance(), Component.translatable("xiidays.admin.teams.remove_member").getString(), "team_remove_member", Component.translatable("xiidays.admin.teams.remove_member_lore").getString());
+        addEntry(2, 1, Items.ENDER_PEARL.getDefaultInstance(), Component.translatable("xiidays.admin.teams.set_spawn").getString(), "team_spawn", Component.translatable("xiidays.admin.teams.set_spawn_lore").getString());
+        addEntry(3, 1, Items.BEACON.getDefaultInstance(), Component.translatable("xiidays.admin.teams.set_core").getString(), "team_core", Component.translatable("xiidays.admin.teams.set_core_lore").getString());
 
-        addEntry(3, 2, Items.PAPER.getDefaultInstance(), "§eListe équipes", "request:team_list", "§7Cliquez pour la liste");
+        addEntry(3, 2, Items.PAPER.getDefaultInstance(), Component.translatable("xiidays.admin.teams.list").getString(), "request:team_list", Component.translatable("xiidays.admin.teams.list_lore").getString());
     }
 
     private void buildSpectators() {
-        addEntry(0, 0, Items.TOTEM_OF_UNDYING.getDefaultInstance(), "§cRespawn All", "spec_respawnall", "§7Respawn tous les spectateurs");
+        addEntry(0, 0, Items.TOTEM_OF_UNDYING.getDefaultInstance(), Component.translatable("xiidays.admin.spectators.respawn_all").getString(), "spec_respawnall", Component.translatable("xiidays.admin.spectators.respawn_all_lore").getString());
     }
 
     private void buildData() {
-        addEntry(0, 0, Items.WRITABLE_BOOK.getDefaultInstance(), "§aSauvegarder", "data_save", "§7Sauvegarde toutes les données");
-        addEntry(1, 0, Items.WRITTEN_BOOK.getDefaultInstance(), "§eRecharger", "data_reload", "§7Recharge depuis les fichiers");
+        addEntry(0, 0, Items.WRITABLE_BOOK.getDefaultInstance(), Component.translatable("xiidays.admin.data.save").getString(), "data_save", Component.translatable("xiidays.admin.data.save_lore").getString());
+        addEntry(1, 0, Items.WRITTEN_BOOK.getDefaultInstance(), Component.translatable("xiidays.admin.data.reload").getString(), "data_reload", Component.translatable("xiidays.admin.data.reload_lore").getString());
     }
 
     // ── Actions ──
@@ -322,7 +322,7 @@ public class AdminScreen extends Screen {
             String dataType = tag.substring(8);
             requestedData.add(dataType);
             PacketDistributor.sendToServer(new RequestAdminDataPayload(dataType));
-            feedbackMessage = "§eDemande en cours...";
+            feedbackMessage = Component.translatable("xiidays.admin.feedback_loading").getString();
             feedbackEndTime = System.currentTimeMillis() + 3000;
             return;
         }
@@ -335,7 +335,7 @@ public class AdminScreen extends Screen {
 
         // Regular action: send to server
         PacketDistributor.sendToServer(new AdminActionPayload(tag));
-        feedbackMessage = "§aCommande exécutée !";
+        feedbackMessage = Component.translatable("xiidays.admin.feedback_executed").getString();
         feedbackEndTime = System.currentTimeMillis() + 2000;
     }
 

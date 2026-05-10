@@ -25,13 +25,10 @@ public class PacketHandler {
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1.0.0");
 
-        // Client -> Serveur
-        registrar.playToClient(
-                PointsPopupPayload.TYPE,
-                PointsPopupPayload.CODEC,
-                PointsPopupPayload::handle
-        );
+        // Play payloads bidirectionnels
+        // Les playToClient sont enregistrés dans ClientPayloadRegistrar (client) et ServerPayloadRegistrar (serveur)
 
+        // Client -> Serveur
         registrar.playToServer(
                 RequestScoreboardPacket.TYPE,
                 RequestScoreboardPacket.CODEC,
@@ -56,37 +53,6 @@ public class PacketHandler {
                 SpectatePackets.SpectateSwitchPayload::handle
         );
 
-        // Serveur -> Client
-        registrar.playToClient(
-                OpenScoreboardPacket.TYPE,
-                OpenScoreboardPacket.CODEC,
-                OpenScoreboardPacket::handle
-        );
-
-        registrar.playToClient(
-                CoreMazeOpenPacket.TYPE,
-                CoreMazeOpenPacket.CODEC,
-                CoreMazeOpenPacket::handle
-        );
-
-        registrar.playToClient(
-                OpenTeamStatsPacket.TYPE,
-                OpenTeamStatsPacket.CODEC,
-                OpenTeamStatsPacket::handle
-        );
-
-        registrar.playToClient(
-                OpenEndScoreboardPacket.TYPE,
-                OpenEndScoreboardPacket.CODEC,
-                OpenEndScoreboardPacket::handle
-        );
-
-        registrar.playToClient(
-                OpenAdminMenuPacket.TYPE,
-                OpenAdminMenuPacket.CODEC,
-                OpenAdminMenuPacket::handle
-        );
-
         registrar.playToServer(
                 AdminActionPayload.TYPE,
                 AdminActionPayload.CODEC,
@@ -103,42 +69,6 @@ public class PacketHandler {
                 RequestOpenAdminMenuPacket.TYPE,
                 RequestOpenAdminMenuPacket.CODEC,
                 RequestOpenAdminMenuPacket::handle
-        );
-
-        registrar.playToClient(
-                AdminDataResponsePayload.TYPE,
-                AdminDataResponsePayload.CODEC,
-                AdminDataResponsePayload::handle
-        );
-
-        registrar.playToClient(
-                DayNotificationPayload.TYPE,
-                DayNotificationPayload.CODEC,
-                DayNotificationPayload::handle
-        );
-
-        registrar.playToClient(
-                DeathNotificationPayload.TYPE,
-                DeathNotificationPayload.CODEC,
-                DeathNotificationPayload::handle
-        );
-
-        registrar.playToClient(
-                SpectatorStatusPayload.TYPE,
-                SpectatorStatusPayload.CODEC,
-                SpectatorStatusPayload::handle
-        );
-
-        registrar.playToClient(
-                EliminationNotificationPayload.TYPE,
-                EliminationNotificationPayload.CODEC,
-                EliminationNotificationPayload::handle
-        );
-
-        registrar.playToClient(
-                GameOverPayload.TYPE,
-                GameOverPayload.CODEC,
-                GameOverPayload::handle
         );
     }
 

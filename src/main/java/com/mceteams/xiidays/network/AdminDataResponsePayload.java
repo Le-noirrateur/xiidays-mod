@@ -1,11 +1,9 @@
 package com.mceteams.xiidays.network;
 
-import com.mceteams.xiidays.screen.AdminScreen;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 import static com.mceteams.xiidays.XIIDays.MODID;
@@ -31,11 +29,5 @@ public record AdminDataResponsePayload(String dataType, String data) implements 
     @Override
     public @NotNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
-    }
-
-    public static void handle(AdminDataResponsePayload packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            AdminScreen.cachedData.put(packet.dataType, packet.data);
-        });
     }
 }

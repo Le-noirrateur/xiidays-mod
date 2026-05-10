@@ -2,6 +2,7 @@ package com.mceteams.xiidays.game;
 
 import com.mceteams.xiidays.data.DayCycleData;
 import com.mceteams.xiidays.data.TeamData;
+import com.mceteams.xiidays.network.DayEndScorePayload;
 import com.mceteams.xiidays.network.DayNotificationPayload;
 import com.mceteams.xiidays.spectator.SpectateManager;
 import com.mojang.brigadier.context.CommandContext;
@@ -21,6 +22,9 @@ import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -125,13 +129,9 @@ public class DaysManager {
 
                 if (days == 1) {
                     context.getSource().getServer().getPlayerList()
-                            .broadcastAll(new ClientboundSetTitleTextPacket(Component.literal("§lDébut de l'aventure")));
-                    context.getSource().getServer().getPlayerList()
                             .broadcastSystemMessage(Component.literal("§c§l[§r§6§lBienvenue dans XII Days§r§c§l]\n\nVotre objectif durant ces 12 jours\nest de récupérer un maximum d'objets\nou de blocs afin de protéger votre\nbase des équipes adverse.§r\n\nVous trouverez quelque objets §2bonus§r\npermettant à votre équipe d'avoir des\n§davantages sur les autres§r, tel que des\ncolis qui tombe quelque fois.\n\n§3§lLes six premier jours sont une phase\nde préparation, les six dernier, de\ncombat\n\n"), false);
                     msg = Component.literal("Le premier jour a commencé.");
                 } else {
-                    context.getSource().getServer().getPlayerList()
-                            .broadcastAll(new ClientboundSetTitleTextPacket(Component.literal("§lDébut du jour")));
                     msg = Component.literal("Le " + days + "e jour a commencé.");
                 }
 
@@ -162,20 +162,47 @@ public class DaysManager {
         return true;
     }
 
-    public static boolean stop() {
+    public static boolean stop(boolean sendDayEndHud) {
         try {
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server == null) return false;
 
             DayCycleData.setInProgress(false);
 
-            var notifEnd = new DayNotificationPayload(DayNotificationPayload.NotificationType.END,
-                    DayCycleData.getCurrentDay(), DayCycleData.getCurrentDay());
-            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                PacketDistributor.sendToPlayer(player, notifEnd);
+            if (sendDayEndHud) {
+                var notifEnd = new DayNotificationPayload(DayNotificationPayload.NotificationType.END,
+                        DayCycleData.getCurrentDay(), DayCycleData.getCurrentDay());
+                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                    PacketDistributor.sendToPlayer(player, notifEnd);
+                }
+
+                // Send day-end rankings to all players
+                List<Map.Entry<Integer, Integer>> leaderboard = PointsManager.getLeaderboard();
+                List<DayEndScorePayload.TeamEntry> entries = new ArrayList<>();
+                for (Map.Entry<Integer, Integer> entry : leaderboard) {
+                    int teamId = entry.getKey();
+                    String name = TeamData.getTeamName(teamId);
+                    int pts = entry.getValue();
+                    var rankEntry = ScoreboardManager.getRankings().stream()
+                            .filter(r -> r.teamId() == teamId)
+                            .findFirst().orElse(null);
+                    int rankChange = 0;
+                    if (rankEntry != null && ScoreboardManager.shouldShowArrow(rankEntry)) {
+                        rankChange = switch (rankEntry.change()) {
+                            case UP -> 1;
+                            case DOWN -> -1;
+                            case NONE -> 0;
+                        };
+                    }
+                    entries.add(new DayEndScorePayload.TeamEntry(name, pts, rankChange));
+                }
+                var scorePayload = new DayEndScorePayload(entries);
+                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                    PacketDistributor.sendToPlayer(player, scorePayload);
+                }
             }
 
-            if (DayCycleData.getCurrentDay() <= 6) {
+            if (sendDayEndHud && DayCycleData.getCurrentDay() <= 6) {
                 SpectateManager.respawnAllSpectators();
             }
 
@@ -187,8 +214,10 @@ public class DaysManager {
             server.getPlayerList()
                     .broadcastSystemMessage(Component.literal("§cLe jour est terminé"), false);
 
-            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                player.playNotifySound(SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.MASTER, 1.0f, 0.5f);
+            if (sendDayEndHud) {
+                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                    player.playNotifySound(SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.MASTER, 1.0f, 0.5f);
+                }
             }
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
@@ -197,7 +226,11 @@ public class DaysManager {
         return true;
     }
 
+    public static boolean stop() {
+        return stop(true);
+    }
+
     public static boolean stop(CommandContext<CommandSourceStack> context) {
-        return stop();
+        return stop(true);
     }
 }

@@ -1,6 +1,9 @@
 package com.mceteams.xiidays.visual;
 
+import com.mceteams.xiidays.client.cinematic.CameraPath;
+import com.mceteams.xiidays.client.cinematic.CinematicController;
 import com.mceteams.xiidays.network.*;
+import com.mceteams.xiidays.player.ClientRankTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -9,6 +12,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
+
+import java.util.List;
 
 import static com.mceteams.xiidays.XIIDays.MODID;
 
@@ -36,9 +41,19 @@ public class HUDOverlayHandler {
     private static GameOverPayload gameOverNotif = null;
     private static long gameOverTime = 0;
 
+    // ── Day-end scoreboard ──
+    private static DayEndScorePayload dayEndScore = null;
+    private static long dayEndScoreStart = 0;
+
     public static void onDayNotification(DayNotificationPayload packet) {
         currentNotification = packet;
         dayNotifStart = System.currentTimeMillis();
+        if (packet.notificationType() == DayNotificationPayload.NotificationType.START) {
+            CameraPath path = CinematicController.createDayStartPath(Minecraft.getInstance());
+            if (path != null) {
+                CinematicController.play(path, true);
+            }
+        }
     }
 
     public static void onDeathNotification(DeathNotificationPayload packet) {
@@ -64,6 +79,16 @@ public class HUDOverlayHandler {
     public static void onGameOver(GameOverPayload packet) {
         gameOverNotif = packet;
         gameOverTime = System.currentTimeMillis();
+    }
+
+    public static void onDayEndScore(DayEndScorePayload packet) {
+        dayEndScore = packet;
+        dayEndScoreStart = System.currentTimeMillis();
+        // Update client rank tracker
+        List<String> rankingOrder = packet.teams().stream()
+                .map(DayEndScorePayload.TeamEntry::teamName).toList();
+        ClientRankTracker.updateRanking(rankingOrder);
+        ClientRankTracker.cleanup();
     }
 
     @SubscribeEvent
@@ -110,6 +135,12 @@ public class HUDOverlayHandler {
             float t = (now - gameOverTime) / 1000f;
             renderGameOver(graphics, font, w, h, t);
         }
+
+        // Render day-end scoreboard
+        if (dayEndScore != null) {
+            float t = (now - dayEndScoreStart) / 1000f;
+            renderDayEndScoreboard(graphics, font, w, h, t, now);
+        }
     }
 
     // ── Death overlay ──
@@ -125,7 +156,7 @@ public class HUDOverlayHandler {
             }
 
             int textAlpha = (int) (255 * Math.min(t / 0.5f, 1f));
-            drawCentered(graphics, font, "§c§lELIMINATED", w / 2, h / 2 - 20, textAlpha);
+            drawCentered(graphics, font, Component.translatable("xiidays.hud.eliminated").getString(), w / 2, h / 2 - 20, textAlpha);
         }
 
         // Phase 2 (1.5-2.5s): Overlay shrinks up, text moves up
@@ -141,7 +172,7 @@ public class HUDOverlayHandler {
             int textY = (int) (h / 2 - 20 - easeOut * 60);
             int textAlpha = (int) (255 * (1f - easeOut));
             if (textAlpha > 0) {
-                drawCentered(graphics, font, "§c§lELIMINATED", w / 2, textY, textAlpha);
+                drawCentered(graphics, font, Component.translatable("xiidays.hud.eliminated").getString(), w / 2, textY, textAlpha);
             }
         }
 
@@ -149,7 +180,7 @@ public class HUDOverlayHandler {
         if (t >= 2.5f && respawnEndTime > 0) {
             long remaining = (respawnEndTime - now) / 1000;
             if (remaining > 0) {
-                String timer = "§cRespawn in §f" + remaining + "§cs";
+                String timer = Component.translatable("xiidays.hud.respawn_in", remaining).getString();
                 int ta = (int) (255 * Math.min((t - 2.5f) / 0.5f, 1f));
                 drawCentered(graphics, font, timer, w / 2, h - 60, ta);
             } else {
@@ -178,10 +209,10 @@ public class HUDOverlayHandler {
 
         graphics.fill(0, 0, w, h, (int) (alpha * 0.5f * 255) << 24 | 0x000000);
 
-        String text = gameOverNotif.isWinner() ? "§6§lVICTORY" : "§c§lDEFEATED";
+        String text = gameOverNotif.isWinner() ? Component.translatable("xiidays.hud.victory").getString() : Component.translatable("xiidays.hud.defeated").getString();
         drawCentered(graphics, font, text, w / 2, h / 2 - 20, a);
 
-        String sub = gameOverNotif.isWinner() ? "§7Your team is the last standing!" : "§7Your team has been eliminated";
+        String sub = gameOverNotif.isWinner() ? Component.translatable("xiidays.hud.victory_sub").getString() : Component.translatable("xiidays.hud.defeated_sub").getString();
         int subA = (int) (a * 0.8f);
         drawCentered(graphics, font, sub, w / 2, h / 2 + 15, subA);
     }
@@ -208,9 +239,11 @@ public class HUDOverlayHandler {
 
         if (alpha < 0.01f) return;
 
-        String text = "§c§l" + elimNotif.teamName() + " §7has been eliminated!";
+        String text;
         if (elimNotif.gameOver()) {
-            text = "§c§l" + elimNotif.teamName() + " §7has been eliminated!\n§6§lGame Over!";
+            text = Component.translatable("xiidays.hud.game_over", elimNotif.teamName()).getString();
+        } else {
+            text = Component.translatable("xiidays.hud.eliminated_team", elimNotif.teamName()).getString();
         }
 
         int x = w - 260 + xOffset;
@@ -223,86 +256,100 @@ public class HUDOverlayHandler {
     // ── Spectator Info HUD ──
 
     private static void renderSpectatorInfo(GuiGraphics graphics, Font font, int w, int h) {
-        String modeText;
+        Component modeComponent;
         switch (spectatorMode) {
             case SpectatorStatusPayload.MODE_TEAMMATE_WATCH -> {
                 if (!spectatorTargetName.isEmpty()) {
-                    modeText = "§7Watching: §f" + spectatorTargetName;
+                    modeComponent = Component.translatable("xiidays.hud.spectator_teammate", spectatorTargetName);
                 } else {
-                    modeText = "§7Teammate Watch";
+                    modeComponent = Component.translatable("xiidays.hud.spectator_teammate_watch");
                 }
             }
-            case SpectatorStatusPayload.MODE_BASE_SPECTATE -> modeText = "§7Base Spectate";
-            case SpectatorStatusPayload.MODE_FREE_SPECTATE -> modeText = "§7Free Spectate";
-            default -> modeText = "§7Spectator";
+            case SpectatorStatusPayload.MODE_BASE_SPECTATE -> modeComponent = Component.translatable("xiidays.hud.spectator_base");
+            case SpectatorStatusPayload.MODE_FREE_SPECTATE -> modeComponent = Component.translatable("xiidays.hud.spectator_free");
+            default -> modeComponent = Component.translatable("xiidays.hud.spectator_default");
         }
         int color = 0xFFFFFF;
-        graphics.drawString(font, Component.literal(modeText), 10, h - 30, color);
+        graphics.drawString(font, modeComponent, 10, h - 30, color);
     }
 
     // ── Day Start ──
 
     private static void renderDayStart(GuiGraphics graphics, Font font, int w, int h, float t) {
         float totalAlpha;
-        if (t < 4f) {
+        if (t < 5f) {
             totalAlpha = 1f;
         } else {
-            totalAlpha = Math.max(0, 1f - (t - 4f) / 2f);
+            totalAlpha = Math.max(0, 1f - (t - 5f) / 3f);
         }
         if (totalAlpha < 0.01f) return;
 
-        // Phase 1 (0-1.2s): "THE DAY HAS BEGUN" fades in at center (title scale),
-        // then shrinks to subtitle scale and moves to top
-        float titleEase = Math.min(t / 1.2f, 1f);
-        float titleEaseOut = 1f - (1f - titleEase) * (1f - titleEase);
+        String titleText = Component.translatable("xiidays.day_start.title").getString();
+        String dayLabel = Component.translatable("xiidays.day_start.day_label").getString();
 
-        float titleScale = 3f + (1.5f - 3f) * titleEaseOut;
-        int titleStartY = h / 2;
-        int titleEndY = h / 4;
-        int titleY = (int) (titleStartY + (titleEndY - titleStartY) * titleEaseOut);
-        int titleAlpha = (int) (255 * Math.min(t / 0.3f, 1f) * totalAlpha);
-        if (titleAlpha > 0) {
-            drawScaledCentered(graphics, font, "§6§lTHE DAY HAS BEGUN", w / 2, titleY, titleScale, titleAlpha);
+        // ── Title: "The Day Has Begun" ──
+        // 0-0.5s: fade in at center (4x)
+        // 0.5-2.0s: hold at center (4x)
+        // 2.0-3.0s: slide to top + shrink to 2x
+        // 3.0s+: stay at top (2x)
+        float holdEnd = 2.0f;
+        float slideEnd = 3.0f;
+
+        if (t < holdEnd) {
+            int alpha = (int) (255 * Math.min(t / 0.5f, 1f) * totalAlpha);
+            if (alpha > 0) {
+                drawScaledCentered(graphics, font, "§6§l" + titleText, w / 2, h / 2, 4f, alpha);
+            }
+        } else if (t < slideEnd) {
+            float p = (t - holdEnd) / (slideEnd - holdEnd);
+            float ease = p * p;
+            float scale = 4f + (2f - 4f) * ease;
+            int y = (int) ((h / 2) + ((h / 5) - (h / 2)) * ease);
+            int alpha = (int) (255 * totalAlpha);
+            drawScaledCentered(graphics, font, "§6§l" + titleText, w / 2, y, scale, alpha);
+        } else {
+            int alpha = (int) (255 * totalAlpha);
+            drawScaledCentered(graphics, font, "§6§l" + titleText, w / 2, h / 5, 2f, alpha);
         }
 
-        // Phase 2 (1.5-3.5s): Day number transition
-        if (t >= 1.5f) {
-            int dayLabelY = h / 2 + 10;
-            int numberOffset = font.lineHeight + 5;
-            int numberY = dayLabelY + numberOffset;
+        // ── Day label + number ──
+        if (t >= 2.5f) {
+            int labelY = h / 2 - 20;
+            int numY = labelY + 60;
 
-            // "Day" label (fixed)
-            float dayLabelFade = Math.min((t - 1.5f) / 0.5f, 1f);
-            int dayLabelAlpha = (int) (255 * dayLabelFade * totalAlpha);
-            if (dayLabelAlpha > 0) {
-                drawScaledCentered(graphics, font, "§fDay", w / 2, dayLabelY, 1.5f, dayLabelAlpha);
+            // Day label (fades in 2.5-3.0s, holds)
+            float labelP = Math.min((t - 2.5f) / 0.5f, 1f);
+            int labelAlpha = (int) (255 * labelP * totalAlpha);
+            if (labelAlpha > 0) {
+                drawScaledCentered(graphics, font, "§f" + dayLabel, w / 2, labelY, 3f, labelAlpha);
             }
 
-            // Number transition
-            if (t >= 1.8f && t < 3.5f) {
-                float p = (t - 1.8f) / 1.2f;
-                if (p > 1f) p = 1f;
-                float easeP = p * p; // ease-in
+            // Number
+            if (t >= 3.5f) {
+                float numFade = Math.min((t - 3.5f) / 0.5f, 1f);
 
-                int slideUp = (int) (30 * easeP);
+                if (t < 4.5f) {
+                    float p = (t - 3.5f) / 1.0f;
+                    if (p > 1f) p = 1f;
+                    float easeP = p * p;
 
-                // Old number: slides up and fades out
-                int oldNumY = numberY - slideUp;
-                int oldAlpha = (int) (255 * (1f - easeP) * totalAlpha);
-                if (oldAlpha > 0) {
-                    drawScaledCentered(graphics, font, "§7" + currentNotification.oldDay(), w / 2, oldNumY, 1.5f, oldAlpha);
+                    int slideDist = 50;
+
+                    int oldY = numY - (int) (slideDist * easeP);
+                    int oldA = (int) (255 * (1f - easeP) * numFade * totalAlpha);
+                    if (oldA > 0) {
+                        drawScaledCentered(graphics, font, "§7" + currentNotification.oldDay(), w / 2, oldY, 2f, oldA);
+                    }
+
+                    int newY = numY + (int) (slideDist * (1f - easeP));
+                    int newA = (int) (255 * easeP * numFade * totalAlpha);
+                    if (newA > 0) {
+                        drawScaledCentered(graphics, font, "§6§l" + currentNotification.newDay(), w / 2, newY, 2f, newA);
+                    }
+                } else {
+                    int a = (int) (255 * totalAlpha);
+                    drawScaledCentered(graphics, font, "§6§l" + currentNotification.newDay(), w / 2, numY, 2f, a);
                 }
-
-                // New number: slides from below and fades in
-                int newNumY = numberY + (int) (30 * (1f - easeP));
-                int newAlpha = (int) (255 * easeP * totalAlpha);
-                if (newAlpha > 0) {
-                    drawScaledCentered(graphics, font, "§6§l" + currentNotification.newDay(), w / 2, newNumY, 1.5f, newAlpha);
-                }
-            } else if (t >= 3.5f) {
-                // After transition, show only new number
-                int numAlpha = (int) (255 * totalAlpha);
-                drawScaledCentered(graphics, font, "§6§l" + currentNotification.newDay(), w / 2, numberY, 1.5f, numAlpha);
             }
         }
     }
@@ -310,42 +357,136 @@ public class HUDOverlayHandler {
     // ── Day End ──
 
     private static void renderDayEnd(GuiGraphics graphics, Font font, int w, int h, float t) {
-        if (t > 4f) return;
+        if (t > 6f) return;
 
         float alpha;
-        if (t < 1f) {
-            alpha = t / 1f;
-        } else if (t < 2.5f) {
+        if (t < 3.5f) {
             alpha = 1f;
         } else {
-            alpha = Math.max(0, 1f - (t - 2.5f) / 1.5f);
+            alpha = Math.max(0, 1f - (t - 3.5f) / 2.5f);
+        }
+        if (alpha < 0.01f) return;
+
+        String text = Component.translatable("xiidays.day_end.title").getString();
+        String format = "§c";
+        String raw = format + text;
+
+        int len = text.length();
+        int totalPairs = (len + 1) / 2;
+        float progress = Math.min(t / 2.0f, 1.0f);
+        int pairs = (int) (progress * totalPairs);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(format);
+        for (int i = 0; i < len; i++) {
+            if (i < pairs || i >= len - pairs) {
+                sb.append(text.charAt(i));
+            } else {
+                sb.append(' ');
+            }
+        }
+
+        int a = (int) (255 * alpha);
+        drawScaledCentered(graphics, font, sb.toString(), w / 2, h / 2 - 10, 3f, a);
+    }
+
+    // ── Day-End Scoreboard ──
+
+    private static void renderDayEndScoreboard(GuiGraphics graphics, Font font, int w, int h, float t, long now) {
+        float te = t - 5.5f; // wait for day-end text to finish
+        if (te < 0) return;
+
+        if (te > 8.0f) { dayEndScore = null; return; }
+
+        float alpha;
+        float slideOffset;
+
+        if (te < 0.5f) {
+            float p = te / 0.5f;
+            alpha = p;
+            slideOffset = h * (1f - p * p);
+        } else if (te < 6.0f) {
+            alpha = 1f;
+            slideOffset = 0;
+        } else {
+            float p = (te - 6.0f) / 2.0f;
+            alpha = Math.max(0, 1f - p);
+            slideOffset = 0;
         }
 
         if (alpha < 0.01f) return;
 
-        int midX = w / 2;
-        int midY = h / 2;
+        var teams = dayEndScore.teams();
+        int panelW = 260;
+        int rowH = 28;
+        int headerH = 38;
+        int pad = 12;
+        int totalH = headerH + teams.size() * rowH + pad * 2;
+        int panelX = (w - panelW) / 2;
+        int baseY = (h - totalH) / 2;
+        int panelY = (int) (baseY + slideOffset);
+        int a = (int) (255 * alpha);
+        int bgA = (int) (200 * alpha);
 
-        // "THE" slides from left
-        String leftText = "§cTHE";
-        int leftW = font.width("THE");
-        int leftOffset = (int) ((1f - Math.min(t / 0.5f, 1f)) * 80);
-        int leftX = midX - 60 - leftW + leftOffset;
-        int leftA = (int) (255 * alpha * Math.min(t / 0.5f, 1f));
-        drawText(graphics, font, leftText, leftX, midY - 10, leftA);
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + totalH, (bgA << 24) | 0x1A1A2E);
+        graphics.fill(panelX, panelY, panelX + panelW, panelY + 3, (a << 24) | 0xFFD700);
 
-        // "DAY" fixed center
-        String centerText = "§cDAY";
-        int cA = (int) (255 * alpha * Math.min(Math.max((t - 0.15f) / 0.35f, 0), 1f));
-        drawText(graphics, font, centerText, midX - font.width("DAY") / 2, midY - 10, cA);
+        String title = Component.translatable("xiidays.hud.scoreboard_title").getString();
+        int titleX = panelX + (panelW - font.width(title)) / 2;
+        int titleY = panelY + pad + 8;
+        drawText(graphics, font, title, titleX, titleY, a);
 
-        // "HAS FINISHED" slides from right
-        String rightText = "§cHAS FINISHED";
-        int rightW = font.width("HAS FINISHED");
-        int rightOffset = (int) ((1f - Math.min(t / 0.5f, 1f)) * 80);
-        int rightX = midX + 60 - rightOffset;
-        int rightA = (int) (255 * alpha * Math.min(t / 0.5f, 1f));
-        drawText(graphics, font, rightText, rightX, midY - 10, rightA);
+        int sepY = titleY + 16;
+        int sepA = (int) (80 * alpha);
+        if (sepA > 0) {
+            graphics.fill(panelX + pad, sepY, panelX + panelW - pad, sepY + 1, (sepA << 24) | 0xFFFFFF);
+        }
+
+        int rowY = sepY + 8;
+        for (int i = 0; i < teams.size(); i++) {
+            var entry = teams.get(i);
+
+            int rowBgA = (int) (10 * alpha);
+            if (rowBgA > 0 && i % 2 == 1) {
+                graphics.fill(panelX, rowY, panelX + panelW, rowY + rowH, (rowBgA << 24) | 0xFFFFFF);
+            }
+
+            String pos = Component.translatable("xiidays.hud.scoreboard_rank", i + 1).getString();
+            drawText(graphics, font, pos, panelX + pad, rowY + 6, a);
+
+            graphics.drawString(font, entry.teamName(), panelX + 40, rowY + 6, (a << 24) | 0xFFFFFF);
+
+            String pts = Component.translatable("xiidays.hud.scoreboard_points", entry.points()).getString();
+            int ptsX = panelX + panelW - pad - font.width(pts);
+            drawText(graphics, font, pts, ptsX, rowY + 6, a);
+
+            int iconX = ptsX - font.width(" ▲") - 4;
+            var battle = ClientRankTracker.getActiveBattleFor(entry.teamName());
+            if (battle != null) {
+                float pulse = (float) (0.5 + 0.5 * Math.sin(now / 150.0));
+                int iconAlpha = (int) (a * pulse);
+                int shake = (int) (1 * Math.sin(now / 50.0));
+                graphics.drawString(font, "\u2694", iconX + shake, rowY + 6, (iconAlpha << 24) | 0xFFAA00);
+            } else {
+                var change = ClientRankTracker.getActiveChange(entry.teamName());
+                if (change != null) {
+                    float progress = change.getProgress();
+                    float fadeStart = 0.8f;
+                    float arrowFade = progress > fadeStart ? 1.0f - ((progress - fadeStart) / (1.0f - fadeStart)) : 1.0f;
+                    arrowFade *= (float) (0.7 + 0.3 * Math.sin(now / 200.0));
+                    arrowFade *= alpha;
+                    int arrowA = (int) (255 * arrowFade);
+                    if (arrowA > 0) {
+                        String arrow = change.getType() == ClientRankTracker.RankChangeType.UP ? "\u25B2" : "\u25BC";
+                        int col = change.getType() == ClientRankTracker.RankChangeType.UP ? 0x00FF00 : 0xFF0000;
+                        int dir = (int) (2 * Math.sin(now / 150.0)) * (change.getType() == ClientRankTracker.RankChangeType.UP ? -1 : 1);
+                        graphics.drawString(font, arrow, iconX, rowY + 6 + dir, (arrowA << 24) | col);
+                    }
+                }
+            }
+
+            rowY += rowH;
+        }
     }
 
     // ── Drawing helpers (no backgrounds) ──

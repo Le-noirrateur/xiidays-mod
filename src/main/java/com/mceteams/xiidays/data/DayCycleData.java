@@ -4,11 +4,9 @@ import com.google.gson.JsonObject;
 
 public class DayCycleData {
     private static final String DOMAIN = "day_cycle";
-    private static JsonObject data;
 
     private static JsonObject get() {
-        if (data == null) data = DataManager.load(DOMAIN);
-        return data;
+        return DataManager.load(DOMAIN);
     }
 
     public static boolean isInProgress() {

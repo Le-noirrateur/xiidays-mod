@@ -1,12 +1,9 @@
 package com.mceteams.xiidays.network;
 
-import com.mceteams.xiidays.screen.TeamStatsScreen;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -88,12 +85,6 @@ public record OpenTeamStatsPacket(TeamStatsData teamStats, List<PlayerStatsData>
     @Override
     public @NotNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
-    }
-
-    public static void handle(OpenTeamStatsPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            Minecraft.getInstance().setScreen(new TeamStatsScreen(packet.teamStats, packet.playerStats));
-        });
     }
 
     public record TeamStatsData(

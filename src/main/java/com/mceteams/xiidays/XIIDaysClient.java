@@ -1,6 +1,5 @@
 package com.mceteams.xiidays;
 
-import com.mceteams.xiidays.network.OpenScoreboardPacket;
 import com.mceteams.xiidays.visual.KeyBindings;
 import com.mceteams.xiidays.visual.TeamSpawnerRenderer;
 import com.mceteams.xiidays.world.BlockEntityRegistry;
@@ -16,8 +15,6 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 import static com.mceteams.xiidays.XIIDays.MODID;
 
@@ -34,36 +31,14 @@ public class XIIDaysClient {
         XIIDays.LOGGER.info("[XII Days - Mod]: Client setup started");
         XIIDays.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
 
-        // Enregistrement des renderers de Block Entities
-        XIIDays.LOGGER.info("[XII Days - Mod]: Registering Block Entity Renderers");
         BlockEntityRenderers.register(BlockEntityRegistry.TEAM_SPAWN.get(), TeamSpawnerRenderer::new);
         XIIDays.LOGGER.info("[XII Days - Mod]: Block Entity Renderers registered");
 
-        // Configuration des render layers
         event.enqueueWork(() -> {
             XIIDays.LOGGER.info("[XII Days - Mod]: Configuring render layers");
             ItemBlockRenderTypes.setRenderLayer(BlockRegistry.TEAM_SPAWNER.get(), RenderType.translucent());
             XIIDays.LOGGER.info("[XII Days - Mod]: Render layers configured");
         });
-    }
-
-    /**
-     * Enregistre les packets SERVEUR → CLIENT
-     */
-    @SubscribeEvent
-    private void registerClientPackets(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1").optional();
-
-        XIIDays.LOGGER.info("[XII Days - Client]: Registering client-bound packets...");
-
-        // Serveur → Client : Données du scoreboard + ouverture de l'écran
-        registrar.playToClient(
-                OpenScoreboardPacket.TYPE,
-                OpenScoreboardPacket.CODEC,
-                OpenScoreboardPacket::handle
-        );
-
-        XIIDays.LOGGER.info("[XII Days - Client]: Client-bound packets registered (1 channel)");
     }
 
     @SubscribeEvent

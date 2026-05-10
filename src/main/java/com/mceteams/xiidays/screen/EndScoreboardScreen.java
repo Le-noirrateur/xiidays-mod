@@ -21,7 +21,7 @@ public class EndScoreboardScreen extends Screen {
     private float maxScroll = 0;
 
     public EndScoreboardScreen(String winningTeam, List<OpenEndScoreboardPacket.TeamEntry> teamStats, OpenEndScoreboardPacket.MvpData mvpData) {
-        super(Component.literal("Fin de Partie"));
+        super(Component.translatable("xiidays.end_scoreboard.title"));
         this.winningTeam = winningTeam;
         this.mvpData = mvpData;
         this.teamStatsList = teamStats;
@@ -55,7 +55,7 @@ public class EndScoreboardScreen extends Screen {
         graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, 0xFF1A1A2E);
         graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + 3, 0xFFFFD700);
 
-        graphics.drawCenteredString(font, "§6§lFIN DE PARTIE", centerX, panelY + 15, 0xFFD700);
+        graphics.drawCenteredString(font, Component.translatable("xiidays.end_scoreboard.title"), centerX, panelY + 15, 0xFFD700);
 
         int contentX = panelX + 15;
         int contentY = panelY + 40;
@@ -68,7 +68,7 @@ public class EndScoreboardScreen extends Screen {
 
         // ── WINNER BANNER ──
         graphics.fill(contentX, yOffset, contentX + contentWidth, yOffset + 30, 0x40FFD700);
-        graphics.drawCenteredString(font, "\uD83C\uDFC6 §6§l" + winningTeam + " §r§6a gagné la partie !", contentX + contentWidth / 2, yOffset + 8, 0xFFD700);
+        graphics.drawCenteredString(font, Component.translatable("xiidays.end_scoreboard.winner", winningTeam), contentX + contentWidth / 2, yOffset + 8, 0xFFD700);
         yOffset += 40;
 
         // ── WINNER STATS ──
@@ -83,23 +83,19 @@ public class EndScoreboardScreen extends Screen {
                 break;
             }
         }
-        graphics.drawString(font, "§7Points: §6" + pts + "  §7Kills: §c" + kills + "  §7Morts: §8" + deaths
-                + "  §7Blocs: §b" + blocks + "  §7Degats: §4" + damage, contentX + 10, yOffset, 0xAAAAAA);
+        graphics.drawString(font, Component.translatable("xiidays.end_scoreboard.stats_line", pts, kills, deaths, blocks, damage), contentX + 10, yOffset, 0xAAAAAA);
         yOffset += 20;
 
         // ── MVP ──
         if (mvpData != null && !mvpData.playerUUID().isEmpty()) {
             graphics.fill(contentX, yOffset, contentX + contentWidth, yOffset + 34, 0x3000FF00);
-            graphics.drawString(font, "\u2B50 §6§lMVP §7» §e" + mvpData.playerName()
-                    + " §7(§6" + mvpData.pointsContributed() + " pts§7) — Équipe §6" + mvpData.teamName(), contentX + 10, yOffset + 3, 0xFFFFFF);
-            String mvpLine = "§7Score: §a" + mvpData.score() + "  §7=  §6" + mvpData.pointsContributed() + " pts"
-                    + " §7+ §c" + mvpData.kills() + "K*50 §7- §8" + mvpData.deaths() + "M*10";
-            graphics.drawString(font, mvpLine, contentX + 10, yOffset + 15, 0xAAAAAA);
+            graphics.drawString(font, Component.translatable("xiidays.end_scoreboard.mvp", mvpData.playerName(), mvpData.pointsContributed(), mvpData.teamName()), contentX + 10, yOffset + 3, 0xFFFFFF);
+            graphics.drawString(font, Component.translatable("xiidays.end_scoreboard.mvp_score", mvpData.score(), mvpData.pointsContributed(), mvpData.kills(), mvpData.deaths()), contentX + 10, yOffset + 15, 0xAAAAAA);
             yOffset += 44;
         }
 
         // ── RANKING ──
-        graphics.drawString(font, "§6§l▸ CLASSEMENT FINAL", contentX + 10, yOffset, 0xFFD700);
+        graphics.drawString(font, Component.translatable("xiidays.end_scoreboard.ranking_header"), contentX + 10, yOffset, 0xFFD700);
         yOffset += 20;
 
         for (int i = 0; i < teamStatsList.size(); i++) {
@@ -121,12 +117,9 @@ public class EndScoreboardScreen extends Screen {
                 graphics.fill(contentX, yOffset - 2, contentX + contentWidth, yOffset + 14, 0x10FFFFFF);
             }
 
-            graphics.drawString(font, medal + " " + color + "#" + (i + 1) + " §f" + team.teamName()
-                    + " §7- §6" + team.points() + " pts", contentX + 10, yOffset, 0xFFFFFF);
+            graphics.drawString(font, Component.translatable("xiidays.end_scoreboard.team_row", medal, color, (i + 1), team.teamName(), team.points()), contentX + 10, yOffset, 0xFFFFFF);
 
-            graphics.drawString(font, "§7K:§c" + team.kills() + " §7M:§8" + team.deaths()
-                    + " §7B:§b" + team.blocksMined() + " §7D:§4" + team.damageDealt(),
-                    contentX + contentWidth - 200, yOffset, 0xAAAAAA);
+            graphics.drawString(font, Component.translatable("xiidays.end_scoreboard.team_stats", team.kills(), team.deaths(), team.blocksMined(), team.damageDealt()), contentX + contentWidth - 200, yOffset, 0xAAAAAA);
 
             yOffset += 20;
         }
@@ -143,7 +136,7 @@ public class EndScoreboardScreen extends Screen {
             graphics.fill(scrollX, barY, scrollX + 4, barY + barH, 0xFFFFD700);
         }
 
-        graphics.drawCenteredString(font, "§8[ESC pour fermer]", centerX, panelY + PANEL_HEIGHT - 12, 0x555555);
+        graphics.drawCenteredString(font, Component.translatable("xiidays.end_scoreboard.close"), centerX, panelY + PANEL_HEIGHT - 12, 0x555555);
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }

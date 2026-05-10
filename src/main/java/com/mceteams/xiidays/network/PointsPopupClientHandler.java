@@ -3,6 +3,7 @@ package com.mceteams.xiidays.network;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -31,7 +32,7 @@ public class PointsPopupClientHandler {
 
         PopupEntry entry = new PopupEntry(payload.points(), payload.typeName(),
                 System.currentTimeMillis(), (long) lifetime);
-        entry.visualY = baseY + 20; // starts slightly lower, slides up
+        entry.visualY = baseY + 20;
         activePopups.add(entry);
 
         if (activePopups.size() > MAX_POPUPS) {
@@ -110,18 +111,7 @@ public class PointsPopupClientHandler {
         }
 
         String displayName() {
-            return switch (typeName) {
-                case "KILL" -> "Kill";
-                case "DEATH" -> "Death";
-                case "MINING" -> "Mining";
-                case "FIRST_BLOOD" -> "First Blood";
-                case "KILL_STREAK" -> "Kill Streak";
-                case "CRATE" -> "Crate";
-                case "TOTEM" -> "Totem";
-                case "CORE_MAZE" -> "Core Maze";
-                case "REVIVED" -> "Ressuscite";
-                default -> typeName.replace('_', ' ');
-            };
+            return Component.translatable("xiidays.points_popup." + typeName.toLowerCase()).getString();
         }
 
         String formattedText() {

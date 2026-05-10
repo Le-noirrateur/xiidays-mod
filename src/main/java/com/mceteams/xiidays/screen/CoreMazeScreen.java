@@ -41,7 +41,7 @@ public class CoreMazeScreen extends Screen {
      * @param teamId ID de l'équipe du joueur
      */
     public CoreMazeScreen(List<EnigmaData> enigmas, int teamId) {
-        super(Component.literal("Core Maze"));
+        super(Component.translatable("xiidays.core_maze.title"));
         this.enigmas = enigmas;
         this.teamId = teamId;
     }
@@ -56,9 +56,9 @@ public class CoreMazeScreen extends Screen {
         int panelY = centerY - PANEL_HEIGHT / 2;
 
         // Champ de réponse
-        this.answerBox = new EditBox(this.font, centerX - 100, panelY + 180, 200, 20, Component.literal("Réponse"));
+        this.answerBox = new EditBox(this.font, centerX - 100, panelY + 180, 200, 20, Component.translatable("xiidays.core_maze.answer_label"));
         this.answerBox.setMaxLength(50);
-        this.answerBox.setHint(Component.literal("Entrez votre réponse..."));
+        this.answerBox.setHint(Component.translatable("xiidays.core_maze.answer_hint"));
         this.answerBox.setResponder(this::onAnswerChanged);
         this.addWidget(this.answerBox);
     }
@@ -81,7 +81,7 @@ public class CoreMazeScreen extends Screen {
 
     private void onCorrectAnswer() {
         solvedCount++;
-        feedbackMessage = "Correct !";
+        feedbackMessage = Component.translatable("xiidays.core_maze.feedback_correct").getString();
         feedbackColor = 0x00FF00;
         feedbackEndTime = System.currentTimeMillis() + 2000;
 
@@ -91,7 +91,7 @@ public class CoreMazeScreen extends Screen {
         // Passer à l'énigme suivante ou terminer
         if (solvedCount >= 3) {
             // Toutes les énigmes sont résolues !
-            feedbackMessage = "Core Maze résolu ! +300 points !";
+            feedbackMessage = Component.translatable("xiidays.core_maze.feedback_complete").getString();
             feedbackColor = 0xFFD700;
             feedbackEndTime = System.currentTimeMillis() + 3000;
 
@@ -119,11 +119,10 @@ public class CoreMazeScreen extends Screen {
         graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + 3, 0xFFFFD700); // Bordure or
 
         // Titre
-        graphics.drawCenteredString(this.font, "§6§lCORE MAZE", centerX, panelY + 15, 0xFFD700);
+        graphics.drawCenteredString(this.font, Component.translatable("xiidays.core_maze.title"), centerX, panelY + 15, 0xFFD700);
 
         // Progression
-        String progress = String.format("§7Progression: §e%d§7/§e3", solvedCount);
-        graphics.drawCenteredString(this.font, progress, centerX, panelY + 35, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, Component.translatable("xiidays.core_maze.progress", solvedCount), centerX, panelY + 35, 0xFFFFFF);
 
         // Indicateurs de progression (cercles)
         for (int i = 0; i < 3; i++) {
@@ -138,8 +137,7 @@ public class CoreMazeScreen extends Screen {
             EnigmaData enigma = enigmas.get(currentEnigmaIndex);
 
             // Type d'énigme
-            String typeStr = "§8[" + enigma.type() + "]";
-            graphics.drawCenteredString(this.font, typeStr, centerX, panelY + 80, 0x888888);
+            graphics.drawCenteredString(this.font, Component.translatable("xiidays.core_maze.type_label", enigma.type()), centerX, panelY + 80, 0x888888);
 
             // Question (peut être sur plusieurs lignes)
             String question = enigma.question();
@@ -152,14 +150,14 @@ public class CoreMazeScreen extends Screen {
 
             // Indice (si demandé)
             if (showHint) {
-                graphics.drawCenteredString(this.font, "§7Indice: §e" + enigma.hint(), centerX, panelY + 160, 0xAAAAAA);
+                graphics.drawCenteredString(this.font, Component.translatable("xiidays.core_maze.hint", enigma.hint()), centerX, panelY + 160, 0xAAAAAA);
             } else {
-                graphics.drawCenteredString(this.font, "§8[Appuyez sur H pour un indice]", centerX, panelY + 160, 0x555555);
+                graphics.drawCenteredString(this.font, Component.translatable("xiidays.core_maze.hint_prompt"), centerX, panelY + 160, 0x555555);
             }
         } else if (solvedCount >= 3) {
             // Puzzle résolu !
-            graphics.drawCenteredString(this.font, "§a§lPUZZLE RÉSOLU !", centerX, panelY + 120, 0x00FF00);
-            graphics.drawCenteredString(this.font, "§6+300 points pour votre équipe !", centerX, panelY + 140, 0xFFD700);
+            graphics.drawCenteredString(this.font, Component.translatable("xiidays.core_maze.puzzle_solved"), centerX, panelY + 120, 0x00FF00);
+            graphics.drawCenteredString(this.font, Component.translatable("xiidays.core_maze.points_awarded"), centerX, panelY + 140, 0xFFD700);
         }
 
         // Champ de réponse
@@ -173,7 +171,7 @@ public class CoreMazeScreen extends Screen {
         }
 
         // Instructions
-        graphics.drawCenteredString(this.font, "§8[ESC pour quitter]", centerX, panelY + PANEL_HEIGHT - 20, 0x555555);
+        graphics.drawCenteredString(this.font, Component.translatable("xiidays.core_maze.close"), centerX, panelY + PANEL_HEIGHT - 20, 0x555555);
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }

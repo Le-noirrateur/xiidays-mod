@@ -4,7 +4,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -60,15 +59,6 @@ public record OpenScoreboardPacket(List<TeamData> teams, String playerTeam) impl
     @Override
     public @NotNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
-    }
-
-    /**
-     * MÉTHODE SIMPLE SANS @OnlyIn
-     * Délègue au handler client
-     */
-    public static void handle(OpenScoreboardPacket packet, IPayloadContext context) {
-        // Déléguer au handler client (chargé uniquement côté client)
-        context.enqueueWork(() -> ClientScoreboardHandler.openScoreboard(packet));
     }
 
     /**

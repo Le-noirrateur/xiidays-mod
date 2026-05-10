@@ -200,8 +200,8 @@ public class TeamManager {
             if (winnerTeam != null) {
                 setWinningTeam(winnerTeam);
 
-                // Stop the ongoing day first
-                DaysManager.stop();
+                // Stop the ongoing day first (skip day-end HUD — game over handles visuals)
+                DaysManager.stop(false);
 
                 if (server != null) {
                     // Send per-player game over (winner/loser) then end scoreboard

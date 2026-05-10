@@ -66,7 +66,7 @@ public class TeamStatsScreen extends Screen {
         graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + 3, 0xFFFFD700); // Bordure or
 
         // Titre
-        graphics.drawCenteredString(this.font, "§6§lSTATISTIQUES D'ÉQUIPE", centerX, panelY + 15, 0xFFD700);
+        graphics.drawCenteredString(this.font, Component.translatable("xiidays.team_stats.title"), centerX, panelY + 15, 0xFFD700);
         graphics.drawCenteredString(this.font, "§e" + teamStats.teamName().toUpperCase(), centerX, panelY + 30, 0xFFFFFF);
 
         // Zone scrollable
@@ -77,7 +77,7 @@ public class TeamStatsScreen extends Screen {
         int yOffset = contentY - (int) scrollOffset;
 
         // === STATS DE L'ÉQUIPE ===
-        graphics.drawString(this.font, "§6§l▸ STATISTIQUES GLOBALES", panelX + 20, yOffset, 0xFFD700);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.global_header"), panelX + 20, yOffset, 0xFFD700);
         yOffset += 20;
 
         // Grille de stats (2 colonnes)
@@ -85,37 +85,37 @@ public class TeamStatsScreen extends Screen {
         int col2X = panelX + 260;
         int lineHeight = 14;
 
-        graphics.drawString(this.font, "§7Points totaux: §f" + teamStats.points(), col1X, yOffset, 0xFFFFFF);
-        graphics.drawString(this.font, "§7Points gagnés: §a+" + teamStats.pointGain(), col2X, yOffset, 0x00FF00);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.total_points", teamStats.points()), col1X, yOffset, 0xFFFFFF);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.points_gained", teamStats.pointGain()), col2X, yOffset, 0x00FF00);
         yOffset += lineHeight;
 
-        graphics.drawString(this.font, "§7Kills: §c" + teamStats.kills(), col1X, yOffset, 0xFF5555);
-        graphics.drawString(this.font, "§7Points perdus: §c-" + teamStats.pointLoss(), col2X, yOffset, 0xFF5555);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.kills", teamStats.kills()), col1X, yOffset, 0xFF5555);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.points_lost", teamStats.pointLoss()), col2X, yOffset, 0xFF5555);
         yOffset += lineHeight;
 
-        graphics.drawString(this.font, "§7Morts: §8" + teamStats.deaths(), col1X, yOffset, 0x888888);
-        graphics.drawString(this.font, "§7K/D Ratio: §e" + formatKD(teamStats.kills(), teamStats.deaths()), col2X, yOffset, 0xFFFF55);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.deaths", teamStats.deaths()), col1X, yOffset, 0x888888);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.kd_ratio", formatKD(teamStats.kills(), teamStats.deaths())), col2X, yOffset, 0xFFFF55);
         yOffset += lineHeight;
 
-        graphics.drawString(this.font, "§7Blocs minés: §b" + teamStats.blocksMined(), col1X, yOffset, 0x55FFFF);
-        graphics.drawString(this.font, "§7Dégâts infligés: §4" + teamStats.damageDealt(), col2X, yOffset, 0xAA0000);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.blocks_mined", teamStats.blocksMined()), col1X, yOffset, 0x55FFFF);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.damage_dealt", teamStats.damageDealt()), col2X, yOffset, 0xAA0000);
         yOffset += lineHeight;
 
-        graphics.drawString(this.font, "§7Dégâts reçus: §6" + teamStats.damageReceived(), col1X, yOffset, 0xFFAA00);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.damage_received", teamStats.damageReceived()), col1X, yOffset, 0xFFAA00);
         yOffset += 30;
 
         // === STATS DES JOUEURS ===
-        graphics.drawString(this.font, "§6§l▸ JOUEURS DE L'ÉQUIPE (" + playerStats.size() + ")", panelX + 20, yOffset, 0xFFD700);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.players_header", playerStats.size()), panelX + 20, yOffset, 0xFFD700);
         yOffset += 25;
 
         // En-tête du tableau
         graphics.fill(panelX + 20, yOffset - 2, panelX + PANEL_WIDTH - 20, yOffset + 12, 0x40FFFFFF);
-        graphics.drawString(this.font, "§fJoueur", panelX + 25, yOffset, 0xFFFFFF);
-        graphics.drawString(this.font, "§fPts", panelX + 150, yOffset, 0xFFFFFF);
-        graphics.drawString(this.font, "§fKills", panelX + 210, yOffset, 0xFFFFFF);
-        graphics.drawString(this.font, "§fMorts", panelX + 270, yOffset, 0xFFFFFF);
-        graphics.drawString(this.font, "§fK/D", panelX + 330, yOffset, 0xFFFFFF);
-        graphics.drawString(this.font, "§fBlocs", panelX + 390, yOffset, 0xFFFFFF);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.table_player"), panelX + 25, yOffset, 0xFFFFFF);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.table_pts"), panelX + 150, yOffset, 0xFFFFFF);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.table_kills"), panelX + 210, yOffset, 0xFFFFFF);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.table_deaths"), panelX + 270, yOffset, 0xFFFFFF);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.table_kd"), panelX + 330, yOffset, 0xFFFFFF);
+        graphics.drawString(this.font, Component.translatable("xiidays.team_stats.table_blocks"), panelX + 390, yOffset, 0xFFFFFF);
         yOffset += 18;
 
         // Ligne de séparation
@@ -133,7 +133,7 @@ public class TeamStatsScreen extends Screen {
             // Médaille pour le MVP de l'équipe (celui avec le plus de points)
             String prefix = "";
             if (i == 0 && playerStats.size() > 1) {
-                prefix = "§6★ "; // Étoile pour le meilleur
+                prefix = Component.translatable("xiidays.team_stats.mvp_star").getString(); // Étoile pour le meilleur
             }
 
             graphics.drawString(this.font, prefix + "§f" + truncate(player.playerName(), 12), panelX + 25, yOffset, 0xFFFFFF);
@@ -164,7 +164,7 @@ public class TeamStatsScreen extends Screen {
         }
 
         // Instructions
-        graphics.drawCenteredString(this.font, "§8[ESC pour fermer]", centerX, panelY + PANEL_HEIGHT - 15, 0x555555);
+        graphics.drawCenteredString(this.font, Component.translatable("xiidays.team_stats.close"), centerX, panelY + PANEL_HEIGHT - 15, 0x555555);
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }

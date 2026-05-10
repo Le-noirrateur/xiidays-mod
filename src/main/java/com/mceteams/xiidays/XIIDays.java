@@ -6,7 +6,6 @@ import com.mceteams.xiidays.game.PointsManager;
 import com.mceteams.xiidays.game.ScoreboardManager;
 import com.mceteams.xiidays.game.TaskScheduler;
 import com.mceteams.xiidays.item.ItemRegistry;
-import com.mceteams.xiidays.network.RequestScoreboardPacket;
 import com.mceteams.xiidays.player.PlayersHandler;
 import com.mceteams.xiidays.restriction.RestrictionsManager;
 import com.mceteams.xiidays.screen.MenuRegistry;
@@ -26,8 +25,6 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
@@ -66,18 +63,10 @@ public class XIIDays {
         LOGGER.info("[XII Days - Mod]: Registering mod Configuration & Specifications...");
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
 
-        LOGGER.info("[XII Days - Mod]: Registering network packets...");
-//        modEventBus.addListener(this::registerPackets);
-
         LOGGER.info("[XII Days - Mod]: DONE, Mod components registration complete.");
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        // Some common setup code
-        LOGGER.info("[XII Days - Mod]: Common setup beginning...");
-
-        LOGGER.info("[XII Days - Mod]: Initializing default cinematic...");
-
         LOGGER.info("[XII Days - Mod]: Common setup complete.");
     }
 
@@ -98,21 +87,6 @@ public class XIIDays {
         LOGGER.info("[XII Days - Mod]: Initializing team points for leaderboard...");
         PointsManager.initializeTeamPoints();
         LOGGER.info("[XII Days - Mod]: Team points initialized");
-    }
-
-    private void registerPackets(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1").optional();
-
-        LOGGER.info("[XII Days - Mod]: Registering server-bound packets...");
-
-        // Client → Serveur : Demande d'ouverture du scoreboard
-        registrar.playToServer(
-                RequestScoreboardPacket.TYPE,
-                RequestScoreboardPacket.CODEC,
-                RequestScoreboardPacket::handle
-        );
-
-        LOGGER.info("[XII Days - Mod]: Server-bound packets registered (1 channel)");
     }
 
     @SubscribeEvent

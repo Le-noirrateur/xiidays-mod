@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mceteams.xiidays.XIIDays;
+import com.mceteams.xiidays.game.PointsManager;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
@@ -81,6 +82,7 @@ public class DataManager {
 
     public static void reloadAll() {
         cache.clear();
+        PointsManager.refreshTeamPoints();
         XIIDays.LOGGER.info("All data caches cleared, will reload on next access");
     }
 

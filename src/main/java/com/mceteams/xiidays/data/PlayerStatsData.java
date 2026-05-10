@@ -4,11 +4,9 @@ import com.google.gson.JsonObject;
 
 public class PlayerStatsData {
     private static final String DOMAIN = "player_stats";
-    private static JsonObject data;
 
     private static JsonObject get() {
-        if (data == null) data = DataManager.load(DOMAIN);
-        return data;
+        return DataManager.load(DOMAIN);
     }
 
     private static JsonObject getPlayer(String uuid) {
