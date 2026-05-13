@@ -185,6 +185,10 @@ public class SpectateManager {
                 TeamStatsData.updateMaxKillStreak(attackerTeamId);
 
                 PointsManager.addPoints(attackerTeamId, PointType.KILL, attacker);
+                if (!TeamStatsData.isFirstBloodClaimed()) {
+                    TeamStatsData.setFirstBloodClaimed(true);
+                    PointsManager.addPoints(attackerTeamId, PointType.FIRST_BLOOD, attacker);
+                }
                 PointsManager.addPoints(attackerTeamId, PointType.KILL_STREAK, attacker);
             }
         }

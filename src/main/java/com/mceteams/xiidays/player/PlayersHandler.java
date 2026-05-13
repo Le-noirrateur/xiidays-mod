@@ -1,5 +1,6 @@
 package com.mceteams.xiidays.player;
 
+import com.mceteams.xiidays.data.PlayerStatsData;
 import com.mceteams.xiidays.data.TeamStatsData;
 import com.mceteams.xiidays.game.DaysManager;
 import com.mceteams.xiidays.game.PointType;
@@ -80,6 +81,7 @@ public class PlayersHandler {
 
         if (blockName != null) {
             TeamStatsData.incrementBlocksMined(teamId);
+            PlayerStatsData.incrementBlocksMined(player.getUUID().toString());
             switch (blockName) {
                 case "DIAMOND_ORE", "NETHERITE_ORE", "EMERALD_ORE",
                      "GOLD_ORE", "IRON_ORE", "COAL_ORE",
@@ -150,5 +152,6 @@ public class PlayersHandler {
 
         TeamStatsData.addDamageDealt(teamId, (int) damage);
         TeamStatsData.addDamageReceived(victimTeamId, (int) damage);
+        PlayerStatsData.addDamageDealt(attacker.getUUID().toString(), (int) damage);
     }
 }

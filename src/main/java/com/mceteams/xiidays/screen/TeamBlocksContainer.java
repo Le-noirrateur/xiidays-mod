@@ -23,7 +23,7 @@ public class TeamBlocksContainer extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        return false;
+        return !player.isRemoved();
     }
 
     public void setPuzzleStep(int step) {

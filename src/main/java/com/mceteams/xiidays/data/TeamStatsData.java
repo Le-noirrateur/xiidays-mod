@@ -183,6 +183,16 @@ public class TeamStatsData {
         DataManager.save(DOMAIN);
     }
 
+    public static boolean isFirstBloodClaimed() {
+        JsonObject obj = get();
+        return obj.has("first_blood_claimed") && obj.get("first_blood_claimed").getAsBoolean();
+    }
+
+    public static void setFirstBloodClaimed(boolean claimed) {
+        get().addProperty("first_blood_claimed", claimed);
+        DataManager.save(DOMAIN);
+    }
+
     public static int getTeamCount() {
         JsonObject obj = get();
         int count = 0;

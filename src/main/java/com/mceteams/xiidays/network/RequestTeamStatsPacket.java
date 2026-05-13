@@ -71,8 +71,8 @@ public record RequestTeamStatsPacket(String teamName) implements CustomPacketPay
                 int pKills = PlayerStatsData.getKills(playerUUID);
                 int pDeaths = PlayerStatsData.getDeaths(playerUUID);
                 int pPoints = PlayerStatsData.getTeamPoints(playerUUID);
-                int pBlocksMined = 0;
-                int pDamageDealt = 0;
+                int pBlocksMined = PlayerStatsData.getBlocksMined(playerUUID);
+                int pDamageDealt = PlayerStatsData.getDamageDealt(playerUUID);
 
                 playerStatsList.add(new OpenTeamStatsPacket.PlayerStatsData(
                         playerName, playerUUID, pKills, pDeaths, pPoints, pBlocksMined, pDamageDealt

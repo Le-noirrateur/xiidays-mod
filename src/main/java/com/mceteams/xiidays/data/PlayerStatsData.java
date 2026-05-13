@@ -59,4 +59,29 @@ public class PlayerStatsData {
     public static void incrementDeaths(String uuid) {
         setDeaths(uuid, getDeaths(uuid) + 1);
     }
+
+    public static int getBlocksMined(String uuid) {
+        JsonObject player = getPlayer(uuid);
+        return player.has("blocks_mined") ? player.get("blocks_mined").getAsInt() : 0;
+    }
+
+    public static void setBlocksMined(String uuid, int mined) {
+        getPlayer(uuid).addProperty("blocks_mined", mined);
+        DataManager.save(DOMAIN);
+    }
+
+    public static void incrementBlocksMined(String uuid) {
+        setBlocksMined(uuid, getBlocksMined(uuid) + 1);
+    }
+
+    public static int getDamageDealt(String uuid) {
+        JsonObject player = getPlayer(uuid);
+        return player.has("damage_dealt") ? player.get("damage_dealt").getAsInt() : 0;
+    }
+
+    public static void addDamageDealt(String uuid, int amount) {
+        int current = getDamageDealt(uuid);
+        getPlayer(uuid).addProperty("damage_dealt", current + amount);
+        DataManager.save(DOMAIN);
+    }
 }

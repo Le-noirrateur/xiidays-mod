@@ -81,7 +81,6 @@ public class PointsManager {
             PacketDistributor.sendToPlayer(srvp, popup);
 //            TeamManager.sendMessageToTeam(teamId, Component.literal(player.getName().getString() + " à ajouté §4§l" + (pointsAdded >= 0 ? "+" : "") + pointsAdded + "§r à votre équipe (§6§l" + type + "§r)"), player.getUUID());
         }
-        NeoForge.EVENT_BUS.post(new PointsChangedEvent(teamId, oldPoints, newPoints));
     }
 
     public static void initializeTeamPoints() {

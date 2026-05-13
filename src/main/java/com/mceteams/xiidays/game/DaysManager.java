@@ -140,6 +140,8 @@ public class DaysManager {
                 context.getSource().getServer().getPlayerList().broadcastAll(
                         new ClientboundSystemChatPacket(msg, true));
 
+                CrateManager.startDrops();
+
                 for (Player player : context.getSource().getServer().getPlayerList().getPlayers()) {
                     player.playNotifySound(SoundEvents.ENDER_DRAGON_GROWL, SoundSource.MASTER, 1.0f, 1.0f);
                     player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1.0f, 2.0f);
@@ -168,6 +170,7 @@ public class DaysManager {
             if (server == null) return false;
 
             DayCycleData.setInProgress(false);
+            CrateManager.stopDrops();
 
             if (sendDayEndHud) {
                 var notifEnd = new DayNotificationPayload(DayNotificationPayload.NotificationType.END,
