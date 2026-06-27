@@ -3,7 +3,7 @@ package com.mceteams.xiidays.network;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ public record DayEndScorePayload(List<TeamEntry> teams) implements CustomPacketP
     public record TeamEntry(String teamName, int points, int rankChange) {}
 
     public static final CustomPacketPayload.Type<DayEndScorePayload> TYPE =
-            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "day_end_score"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MODID, "day_end_score"));
 
     public static final StreamCodec<FriendlyByteBuf, DayEndScorePayload> CODEC = new StreamCodec<>() {
         @Override

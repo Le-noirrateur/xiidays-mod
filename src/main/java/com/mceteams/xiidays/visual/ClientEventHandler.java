@@ -8,7 +8,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 import static com.mceteams.xiidays.XIIDays.MODID;
 
@@ -26,7 +26,7 @@ public class ClientEventHandler {
         }
 
         if (KeyBindings.OPEN_ADMIN_MENU.consumeClick()) {
-            PacketDistributor.sendToServer(new RequestOpenAdminMenuPacket());
+            ClientPacketDistributor.sendToServer(new RequestOpenAdminMenuPacket());
         }
     }
 }

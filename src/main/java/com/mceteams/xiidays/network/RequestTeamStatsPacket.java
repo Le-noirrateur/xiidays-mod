@@ -6,7 +6,7 @@ import com.mceteams.xiidays.data.TeamStatsData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -21,7 +21,7 @@ import static com.mceteams.xiidays.XIIDays.MODID;
 public record RequestTeamStatsPacket(String teamName) implements CustomPacketPayload {
 
     public static final Type<RequestTeamStatsPacket> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "request_team_stats"));
+            new Type<>(Identifier.fromNamespaceAndPath(MODID, "request_team_stats"));
 
     public static final StreamCodec<FriendlyByteBuf, RequestTeamStatsPacket> CODEC = new StreamCodec<>() {
         @Override
@@ -65,7 +65,7 @@ public record RequestTeamStatsPacket(String teamName) implements CustomPacketPay
                 String playerUUID = members.get(i).getAsString();
                 if (playerUUID == null || playerUUID.isEmpty()) continue;
 
-                ServerPlayer memberPlayer = player.server.getPlayerList().getPlayer(UUID.fromString(playerUUID));
+                ServerPlayer memberPlayer = player.level().getServer().getPlayerList().getPlayer(UUID.fromString(playerUUID));
                 String playerName = memberPlayer != null ? memberPlayer.getName().getString() : "Joueur hors ligne";
 
                 int pKills = PlayerStatsData.getKills(playerUUID);

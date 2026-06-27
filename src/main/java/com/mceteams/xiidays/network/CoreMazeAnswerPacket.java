@@ -10,7 +10,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -22,7 +22,7 @@ import static com.mceteams.xiidays.XIIDays.MODID;
 public record CoreMazeAnswerPacket(int teamId, int enigmaIndex, boolean correct) implements CustomPacketPayload {
 
     public static final Type<CoreMazeAnswerPacket> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "core_maze_answer"));
+            new Type<>(Identifier.fromNamespaceAndPath(MODID, "core_maze_answer"));
 
     public static final StreamCodec<FriendlyByteBuf, CoreMazeAnswerPacket> CODEC = new StreamCodec<>() {
         @Override

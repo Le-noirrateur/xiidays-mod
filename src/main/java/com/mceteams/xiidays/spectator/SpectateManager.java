@@ -102,7 +102,7 @@ public class SpectateManager {
     private static void savePlayerInventory(ServerPlayer player) {
         Inventory inv = player.getInventory();
         List<ItemStack> saved = new ArrayList<>();
-        Level level = player.serverLevel();
+        Level level = player.level();
         BlockPos pos = player.blockPosition();
 
         // Save main inventory + armor + offhand
@@ -171,7 +171,7 @@ public class SpectateManager {
         }
         PacketDistributor.sendToPlayer(player, new DeathNotificationPayload(deathDelay));
 
-        player.playNotifySound(SoundEvents.ANVIL_BREAK, SoundSource.MASTER, 1.0f, 1.0f);
+        player.playSound(SoundEvents.ANVIL_BREAK, 1.0f, 1.0f);
 
         if (event.getSource().getEntity() instanceof ServerPlayer attacker) {
             String attackerTeamName = TeamManager.getPlayerCurrentTeam(attacker.getUUID().toString());
@@ -366,9 +366,7 @@ public class SpectateManager {
             if (spawnData != null) {
                 BlockPos spawn = parseBlockPos(spawnData);
                 if (spawn != null) {
-                    spectator.teleportTo(spectator.serverLevel(),
-                            spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5,
-                            spectator.getYRot(), spectator.getXRot());
+                    spectator.teleportTo(spectator.level(), spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, Set.of(), spectator.getYRot(), spectator.getXRot(), false);
                 }
             }
         }
@@ -389,10 +387,8 @@ public class SpectateManager {
         sendSpectatorStatus(spectator);
 
         // Teleport to world spawn as a neutral vantage point
-        BlockPos worldSpawn = spectator.serverLevel().getSharedSpawnPos();
-        spectator.teleportTo(spectator.serverLevel(),
-                worldSpawn.getX() + 0.5, 100, worldSpawn.getZ() + 0.5,
-                spectator.getYRot(), spectator.getXRot());
+        BlockPos worldSpawn = spectator.level().getRespawnData().pos();
+        spectator.teleportTo(spectator.level(), worldSpawn.getX() + 0.5, 100, worldSpawn.getZ() + 0.5, Set.of(), spectator.getYRot(), spectator.getXRot(), false);
 
         spectator.sendSystemMessage(Component.literal(
                 "§7Mode spectateur libre. Vous pouvez voler mais ne pouvez pas entrer dans les bases."));
@@ -412,9 +408,7 @@ public class SpectateManager {
         BlockPos clamped = clampToZone(pos, teamId);
 
         if (clamped != null && !clamped.equals(pos)) {
-            spectator.teleportTo(spectator.serverLevel(),
-                    clamped.getX() + 0.5, clamped.getY(), clamped.getZ() + 0.5,
-                    spectator.getYRot(), spectator.getXRot());
+            spectator.teleportTo(spectator.level(), clamped.getX() + 0.5, clamped.getY(), clamped.getZ() + 0.5, Set.of(), spectator.getYRot(), spectator.getXRot(), false);
             spectator.sendSystemMessage(Component.literal("§cVous ne pouvez pas quitter votre zone !"), true);
         }
     }
@@ -427,10 +421,8 @@ public class SpectateManager {
             if (otherId <= 0) continue;
 
             if (isInsideAnyZone(pos, otherId)) {
-                BlockPos worldSpawn = spectator.serverLevel().getSharedSpawnPos();
-                spectator.teleportTo(spectator.serverLevel(),
-                        worldSpawn.getX() + 0.5, 100, worldSpawn.getZ() + 0.5,
-                        spectator.getYRot(), spectator.getXRot());
+                BlockPos worldSpawn = spectator.level().getRespawnData().pos();
+                spectator.teleportTo(spectator.level(), worldSpawn.getX() + 0.5, 100, worldSpawn.getZ() + 0.5, Set.of(), spectator.getYRot(), spectator.getXRot(), false);
                 spectator.sendSystemMessage(Component.literal("§cVous ne pouvez pas entrer dans les bases !"), true);
                 return;
             }
@@ -599,7 +591,7 @@ public class SpectateManager {
         UUID targetId = spectatorTargets.get(player.getUUID());
         String targetName = "";
         if (targetId != null) {
-            ServerPlayer target = player.server.getPlayerList().getPlayer(targetId);
+            ServerPlayer target = player.level().getServer().getPlayerList().getPlayer(targetId);
             if (target != null) targetName = target.getName().getString();
         }
         PacketDistributor.sendToPlayer(player, new SpectatorStatusPayload(modeId, targetName));
@@ -628,9 +620,7 @@ public class SpectateManager {
             if (spawnData != null) {
                 BlockPos spawnPos = parseBlockPos(spawnData);
                 if (spawnPos != null) {
-                    player.teleportTo(player.serverLevel(),
-                            spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5,
-                            player.getYRot(), player.getXRot());
+                    player.teleportTo(player.level(), spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, Set.of(), player.getYRot(), player.getXRot(), false);
                 }
             }
         }
@@ -726,7 +716,7 @@ public class SpectateManager {
         if (spectatorTeam == null) return Collections.emptyList();
 
         List<ServerPlayer> teammates = new ArrayList<>();
-        for (ServerPlayer player : spectator.serverLevel().getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer player : spectator.level().getServer().getPlayerList().getPlayers()) {
             if (player.getUUID().equals(spectator.getUUID())) continue;
             if (player.gameMode.getGameModeForPlayer() != GameType.SURVIVAL) continue;
 

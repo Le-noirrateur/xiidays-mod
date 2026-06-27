@@ -27,8 +27,8 @@ public class SpawnerBlock extends Block implements EntityBlock {
     }
 
 
-    @Override
-    public boolean propagatesSkylightDown(@NotNull BlockState state, @NotNull BlockGetter reader, @NotNull BlockPos pos) {
+@Override
+    public boolean propagatesSkylightDown(@NotNull BlockState state) {
         return true; // Permet à la lumière de traverser
     }
 

@@ -86,7 +86,7 @@ public class TeamManager {
             if (blockEntity instanceof SpawnerBlockEntity teamSpawn) {
                 int teamId = TeamManager.getTeamId(teamName);
                 teamSpawn.setTeamId(teamId);
-                level.getChunkAt(newPos).setUnsaved(true);
+                level.getChunkAt(newPos).markUnsaved();
 
                 TeamData.setSpawn(teamId, pos.getX() + "," + (pos.getY() + 1) + "," + pos.getZ());
                 return 1;
@@ -112,7 +112,7 @@ public class TeamManager {
                 int teamId = TeamManager.getTeamId(teamName);
                 teamCore.setTeamId(teamId);
                 teamCore.setPuzzleSolved(false);
-                level.getChunkAt(pos).setUnsaved(true);
+                level.getChunkAt(pos).markUnsaved();
 
                 TeamData.setCore(teamId, pos.getX() + "," + pos.getY() + "," + pos.getZ());
                 return 1;
@@ -182,7 +182,7 @@ public class TeamManager {
         var server = ServerLifecycleHooks.getCurrentServer();
         if (server != null) {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-                p.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.3f);
+                p.playSound(SoundEvents.NOTE_BLOCK_BASS.value(), 1f, 0.3f);
             }
         }
 
@@ -210,9 +210,9 @@ public class TeamManager {
                         boolean isWinner = winnerTeam.equals(playerTeam);
                         PacketDistributor.sendToPlayer(player, new GameOverPayload(isWinner));
                         if (isWinner) {
-                            player.playNotifySound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1f, 1f);
+                            player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
                         } else {
-                            player.playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.3f);
+                            player.playSound(SoundEvents.NOTE_BLOCK_BASS.value(), 1f, 0.3f);
                         }
                     }
                     OpenEndScoreboardPacket packet = buildEndPacket(winnerTeam);

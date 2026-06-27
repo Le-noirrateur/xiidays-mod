@@ -3,7 +3,7 @@ package com.mceteams.xiidays.network;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import static com.mceteams.xiidays.XIIDays.MODID;
 public record OpenScoreboardPacket(List<TeamData> teams, String playerTeam) implements CustomPacketPayload {
 
     public static final Type<OpenScoreboardPacket> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "open_scoreboard"));
+            new Type<>(Identifier.fromNamespaceAndPath(MODID, "open_scoreboard"));
 
     public static final StreamCodec<FriendlyByteBuf, OpenScoreboardPacket> CODEC = new StreamCodec<>() {
         @Override

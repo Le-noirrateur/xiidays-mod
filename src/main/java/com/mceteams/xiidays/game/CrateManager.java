@@ -49,7 +49,7 @@ public class CrateManager {
         if (alivePlayers.isEmpty()) return;
 
         ServerPlayer target = alivePlayers.get(RANDOM.nextInt(alivePlayers.size()));
-        ServerLevel level = target.serverLevel();
+        ServerLevel level = target.level();
 
         BlockPos dropPos = target.blockPosition().offset(
                 RANDOM.nextInt(21) - 10,
@@ -60,7 +60,7 @@ public class CrateManager {
         level.setBlock(dropPos, Blocks.BARREL.defaultBlockState(), 3);
 
         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-            p.playNotifySound(SoundEvents.AMBIENT_CAVE.value(), SoundSource.MASTER, 1f, 1f);
+            p.playSound(SoundEvents.AMBIENT_CAVE.value(), 1f, 1f);
             p.sendSystemMessage(Component.literal("§6§lUn colis est tombé quelque part !"));
         }
 
@@ -89,7 +89,7 @@ public class CrateManager {
         PointsManager.addPoints(teamId, PointType.CRATE, player);
 
         for (ServerPlayer p : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
-            p.playNotifySound(SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.MASTER, 1f, 1f);
+            p.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(), 1f, 1f);
             p.sendSystemMessage(Component.literal("§6L'équipe §e" + teamName + " §6a ouvert un colis !"));
         }
     }

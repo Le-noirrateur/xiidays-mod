@@ -60,7 +60,7 @@ public class PlayersHandler {
                 serverPlayer.removeEffectNoUpdate(net.minecraft.world.effect.MobEffects.DARKNESS);
                 serverPlayer.removeEffectNoUpdate(net.minecraft.world.effect.MobEffects.BLINDNESS);
                 serverPlayer.sendSystemMessage(Component.literal("Bienvenu(e) §l" + serverPlayer.getName().getString() + "§r, le jour §l" + DaysManager.getCurrentDay() + "§r est en cours !"));
-                serverPlayer.playNotifySound(SoundEvents.VILLAGER_NO, SoundSource.MASTER, 1.0f, 1.0f);
+                serverPlayer.playSound(SoundEvents.VILLAGER_NO, 1.0f, 1.0f);
             }
         }
     }
@@ -127,7 +127,7 @@ public class PlayersHandler {
             if (attackerTeam != null && attackerTeam.equals(targetTeam)) {
                 event.setCanceled(true);
                 notifyPlayer(serverAttacker, "§cVous ne pouvez pas attaquer un membre de votre équipe !", new NotifyOptions().sound(SoundEvents.LAVA_EXTINGUISH, SoundSource.MASTER, 1.0f, 1.0f).actionBar(true));
-                serverAttacker.playNotifySound(SoundEvents.LAVA_EXTINGUISH, SoundSource.MASTER, 1.0f, 1.0f);
+                serverAttacker.playSound(SoundEvents.LAVA_EXTINGUISH, 1.0f, 1.0f);
             }
         }
     }

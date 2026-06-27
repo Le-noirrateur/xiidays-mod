@@ -4,8 +4,9 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,7 +15,7 @@ import static com.mceteams.xiidays.XIIDays.MODID;
 public record AdminActionPayload(String action, String target, int value) implements CustomPacketPayload {
 
     public static final Type<AdminActionPayload> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "admin_action"));
+            new Type<>(Identifier.fromNamespaceAndPath(MODID, "admin_action"));
 
     public AdminActionPayload(String action) {
         this(action, "", 0);
@@ -46,7 +47,7 @@ public record AdminActionPayload(String action, String target, int value) implem
     public static void handle(AdminActionPayload packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
-            if (!player.hasPermissions(4)) {
+            if (!player.permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
                 player.sendSystemMessage(Component.literal("§cVous n'avez pas la permission !"));
                 return;
             }
@@ -55,7 +56,7 @@ public record AdminActionPayload(String action, String target, int value) implem
     }
 
     private static void runCmd(ServerPlayer player, String cmd) {
-        player.getServer().getCommands().performPrefixedCommand(
+        player.level().getServer().getCommands().performPrefixedCommand(
                 player.createCommandSourceStack(), cmd);
     }
 

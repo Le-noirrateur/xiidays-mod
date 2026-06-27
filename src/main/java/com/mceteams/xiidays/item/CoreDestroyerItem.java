@@ -44,7 +44,7 @@ public class CoreDestroyerItem extends Item {
             return InteractionResult.PASS;
         }
 
-        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             BlockEntity be = level.getBlockEntity(pos);
             if (!(be instanceof CoreBlockEntity core)) {
                 return InteractionResult.FAIL;
@@ -101,6 +101,6 @@ public class CoreDestroyerItem extends Item {
             return InteractionResult.SUCCESS;
         }
 
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 }

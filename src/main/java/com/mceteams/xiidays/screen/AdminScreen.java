@@ -5,12 +5,14 @@ import com.mceteams.xiidays.network.RequestAdminDataPayload;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -52,7 +54,7 @@ public class AdminScreen extends Screen {
     }
 
     @Override
-    protected void renderBlurredBackground(float partialTick) {
+    protected void renderBlurredBackground(GuiGraphics guiGraphics) {
     }
 
     @Override
@@ -140,7 +142,7 @@ public class AdminScreen extends Screen {
                     }
                 }
             }
-            graphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);
+            graphics.setComponentTooltipForNextFrame(font, tooltip, mouseX, mouseY);
         }
 
         graphics.drawCenteredString(font, Component.translatable("xiidays.admin.close"), cx, panelY + 260, 0x555555);
@@ -168,12 +170,12 @@ public class AdminScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
         if (inputBox != null && inputBox.isFocused()) {
-            if (keyCode == 257) {
+            if (event.key() == 257) {
                 String value = inputBox.getValue().strip();
                 if (!value.isEmpty() && pendingInputAction != null) {
-                    PacketDistributor.sendToServer(new AdminActionPayload(pendingInputAction, value));
+                    ClientPacketDistributor.sendToServer(new AdminActionPayload(pendingInputAction, value));
                     feedbackMessage = Component.translatable("xiidays.admin.feedback_sent").getString();
                     feedbackEndTime = System.currentTimeMillis() + 2000;
                 }
@@ -181,21 +183,23 @@ public class AdminScreen extends Screen {
                 rebuild();
                 return true;
             }
-            if (keyCode == 256) {
+            if (event.key() == 256) {
                 exitInputMode();
                 rebuild();
                 return true;
             }
-            return inputBox.keyPressed(keyCode, scanCode, modifiers);
+            return inputBox.keyPressed(event);
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean isOverlay) {
+        double mouseX = event.x();
+        double mouseY = event.y();
         if (inputBox != null) {
-            inputBox.mouseClicked(mouseX, mouseY, button);
-            return super.mouseClicked(mouseX, mouseY, button);
+            inputBox.mouseClicked(event, isOverlay);
+            return super.mouseClicked(event, isOverlay);
         }
 
         // Check item clicks
@@ -223,7 +227,7 @@ public class AdminScreen extends Screen {
             }
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, isOverlay);
     }
 
     @Override
@@ -321,7 +325,7 @@ public class AdminScreen extends Screen {
         if (tag.startsWith("request:")) {
             String dataType = tag.substring(8);
             requestedData.add(dataType);
-            PacketDistributor.sendToServer(new RequestAdminDataPayload(dataType));
+            ClientPacketDistributor.sendToServer(new RequestAdminDataPayload(dataType));
             feedbackMessage = Component.translatable("xiidays.admin.feedback_loading").getString();
             feedbackEndTime = System.currentTimeMillis() + 3000;
             return;
@@ -334,7 +338,7 @@ public class AdminScreen extends Screen {
         }
 
         // Regular action: send to server
-        PacketDistributor.sendToServer(new AdminActionPayload(tag));
+        ClientPacketDistributor.sendToServer(new AdminActionPayload(tag));
         feedbackMessage = Component.translatable("xiidays.admin.feedback_executed").getString();
         feedbackEndTime = System.currentTimeMillis() + 2000;
     }

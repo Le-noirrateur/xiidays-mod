@@ -501,11 +501,11 @@ public class HUDOverlayHandler {
         if (alpha <= 0) return;
         int color = (alpha << 24) | 0xFFFFFF;
         var pose = graphics.pose();
-        pose.pushPose();
-        pose.translate(x, y, 0);
-        pose.scale(scale, scale, 1);
+        pose.pushMatrix();
+        pose.translate(x, y);
+        pose.scale(scale, scale);
         graphics.drawString(font, Component.literal(text), -font.width(text) / 2, 0, color);
-        pose.popPose();
+        pose.popMatrix();
     }
 
     private static void drawText(GuiGraphics graphics, Font font, String text, int x, int y, int alpha) {

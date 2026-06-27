@@ -41,7 +41,7 @@ public class NotifyOptions {
         if (!canSendMessage(player.getUUID())) return;
 
         player.displayClientMessage(Component.literal(message), options.actionBar);
-        player.playNotifySound(options.sound, options.source, options.volume, options.pitch);
+        player.level().playSound(null, player.blockPosition(), options.sound, options.source, options.volume, options.pitch);
     }
 
     // === Surcharge pratique (valeurs par défaut) ===

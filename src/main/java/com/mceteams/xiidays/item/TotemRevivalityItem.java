@@ -29,7 +29,7 @@ public class TotemRevivalityItem extends Item {
     public @NotNull InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity target, InteractionHand hand) {
         Level level = player.level();
 
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
 
         if (!(target instanceof ServerPlayer targetPlayer) || !(player instanceof ServerPlayer serverPlayer)) {
             return InteractionResult.PASS;

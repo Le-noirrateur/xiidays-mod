@@ -99,10 +99,13 @@ public class CinematicController {
     @SubscribeEvent
     public static void onMovementInput(MovementInputUpdateEvent event) {
         if (lockControls && currentPath != null) {
-            event.getInput().forwardImpulse = 0;
-            event.getInput().leftImpulse = 0;
-            event.getInput().jumping = false;
-            event.getInput().shiftKeyDown = false;
+            try {
+                var field = net.minecraft.client.player.ClientInput.class.getDeclaredField("moveVector");
+                field.setAccessible(true);
+                field.set(event.getInput(), net.minecraft.world.phys.Vec2.ZERO);
+            } catch (ReflectiveOperationException ignored) {
+            }
+            event.getInput().keyPresses = net.minecraft.world.entity.player.Input.EMPTY;
         }
     }
 

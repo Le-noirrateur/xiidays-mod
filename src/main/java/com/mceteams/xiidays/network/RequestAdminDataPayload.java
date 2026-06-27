@@ -6,8 +6,9 @@ import com.mceteams.xiidays.game.TeamManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +18,7 @@ import static com.mceteams.xiidays.XIIDays.MODID;
 public record RequestAdminDataPayload(String dataType) implements CustomPacketPayload {
 
     public static final Type<RequestAdminDataPayload> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "request_admin_data"));
+            new Type<>(Identifier.fromNamespaceAndPath(MODID, "request_admin_data"));
 
     public static final StreamCodec<FriendlyByteBuf, RequestAdminDataPayload> CODEC = new StreamCodec<>() {
         @Override
@@ -39,7 +40,7 @@ public record RequestAdminDataPayload(String dataType) implements CustomPacketPa
     public static void handle(RequestAdminDataPayload packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
-            if (!player.hasPermissions(4)) return;
+            if (!player.permissions().hasPermission(Permissions.COMMANDS_OWNER)) return;
 
             String data = switch (packet.dataType) {
                 case "day_status" -> {

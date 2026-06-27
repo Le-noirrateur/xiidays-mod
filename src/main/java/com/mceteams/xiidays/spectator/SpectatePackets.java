@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -19,7 +19,7 @@ public class SpectatePackets {
     public record SpectateSwitchPayload(boolean direction) implements CustomPacketPayload {
 
         public static final Type<SpectateSwitchPayload> TYPE =
-                new Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "spectate_switch"));
+                new Type<>(Identifier.fromNamespaceAndPath(MODID, "spectate_switch"));
 
         public static final StreamCodec<ByteBuf, SpectateSwitchPayload> CODEC =
                 ByteBufCodecs.BOOL.map(SpectateSwitchPayload::new, SpectateSwitchPayload::direction);

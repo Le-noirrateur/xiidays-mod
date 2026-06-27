@@ -29,7 +29,7 @@ public class BlockRegistry {
             () -> new SpawnerBlock(BlockBehaviour.Properties.of()
                     .noOcclusion()                                                                                // Pas d'occlusion (transparent)
                     .noLootTable()                                                                                // Pas de table de loot
-                    .noCollission()                                                                               // Pas de collision
+                    .noCollision()                                                                               // Pas de collision
                     .noTerrainParticles()                                                                         // Pas de particules de terrain
                     .sound(SoundType.STONE)                                                                       // Son de pierre
                     .mapColor(MapColor.STONE)                                                                     // Couleur de la carte

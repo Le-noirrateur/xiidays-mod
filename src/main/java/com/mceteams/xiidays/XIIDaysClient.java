@@ -6,8 +6,8 @@ import com.mceteams.xiidays.world.BlockEntityRegistry;
 import com.mceteams.xiidays.world.BlockRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -36,7 +36,7 @@ public class XIIDaysClient {
 
         event.enqueueWork(() -> {
             XIIDays.LOGGER.info("[XII Days - Mod]: Configuring render layers");
-            ItemBlockRenderTypes.setRenderLayer(BlockRegistry.TEAM_SPAWNER.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(BlockRegistry.TEAM_SPAWNER.get(), ChunkSectionLayer.TRANSLUCENT);
             XIIDays.LOGGER.info("[XII Days - Mod]: Render layers configured");
         });
     }

@@ -4,9 +4,10 @@ import com.mceteams.xiidays.network.CoreMazeAnswerPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -18,7 +19,7 @@ import static com.mceteams.xiidays.XIIDays.MODID;
  */
 public class CoreMazeScreen extends Screen {
 
-    private static final ResourceLocation BACKGROUND = ResourceLocation.fromNamespaceAndPath(MODID, "textures/gui/core_maze_bg.png");
+    private static final Identifier BACKGROUND = Identifier.fromNamespaceAndPath(MODID, "textures/gui/core_maze_bg.png");
 
     private final List<EnigmaData> enigmas;
     private final int teamId;
@@ -86,7 +87,7 @@ public class CoreMazeScreen extends Screen {
         feedbackEndTime = System.currentTimeMillis() + 2000;
 
         // Envoyer la validation au serveur
-        PacketDistributor.sendToServer(new CoreMazeAnswerPacket(teamId, currentEnigmaIndex, true));
+        ClientPacketDistributor.sendToServer(new CoreMazeAnswerPacket(teamId, currentEnigmaIndex, true));
 
         // Passer à l'énigme suivante ou terminer
         if (solvedCount >= 3) {
@@ -177,20 +178,20 @@ public class CoreMazeScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
         // H pour afficher l'indice
-        if (keyCode == 72) { // H
+        if (event.key() == 72) { // H
             showHint = true;
             return true;
         }
 
         // Entrée pour valider
-        if (keyCode == 257 && answerBox.isFocused()) { // ENTER
+        if (event.key() == 257 && answerBox.isFocused()) { // ENTER
             // La validation se fait automatiquement via onAnswerChanged
             return true;
         }
 
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override

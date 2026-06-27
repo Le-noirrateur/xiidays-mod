@@ -3,7 +3,7 @@ package com.mceteams.xiidays.network;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ import static com.mceteams.xiidays.XIIDays.MODID;
 public record CoreMazeOpenPacket(List<EnigmaPayload> enigmas, int teamId) implements CustomPacketPayload {
 
     public static final Type<CoreMazeOpenPacket> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "core_maze_open"));
+            new Type<>(Identifier.fromNamespaceAndPath(MODID, "core_maze_open"));
 
     public static final StreamCodec<FriendlyByteBuf, CoreMazeOpenPacket> CODEC = new StreamCodec<>() {
         @Override

@@ -5,7 +5,7 @@ import com.mceteams.xiidays.data.RestrictionsData;
 import com.mceteams.xiidays.player.NotifyOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -19,7 +19,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.common.util.TriState;
+import net.minecraft.util.TriState;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -61,12 +61,12 @@ public class RestrictionsManager {
     }
 
     public static boolean isItemAllowed(Item item) {
-        ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
+        Identifier itemKey = BuiltInRegistries.ITEM.getKey(item);
         return RestrictionsData.isItemAllowed(itemKey.toString());
     }
 
     public static boolean isBlockAllowed(Block block) {
-        ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
+        Identifier blockKey = BuiltInRegistries.BLOCK.getKey(block);
         return RestrictionsData.isBlockAllowed(blockKey.toString());
     }
 
@@ -75,13 +75,13 @@ public class RestrictionsManager {
         if (item instanceof BlockItem blockItem) {
             if (!isBlockAllowed(blockItem.getBlock())) allowed = false;
         }
-        ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
+        Identifier itemKey = BuiltInRegistries.ITEM.getKey(item);
         return Component.literal((allowed ? "§aAutorisé" : "§cInterdit") + " §7→ " + itemKey);
     }
 
     public static Component getStatusComponent(Block block) {
         boolean allowed = isBlockAllowed(block);
-        ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
+        Identifier blockKey = BuiltInRegistries.BLOCK.getKey(block);
         return Component.literal((allowed ? "§aAutorisé" : "§cInterdit") + " §7→ " + blockKey);
     }
 
@@ -118,10 +118,10 @@ public class RestrictionsManager {
     private static boolean isForbidden(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
         Item item = stack.getItem();
-        ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
+        Identifier itemKey = BuiltInRegistries.ITEM.getKey(item);
         if (!RestrictionsData.isItemAllowed(itemKey.toString())) return true;
         if (item instanceof BlockItem blockItem) {
-            ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(blockItem.getBlock());
+            Identifier blockKey = BuiltInRegistries.BLOCK.getKey(blockItem.getBlock());
             return !RestrictionsData.isBlockAllowed(blockKey.toString());
         }
         return false;
@@ -219,7 +219,7 @@ public class RestrictionsManager {
         Player player = event.getPlayer();
         if (hasBypass(player)) return;
 
-        ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
+        Identifier itemKey = BuiltInRegistries.ITEM.getKey(item);
         if (!RestrictionsData.isItemAllowed(itemKey.toString())) {
             event.setCanPickup(TriState.FALSE);
             if (player instanceof ServerPlayer serverPlayer) {
@@ -229,7 +229,7 @@ public class RestrictionsManager {
         }
 
         if (item instanceof BlockItem blockItem) {
-            ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(blockItem.getBlock());
+            Identifier blockKey = BuiltInRegistries.BLOCK.getKey(blockItem.getBlock());
             if (!RestrictionsData.isBlockAllowed(blockKey.toString())) {
                 event.setCanPickup(TriState.FALSE);
                 if (player instanceof ServerPlayer serverPlayer) {
@@ -244,7 +244,7 @@ public class RestrictionsManager {
         Block block = event.getState().getBlock();
         Player player = event.getPlayer();
         if (hasBypass(player)) return;
-        ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
+        Identifier blockKey = BuiltInRegistries.BLOCK.getKey(block);
         if (!RestrictionsData.isBlockAllowed(blockKey.toString())) {
             event.setCanceled(true);
             if (player instanceof ServerPlayer serverPlayer) {
@@ -256,7 +256,7 @@ public class RestrictionsManager {
     @SubscribeEvent
     public static void onBlockNeighborNotifyEvent(BlockEvent.NeighborNotifyEvent event) {
         Block block = event.getState().getBlock();
-        ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
+        Identifier blockKey = BuiltInRegistries.BLOCK.getKey(block);
         if (!RestrictionsData.isBlockAllowed(blockKey.toString())) {
             event.setCanceled(true);
         }
@@ -269,11 +269,11 @@ public class RestrictionsManager {
         Player player = event.getEntity();
         if (hasBypass(player)) return;
 
-        ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
+        Identifier itemKey = BuiltInRegistries.ITEM.getKey(item);
         boolean isForbidden = !RestrictionsData.isItemAllowed(itemKey.toString());
         boolean isBlockForbidden = false;
         if (item instanceof BlockItem blockItem) {
-            ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(blockItem.getBlock());
+            Identifier blockKey = BuiltInRegistries.BLOCK.getKey(blockItem.getBlock());
             isBlockForbidden = !RestrictionsData.isBlockAllowed(blockKey.toString());
         }
 
@@ -310,11 +310,11 @@ public class RestrictionsManager {
         Player player = event.getEntity();
         if (hasBypass(player)) return;
 
-        ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
+        Identifier itemKey = BuiltInRegistries.ITEM.getKey(item);
         boolean isForbidden = !RestrictionsData.isItemAllowed(itemKey.toString());
         boolean isBlockForbidden = false;
         if (item instanceof BlockItem blockItem) {
-            ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(blockItem.getBlock());
+            Identifier blockKey = BuiltInRegistries.BLOCK.getKey(blockItem.getBlock());
             isBlockForbidden = !RestrictionsData.isBlockAllowed(blockKey.toString());
         }
 
@@ -330,7 +330,7 @@ public class RestrictionsManager {
     }
 
     public static void setItemsAccess(boolean allow, Item it) {
-        ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(it);
+        Identifier itemKey = BuiltInRegistries.ITEM.getKey(it);
         String itemName = itemKey.toString();
         if (allow) {
             if (!RestrictionsData.isItemAllowed(itemName)) {
@@ -345,7 +345,7 @@ public class RestrictionsManager {
     }
 
     public static void setBlockAccess(boolean allow, Block bl) {
-        ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(bl);
+        Identifier blockKey = BuiltInRegistries.BLOCK.getKey(bl);
         String blockName = blockKey.toString();
         if (allow) {
             if (!RestrictionsData.isBlockAllowed(blockName)) {
@@ -360,7 +360,7 @@ public class RestrictionsManager {
     }
 
     public static void removeForbiddenItemFromAll(Item item) {
-        ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
+        Identifier itemKey = BuiltInRegistries.ITEM.getKey(item);
         String itemName = itemKey.toString();
         assert ServerLifecycleHooks.getCurrentServer() != null;
         for (ServerPlayer player : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
@@ -380,7 +380,7 @@ public class RestrictionsManager {
     }
 
     public static void removeForbiddenBlockFromAll(Block block) {
-        ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
+        Identifier blockKey = BuiltInRegistries.BLOCK.getKey(block);
         String blockName = blockKey.toString();
         assert ServerLifecycleHooks.getCurrentServer() != null;
         for (ServerPlayer player : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {

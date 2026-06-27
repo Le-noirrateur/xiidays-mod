@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.mceteams.xiidays.XIIDays.LOGGER;
@@ -59,7 +60,7 @@ public class DaysManager {
                             serverPlayer.removeEffectNoUpdate(MobEffects.BLINDNESS);
                             serverPlayer.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0, true, false));
                             serverPlayer.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 60, 255, true, false));
-                            serverPlayer.playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.MASTER, 1.0f, 1.0f);
+                            serverPlayer.playSound(SoundEvents.NOTE_BLOCK_HAT.value(), 1.0f, 1.0f);
                         }
                     }
 
@@ -69,7 +70,7 @@ public class DaysManager {
                             .broadcastAll(new ClientboundSetTitleTextPacket(Component.literal("§62")));
 
                     for (Player player : context.getSource().getServer().getPlayerList().getPlayers()) {
-                        player.playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.MASTER, 1.0f, 1.0f);
+                        player.playSound(SoundEvents.NOTE_BLOCK_HAT.value(), 1.0f, 1.0f);
                     }
 
                     TimeUnit.SECONDS.sleep(1);
@@ -78,7 +79,7 @@ public class DaysManager {
                             .broadcastAll(new ClientboundSetTitleTextPacket(Component.literal("§21")));
 
                     for (Player player : context.getSource().getServer().getPlayerList().getPlayers()) {
-                        player.playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.MASTER, 1.0f, 1.0f);
+                        player.playSound(SoundEvents.NOTE_BLOCK_HAT.value(), 1.0f, 1.0f);
                     }
 
                     TimeUnit.SECONDS.sleep(1);
@@ -117,9 +118,9 @@ public class DaysManager {
                                     Integer.parseInt(parts[1].trim()),
                                     Integer.parseInt(parts[2].trim())
                             );
-                            serverPlayer.teleportTo(serverPlayer.serverLevel(),
+                            serverPlayer.teleportTo(serverPlayer.level(),
                                     spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5,
-                                    serverPlayer.getYRot(), serverPlayer.getXRot());
+                                    Set.of(), serverPlayer.getYRot(), serverPlayer.getXRot(), false);
                         } catch (Exception ignored) {
                         }
                     }
@@ -143,11 +144,11 @@ public class DaysManager {
                 CrateManager.startDrops();
 
                 for (Player player : context.getSource().getServer().getPlayerList().getPlayers()) {
-                    player.playNotifySound(SoundEvents.ENDER_DRAGON_GROWL, SoundSource.MASTER, 1.0f, 1.0f);
-                    player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.MASTER, 1.0f, 2.0f);
+                    player.playSound(SoundEvents.ENDER_DRAGON_GROWL, 1.0f, 1.0f);
+                    player.playSound(SoundEvents.PLAYER_LEVELUP, 1.0f, 2.0f);
                 }
             } else {
-                Objects.requireNonNull(context.getSource().getPlayer()).playNotifySound(SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.MASTER, 1f, 0.5f);
+                Objects.requireNonNull(context.getSource().getPlayer()).playSound(SoundEvents.NOTE_BLOCK_BASS.value(), 1f, 0.5f);
 
                 if (DayCycleData.isInProgress()) {
                     context.getSource().sendSystemMessage(Component.literal("§cUne journée est déjà en cours"));
@@ -219,7 +220,7 @@ public class DaysManager {
 
             if (sendDayEndHud) {
                 for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                    player.playNotifySound(SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.MASTER, 1.0f, 0.5f);
+                    player.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(), 1.0f, 0.5f);
                 }
             }
         } catch (Exception e) {

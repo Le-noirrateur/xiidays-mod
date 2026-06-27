@@ -13,15 +13,15 @@ public class BlockEntityRegistry {
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CoreBlockEntity>> TEAM_CORE =
             BLOCK_ENTITIES.register("team_core",
-                    () -> BlockEntityType.Builder.of(
+                    () -> new BlockEntityType<>(
                             CoreBlockEntity::new,
                             BlockRegistry.TEAM_CORE.get()
-                    ).build(null));
+                    ));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SpawnerBlockEntity>> TEAM_SPAWN =
             BLOCK_ENTITIES.register("team_spawn",
-                    () -> BlockEntityType.Builder.of(
+                    () -> new BlockEntityType<>(
                             SpawnerBlockEntity::new,
                             BlockRegistry.TEAM_SPAWNER.get()
-                    ).build(null));
+                    ));
 }

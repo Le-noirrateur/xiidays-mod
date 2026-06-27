@@ -3,7 +3,7 @@ package com.mceteams.xiidays.network;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 import static com.mceteams.xiidays.XIIDays.MODID;
@@ -16,7 +16,7 @@ public record SpectatorStatusPayload(int mode, String targetName) implements Cus
     public static final int MODE_FREE_SPECTATE = 3;
 
     public static final CustomPacketPayload.Type<SpectatorStatusPayload> TYPE =
-            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "spectator_status"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MODID, "spectator_status"));
 
     public static final StreamCodec<FriendlyByteBuf, SpectatorStatusPayload> CODEC = new StreamCodec<>() {
         @Override

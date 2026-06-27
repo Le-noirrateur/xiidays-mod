@@ -3,7 +3,7 @@ package com.mceteams.xiidays.network;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 import static com.mceteams.xiidays.XIIDays.MODID;
@@ -13,7 +13,7 @@ public record DayNotificationPayload(NotificationType notificationType, int newD
     public enum NotificationType { START, END }
 
     public static final CustomPacketPayload.Type<DayNotificationPayload> TYPE =
-            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MODID, "day_notification"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(MODID, "day_notification"));
 
     public static final StreamCodec<FriendlyByteBuf, DayNotificationPayload> CODEC = new StreamCodec<>() {
         @Override

@@ -4,6 +4,7 @@ import com.mceteams.xiidays.spectator.SpectatePackets;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -73,7 +74,7 @@ public class PacketHandler {
     }
 
     public static void sendToServer(RequestScoreboardPacket packet) {
-        PacketDistributor.sendToServer(packet);
+        ClientPacketDistributor.sendToServer(packet);
     }
 
     public static void sendToClient(OpenScoreboardPacket packet, ServerPlayer player) {

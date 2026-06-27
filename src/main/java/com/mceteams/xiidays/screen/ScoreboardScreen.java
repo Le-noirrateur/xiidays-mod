@@ -7,9 +7,10 @@ import com.mceteams.xiidays.player.ClientRankTracker.RankChangeInfo;
 import com.mceteams.xiidays.player.ClientRankTracker.RankChangeType;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -100,7 +101,7 @@ public class ScoreboardScreen extends Screen {
     }
 
     @Override
-    protected void renderBlurredBackground(float partialTick) {
+    protected void renderBlurredBackground(GuiGraphics guiGraphics) {
     }
 
     private void renderTeamRow(GuiGraphics graphics, int x, int y, int width, TeamScore team, int rank, int mouseX, int mouseY) {
@@ -164,8 +165,10 @@ public class ScoreboardScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean isOverlay) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        if (event.button() == 0) {
             int centerX = width / 2;
             int centerY = height / 2;
             int panelX = centerX - PANEL_WIDTH / 2;
@@ -185,14 +188,14 @@ public class ScoreboardScreen extends Screen {
                         mouseY <= Math.min(rowBottom, contentY + MAX_VISIBLE * (ROW_HEIGHT + ROW_SPACING))) {
 
                     if (team.teamName.equalsIgnoreCase(playerTeam)) {
-                        PacketDistributor.sendToServer(new RequestTeamStatsPacket(team.teamName));
+                        ClientPacketDistributor.sendToServer(new RequestTeamStatsPacket(team.teamName));
                         return true;
                     }
                 }
                 yOffset += ROW_HEIGHT + ROW_SPACING;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, isOverlay);
     }
 
     @Override

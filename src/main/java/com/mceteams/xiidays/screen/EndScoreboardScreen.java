@@ -142,7 +142,7 @@ public class EndScoreboardScreen extends Screen {
     }
 
     @Override
-    protected void renderBlurredBackground(float partialTick) {
+    protected void renderBlurredBackground(GuiGraphics guiGraphics) {
     }
 
     @Override

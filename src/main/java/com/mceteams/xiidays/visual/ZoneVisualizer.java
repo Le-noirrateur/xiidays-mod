@@ -8,7 +8,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,15 +21,15 @@ public class ZoneVisualizer {
     private static final int UPDATE_INTERVAL = 5;
     private static final double PARTICLE_SPACING = 1.5;
 
-    private static final Vector3f[] TEAM_COLORS = {
-            new Vector3f(1.00F, 0.27F, 0.27F),  // Red
-            new Vector3f(0.27F, 0.53F, 1.00F),  // Blue
-            new Vector3f(0.27F, 1.00F, 0.27F),  // Green
-            new Vector3f(1.00F, 1.00F, 0.27F),  // Yellow
-            new Vector3f(1.00F, 0.27F, 1.00F),  // Pink
-            new Vector3f(0.27F, 1.00F, 1.00F),  // Cyan
-            new Vector3f(1.00F, 0.55F, 0.00F),  // Orange
-            new Vector3f(0.67F, 0.27F, 1.00F),  // Purple
+    private static final int[] TEAM_COLORS = {
+            0xFFFF4444,  // Red
+            0xFF4488FF,  // Blue
+            0xFF44FF44,  // Green
+            0xFFFFFF44,  // Yellow
+            0xFFFF44FF,  // Pink
+            0xFF44FFFF,  // Cyan
+            0xFFFF8C00,  // Orange
+            0xFFAB44FF,  // Purple
     };
 
     private static final Map<UUID, Integer> viewers = new HashMap<>();
@@ -43,7 +42,7 @@ public class ZoneVisualizer {
         Integer targetTeamId = viewers.get(player.getUUID());
         if (targetTeamId == null) return;
 
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = player.level();
 
         for (String teamName : TeamData.getAllTeamNames()) {
             int teamId = TeamData.getTeamId(teamName);
@@ -57,7 +56,7 @@ public class ZoneVisualizer {
             BlockPos max = parseBlockPos(maxStr);
             if (min == null || max == null) continue;
 
-            Vector3f color = TEAM_COLORS[Math.abs(teamId - 1) % TEAM_COLORS.length];
+            int color = TEAM_COLORS[Math.abs(teamId - 1) % TEAM_COLORS.length];
             DustParticleOptions particle = new DustParticleOptions(color, 1.5F);
 
             drawBoxEdges(level, min, max, particle);
