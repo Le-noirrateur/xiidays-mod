@@ -20,9 +20,8 @@
 - [Issue guidelines](#issue-guidelines)
 - [Labels](#labels)
 - [Report template](#report-template)
-- [Technical details](#technical-details)
 - [Credits](#credits)
-- [License](#license)
+- [License](https://github.com/Le-noirrateur/xiidays-mod?tab=AGPL-3.0-1-ov-file)
 
 ---
 
