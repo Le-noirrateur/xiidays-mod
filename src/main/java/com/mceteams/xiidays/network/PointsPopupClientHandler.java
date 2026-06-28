@@ -4,14 +4,10 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-@OnlyIn(Dist.CLIENT)
 public class PointsPopupClientHandler {
 
     private static final List<PopupEntry> activePopups = new ArrayList<>();

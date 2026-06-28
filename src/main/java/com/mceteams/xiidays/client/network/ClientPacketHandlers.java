@@ -6,14 +6,11 @@ import com.mceteams.xiidays.screen.CoreMazeScreen;
 import com.mceteams.xiidays.screen.TeamStatsScreen;
 import com.mceteams.xiidays.visual.HUDOverlayHandler;
 import net.minecraft.client.Minecraft;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@OnlyIn(Dist.CLIENT)
 public class ClientPacketHandlers {
 
     public static void handleDayNotification(DayNotificationPayload packet, IPayloadContext context) {

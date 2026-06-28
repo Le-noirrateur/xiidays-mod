@@ -3,8 +3,6 @@ package com.mceteams.xiidays.network;
 import com.mceteams.xiidays.player.ClientRankTracker;
 import com.mceteams.xiidays.screen.ScoreboardScreen;
 import net.minecraft.client.Minecraft;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +11,6 @@ import java.util.List;
  * Gère l'ouverture du scoreboard côté CLIENT uniquement
  * Cette classe ne sera JAMAIS chargée sur le serveur
  */
-@OnlyIn(Dist.CLIENT)
 public class ClientScoreboardHandler {
 
     /**
