@@ -299,6 +299,7 @@ public class SpectateManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static void tickBaseSpectate(ServerPlayer spectator) {
         // If a teammate came back alive, switch to watch mode
         ServerPlayer alive = findAliveTeammate(spectator);
@@ -344,6 +345,7 @@ public class SpectateManager {
         sendSpectatorStatus(spectator);
     }
 
+    @SuppressWarnings("deprecation")
     private static void enterBaseSpectate(ServerPlayer spectator) {
         spectatorModes.put(spectator.getUUID(), SpectatorMode.BASE_SPECTATE);
 

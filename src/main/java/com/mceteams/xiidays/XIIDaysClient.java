@@ -27,6 +27,7 @@ public class XIIDaysClient {
     }
 
     @SubscribeEvent
+    @SuppressWarnings("deprecation")
     private void onClientSetup(FMLClientSetupEvent event) {
         XIIDays.LOGGER.info("[XII Days - Mod]: Client setup started");
         XIIDays.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());

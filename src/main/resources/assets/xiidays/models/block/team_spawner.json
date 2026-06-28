@@ -3,6 +3,5 @@
   "textures": {
     "all": "xiidays:block/team_spawner",
     "particle": "xiidays:block/team_spawner"
-  },
-  "render_type": "minecraft:translucent"
+  }
 }

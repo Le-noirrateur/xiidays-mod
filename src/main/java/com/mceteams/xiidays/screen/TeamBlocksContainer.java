@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 public class TeamBlocksContainer extends AbstractContainerMenu {
     private final SimpleContainerData data;
 
+    @SuppressWarnings("this-escape")
     public TeamBlocksContainer(int containerId, Inventory playerInventory) {
         super(MenuRegistry.TEAM_CORE_MENU.get(), containerId);
         this.data = new SimpleContainerData(1);

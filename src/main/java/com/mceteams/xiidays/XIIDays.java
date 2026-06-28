@@ -35,6 +35,7 @@ public class XIIDays {
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    @SuppressWarnings("this-escape")
     public XIIDays(IEventBus modEventBus, ModContainer modContainer) {
 
         LOGGER.info("\n╔═══════════════════════════════════════════════╗\n║                                               ║\n║   Welcome to XII Days - Mod                   ║\n║   Developing by FSS, MCE - fss.mceteams.com   ║\n║                                               ║\n║   Version {}                              ║\n║                                               ║\n╚═══════════════════════════════════════════════╝", modContainer.getModInfo().getVersion());
