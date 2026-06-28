@@ -43,7 +43,7 @@ The mod is designed to run as part of a complete ecosystem including the **LNR L
 
 The source code is **public** and hosted on GitHub:
 
-> 🔗 **https://github.com/Le-noirrateur/xiidays-mod**
+> **https://github.com/Le-noirrateur/xiidays-mod**
 
 The mod is licensed under the **GNU AGPLv3** license. By contributing or redistributing, you agree to the terms of that license. Runnable builds (compiled JARs) are distributed via the channels listed below — source distribution remains subject to AGPLv3 obligations.
 
