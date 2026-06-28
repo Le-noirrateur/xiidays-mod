@@ -63,7 +63,7 @@ The mod is distributed through two channels:
 
 The project is present on Modrinth but **unlisted** — it does not appear in public search results and is only reachable via direct link:
 
-> 🔗 **https://modrinth.com/mod/xiidays**
+> 🔗 **https://modrinth.com/mod/#######**
 
 This is intentional: the mod is built for a specific private event and is not aimed at general public consumption. If you reached this page, you were given the link by the FSS team.
 
